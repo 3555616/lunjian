@@ -239,6 +239,11 @@ public class CommandLine {
 		} else if ("halt".equals(cmd[0])) {
 			cmd[0] = "escape";
 			cmd[1] = null;
+		} else if ("heal".equals(cmd[0])) {
+			cmd[0] = "recovery";
+			cmd[1] = null;
+		} else if ("chat".equals(cmd[0]) && cmd[1] == null) {
+			cmd[0] = "go_chat";
 		}
 	}
 

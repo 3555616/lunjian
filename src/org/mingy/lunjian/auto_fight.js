@@ -32,6 +32,66 @@ if (!ctx[2] && heal && safe && safe > 0) {
 		return false;
 	}
 }
+var findButton = function(name) {
+	var $b = null;
+	$('button.cmd_skill_button').each(function() {
+		if ($(this).text == name) {
+			$b = $(this);
+			return false;
+		}
+	});
+	return $b;
+};
 if (ctx[2]) {
-	
+	var $b = findButton(heal);
+	if ($b) {
+		String onclick = $b.attr('onclick');
+		if (onclick != 'clickButton(\'0\', 0)') {
+			$b.click();
+			ctx[1] = false;
+			ctx[2] = false;
+			ctx[3] = "perform " + heal;
+		}
+		return ctx;
+	}
 }
+var getTargetHp = function() {
+	var hp = 0, $t = pos.charAt(0) == '1' ? $('#vs_hp21,#vs_hp22,vs_hp23，vs_hp24') : $('#vs_hp11,#vs_hp12,vs_hp13，vs_hp14');
+	%t.each(function () {
+		hp += parseInt($('> i > span', this).text());
+	});
+	return hp;
+};
+if (!ctx[1] && !ctx[2]) {
+	if (getTargetHp() < fast) {
+		if (point < 40) {
+			return ctx;
+		}
+	} else {
+		if (point < 100) {
+			return ctx;
+		}
+	}
+}
+var cycle = [];
+for (var i = ctx[0]; i < pfms.length; i++) {
+	cycle.push(i);
+}
+for (var i = 0; i < ctx[0]; i++) {
+	cycle.push(i);
+}
+for (var i = 0; i < cycle.length; i++) {
+	var index = cycle[i], pfm = pfms[index];
+	var $b = findButton(pfm);
+	if ($b) {
+		String onclick = $b.attr('onclick');
+		if (onclick != 'clickButton(\'0\', 0)') {
+			$b.click();
+			ctx[0] = ++index < pfms.length ? index : 0;
+			ctx[2] = true;
+			ctx[3] = "perform " + pfm;
+		}
+		return ctx;
+	}
+}
+return true;
