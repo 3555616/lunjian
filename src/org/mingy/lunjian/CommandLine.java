@@ -7,7 +7,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -23,11 +25,86 @@ import org.openqa.selenium.io.IOUtils;
 
 public class CommandLine {
 
+	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
+
 	private WebDriver webdriver;
 	private File aliasFile;
 	private Properties aliases;
 	private Timer timer;
 	private TimerTask task;
+
+	static {
+		MAP_IDS.put("xueting", "1");
+		MAP_IDS.put("xt", "1");
+		MAP_IDS.put("luoyang", "2");
+		MAP_IDS.put("ly", "2");
+		MAP_IDS.put("huashancun", "3");
+		MAP_IDS.put("hsc", "3");
+		MAP_IDS.put("huashan", "4");
+		MAP_IDS.put("hs", "4");
+		MAP_IDS.put("yangzhou", "5");
+		MAP_IDS.put("yz", "5");
+		MAP_IDS.put("gaibang", "6");
+		MAP_IDS.put("gb", "6");
+		MAP_IDS.put("qiaoyin", "7");
+		MAP_IDS.put("qy", "7");
+		MAP_IDS.put("emei", "8");
+		MAP_IDS.put("em", "8");
+		MAP_IDS.put("hengshan", "9");
+		MAP_IDS.put("hs2", "9");
+		MAP_IDS.put("wudang", "10");
+		MAP_IDS.put("wd", "10");
+		MAP_IDS.put("wanyue", "11");
+		MAP_IDS.put("wy", "11");
+		MAP_IDS.put("shuiyan", "12");
+		MAP_IDS.put("sy", "12");
+		MAP_IDS.put("shaolin", "13");
+		MAP_IDS.put("sl", "13");
+		MAP_IDS.put("tangmen", "14");
+		MAP_IDS.put("tm", "14");
+		MAP_IDS.put("qingcheng", "15");
+		MAP_IDS.put("qc", "15");
+		MAP_IDS.put("xiaoyao", "16");
+		MAP_IDS.put("xy", "16");
+		MAP_IDS.put("kaifang", "17");
+		MAP_IDS.put("kf", "17");
+		MAP_IDS.put("guangmingding", "18");
+		MAP_IDS.put("gmd", "18");
+		MAP_IDS.put("mingjiao", "18");
+		MAP_IDS.put("mj", "18");
+		MAP_IDS.put("quanzhen", "19");
+		MAP_IDS.put("qz", "19");
+		MAP_IDS.put("gumu", "20");
+		MAP_IDS.put("gm", "20");
+		MAP_IDS.put("baituo", "21");
+		MAP_IDS.put("bt", "21");
+		MAP_IDS.put("songshan", "22");
+		MAP_IDS.put("ss", "22");
+		MAP_IDS.put("meizhuang", "23");
+		MAP_IDS.put("mz", "23");
+		MAP_IDS.put("taishan", "24");
+		MAP_IDS.put("ts", "24");
+		MAP_IDS.put("daqi", "25");
+		MAP_IDS.put("dq", "25");
+		MAP_IDS.put("dazhao", "26");
+		MAP_IDS.put("dz", "26");
+		MAP_IDS.put("heimuya", "27");
+		MAP_IDS.put("hmy", "27");
+		MAP_IDS.put("riyue", "27");
+		MAP_IDS.put("ry", "27");
+		MAP_IDS.put("xingxiu", "28");
+		MAP_IDS.put("xx", "28");
+		MAP_IDS.put("maoshan", "29");
+		MAP_IDS.put("ms", "29");
+		MAP_IDS.put("taohuadao", "30");
+		MAP_IDS.put("thd", "30");
+		MAP_IDS.put("tiexue", "31");
+		MAP_IDS.put("tx", "31");
+		MAP_IDS.put("murong", "32");
+		MAP_IDS.put("mr", "32");
+		MAP_IDS.put("dali", "33");
+		MAP_IDS.put("dl", "33");
+	}
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmdline = new CommandLine();
@@ -48,7 +125,17 @@ public class CommandLine {
 					properties.getProperty("webdriver.chrome.driver"));
 			webdriver = new ChromeDriver();
 		}
-		webdriver.manage().window().setSize(new Dimension(400, 600));
+		String size = properties.getProperty("browser.size");
+		int i = size.indexOf('*');
+		if (i > 0) {
+			webdriver
+					.manage()
+					.window()
+					.setSize(
+							new Dimension(Integer.parseInt(size.substring(0, i)
+									.trim()), Integer.parseInt(size.substring(
+									i + 1).trim())));
+		}
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
 		timer = new Timer(true);
@@ -247,6 +334,8 @@ public class CommandLine {
 			cmd[0] = "go";
 		} else if ("fly".equals(cmd[0])) {
 			cmd[0] = "jh";
+			String id = MAP_IDS.get(cmd[1]);
+			cmd[1] = id != null ? id : cmd[1];
 		} else if ("tu".equals(cmd[0])) {
 			cmd[0] = "cangbaotu_op1";
 			cmd[1] = null;
