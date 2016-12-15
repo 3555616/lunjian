@@ -6,9 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,9 +17,9 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.io.IOUtils;
 
 public class CommandLine {
 
@@ -29,7 +28,6 @@ public class CommandLine {
 	private Properties aliases;
 	private Timer timer;
 	private TimerTask task;
-	private String playerName;
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmdline = new CommandLine();
@@ -54,6 +52,7 @@ public class CommandLine {
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
 		timer = new Timer(true);
+		timer.schedule(new ChannelTask(), 1000, 1000);
 		loadAlias(properties.getProperty("alias.properties"));
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				System.in, "gbk"));
@@ -92,7 +91,7 @@ public class CommandLine {
 			task = new LootTask();
 			timer.schedule(task, 0, 200);
 		} else if (line.equals("#combat")) {
-			String pos = getCombatPos();
+			String pos = getCombatPosition();
 			if (pos != null) {
 				stopTask();
 				System.out.println("starting auto combat...");
@@ -128,30 +127,41 @@ public class CommandLine {
 				}
 			}
 		} else if (line.length() > 0 && line.charAt(0) != '#') {
-			line = process(line);
-			if (line.length() > 0) {
-				send(line);
+			ProcessedCommand pc = process(line);
+			if (pc.isChat) {
+				send("go_chat");
+			} else {
+				send("quit_chat");
+			}
+			if (pc.command != null) {
+				send(pc.command);
 			}
 		}
 	}
 
-	private String process(String line) {
+	private ProcessedCommand process(String line) {
+		ProcessedCommand pc = new ProcessedCommand();
+		pc.isChat = true;
 		StringBuilder sb = new StringBuilder();
 		for (String cmd : line.split(";")) {
 			if (cmd.length() > 0) {
-				cmd = translate(cmd);
-				if (cmd != null) {
+				ProcessedCommand c = translate(cmd);
+				if (!c.isChat) {
+					pc.isChat = false;
+				}
+				if (c.command != null) {
 					if (sb.length() > 0) {
 						sb.append(';');
 					}
-					sb.append(cmd);
+					sb.append(c.command);
 				}
 			}
 		}
-		return sb.toString();
+		pc.command = sb.length() > 0 ? sb.toString() : null;
+		return pc;
 	}
 
-	private String translate(String line) {
+	private ProcessedCommand translate(String line) {
 		int i = line.indexOf(' ');
 		String[] cmd = new String[2];
 		if (i > 0) {
@@ -168,51 +178,61 @@ public class CommandLine {
 			}
 			return process(line);
 		}
-		translate(cmd);
+		ProcessedCommand pc = new ProcessedCommand();
+		pc.isChat = translate(cmd);
 		if (cmd[0] != null) {
 			if (cmd[1] != null) {
-				return cmd[0] + " " + cmd[1];
+				pc.command = cmd[0] + " " + cmd[1];
 			} else {
-				return cmd[0];
+				pc.command = cmd[0];
 			}
-		} else {
-			return null;
 		}
+		return pc;
 	}
 
-	private void translate(String[] cmd) {
+	private boolean translate(String[] cmd) {
+		boolean isChat = false;
 		if ("look".equals(cmd[0])) {
 			if (cmd[1] == null) {
 				cmd[0] = "golook_room";
 			} else {
-				String[] target = getTarget(new String[] { "npc", "item" },
-						cmd[1]);
+				String[] target = findTarget(new String[] { "npc", "item",
+						"user" }, cmd[1]);
 				if (target != null) {
 					if ("npc".equals(target[1])) {
 						cmd[0] = "look_npc";
 						cmd[1] = target[0];
-					} else {
+					} else if ("item".equals(target[1])) {
 						cmd[0] = "look_item";
+						cmd[1] = target[0];
+					} else {
+						cmd[0] = "score";
 						cmd[1] = target[0];
 					}
 				} else {
 					cmd[0] = null;
 				}
 			}
-		} else if ("kill".equals(cmd[0]) || "fight".equals(cmd[0])
-				|| "watch".equals(cmd[0]) || "ask".equals(cmd[0])
-				|| "give".equals(cmd[0])) {
+		} else if ("fight".equals(cmd[0]) || "watch".equals(cmd[0])) {
 			if ("watch".equals(cmd[0])) {
 				cmd[0] = "watch_vs";
 			}
-			String[] target = getTarget(new String[] { "npc" }, cmd[1]);
+			String[] target = findTarget(new String[] { "npc", "user" }, cmd[1]);
+			if (target != null) {
+				cmd[1] = target[0];
+			} else {
+				cmd[0] = null;
+			}
+		} else if ("kill".equals(cmd[0]) || "ask".equals(cmd[0])
+				|| "give".equals(cmd[0])) {
+			String[] target = findTarget(new String[] { "npc" }, cmd[1]);
 			if (target != null) {
 				cmd[1] = target[0];
 			} else {
 				cmd[0] = null;
 			}
 		} else if ("get".equals(cmd[0])) {
-			String[] target = getTarget(new String[] { "item" }, cmd[1]);
+			String[] target = findTarget(new String[] { "item" }, cmd[1]);
 			if (target != null) {
 				cmd[1] = target[0];
 			} else {
@@ -242,13 +262,16 @@ public class CommandLine {
 		} else if ("heal".equals(cmd[0])) {
 			cmd[0] = "recovery";
 			cmd[1] = null;
-		} else if ("chat".equals(cmd[0]) && cmd[1] == null) {
-			cmd[0] = "go_chat";
+		} else if ("chat".equals(cmd[0]) || "rumor".equals(cmd[0])) {
+			if (cmd[1] == null) {
+				cmd[0] = null;
+			}
+			isChat = true;
 		}
+		return isChat;
 	}
 
-	@SuppressWarnings("unchecked")
-	private String[] getTarget(String[] types, String pattern) {
+	private String[] findTarget(String[] types, String pattern) {
 		String name = null;
 		int index = 1;
 		int i = pattern.lastIndexOf(' ');
@@ -266,29 +289,102 @@ public class CommandLine {
 				name = pattern;
 			}
 		}
-		String js = "var types = arguments[0], name = arguments[1], index = arguments[2], msg = g_obj_map.get('msg_room');\n"
-				+ "if (msg == undefined) {return null;}\n"
-				+ "var check = function(t, n) {if (types && $.inArray(t, types) < 0) {return false;} var s = n.split(','); if (name) {if (t == 'cmd') return false; if (s[1].indexOf(name) < 0 && (name.length < 6 || s[0].indexOf(name) < 0)) return false;} return s[0];};"
-				+ "for (var t, i = 1; (t = msg.get('npc' + i)) != undefined; i++) {var id = check('npc', t); if (id && (--index) == 0) return [id, 'npc'];}\n"
-				+ "for (var t, i = 1; (t = msg.get('item' + i)) != undefined; i++) {var id = check('item', t); if (id && (--index) == 0) return [id, 'item'];}\n"
-				+ "for (var t, i = 1; (t = msg.get('user' + i)) != undefined; i++) {var id = check('user', t); if (id && (--index) == 0) return [id, 'user'];}\n"
-				+ "for (var t, i = 1; (t = msg.get('cmd' + i)) != undefined; i++) {var id = check('cnd', t); if (id && (--index) == 0) return [id, 'cmd'];}\n"
-				+ "return null;";
-		List<String> target = (List<String>) js(js, types, name, index);
-		return target != null ? target.toArray(new String[2]) : null;
+		for (String[] target : getTargets(types)) {
+			boolean match = false;
+			if (name != null) {
+				if ("corpse".equals(name)) {
+					if (target[0].startsWith("corpse")) {
+						match = true;
+					}
+				} else if (target[1] != null) {
+					if (target[1].contains(name)) {
+						match = true;
+					} else {
+						for (String pinyin : Pinyin.convertToPinyin(target[1])) {
+							if (pinyin.contains(name)) {
+								match = true;
+								break;
+							}
+						}
+						if (!match) {
+							if (Pinyin.convertToFirstPinyin(target[1])
+									.contains(name)) {
+								match = true;
+							}
+						}
+					}
+				}
+			} else {
+				match = true;
+			}
+			if (match && (--index) == 0) {
+				return new String[] { target[0], target[2] };
+			}
+		}
+		return null;
+	}
+
+	private String[] findTargets(String type, String name) {
+		List<String> list = new ArrayList<String>();
+		for (String[] target : getTargets(type)) {
+			boolean match = false;
+			if (name != null) {
+				if ("corpse".equals(name)) {
+					if (target[0].startsWith("corpse")) {
+						match = true;
+					}
+				} else if (target[1] != null) {
+					if (target[1].contains(name)) {
+						match = true;
+					} else {
+						for (String pinyin : Pinyin.convertToPinyin(target[1])) {
+							if (pinyin.contains(name)) {
+								match = true;
+								break;
+							}
+						}
+						if (!match) {
+							if (Pinyin.convertToFirstPinyin(target[1])
+									.contains(name)) {
+								match = true;
+							}
+						}
+					}
+				}
+			} else {
+				match = true;
+			}
+			if (match) {
+				list.add(target[0]);
+			}
+		}
+		return list.toArray(new String[list.size()]);
 	}
 
 	@SuppressWarnings("unchecked")
-	private String[] findTargets(String type, String name) {
-		String js = "var type = arguments[0], name = arguments[1], msg = g_obj_map.get('msg_room'), targets = [];\n"
-				+ "if (msg == undefined) {return targets;}\n"
-				+ "var check = function(t, n) {if (type && type != t) {return false;} var s = n.split(','); if (name && s[1].indexOf(name) < 0 && (name.length < 6 || s[0].indexOf(name) < 0)) return false; return s[0];};"
-				+ "for (var t, i = 1; (t = msg.get('npc' + i)) != undefined; i++) {var id = check('npc', t); if (id) targets.push(id);}\n"
-				+ "for (var t, i = 1; (t = msg.get('item' + i)) != undefined; i++) {var id = check('item', t); if (id) targets.push(id);}\n"
-				+ "for (var t, i = 1; (t = msg.get('user' + i)) != undefined; i++) {var id = check('user', t); if (id) targets.push(id);}\n"
-				+ "return targets;";
-		List<String> targets = (List<String>) js(js, type, name);
-		return targets.toArray(new String[targets.size()]);
+	private List<String[]> getTargets(String... types) {
+		List<List<String>> targets = (List<List<String>>) js(
+				load("get_targets.js"), new Object[] { types });
+		List<String[]> result = new ArrayList<String[]>(targets.size());
+		for (List<String> target : targets) {
+			String text = target.get(1);
+			if (text != null) {
+				target.set(1, removeSGR(text));
+			}
+			result.add(target.toArray(new String[3]));
+		}
+		return result;
+	}
+
+	private String removeSGR(String text) {
+		for (int i = text.indexOf("\u001b["); i >= 0; i = text
+				.indexOf("\u001b[")) {
+			int j = text.indexOf('m', i + 2);
+			if (j >= 0) {
+				text = text.substring(0, i) + text.substring(j + 1);
+			}
+		}
+		return text;
 	}
 
 	private void loadAlias(String location) throws IOException {
@@ -317,141 +413,21 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
+	private String load(String file) {
+		try {
+			return IOUtils.readFully(CommandLine.class
+					.getResourceAsStream(file));
+		} catch (IOException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
+
 	private Object js(String script, Object... args) {
 		return ((JavascriptExecutor) webdriver).executeScript(script, args);
 	}
 
-	private String getPlayerName() {
-		if (playerName == null) {
-			playerName = (String) js("return g_obj_map.get('msg_attrs').get('name');");
-		}
-		return playerName;
-	}
-
-	private String getCombatPos() {
-		try {
-			WebElement e = webdriver
-					.findElement(By
-							.xpath("//td[@id='vs11' or @id='vs12' or @id='vs13' or @id='vs14' or @id='vs21' or @id='vs22' or @id='vs23' or @id='vs24'][translate(normalize-space(text()),' ','')='"
-									+ getPlayerName() + "']"));
-			return e.getAttribute("id").substring(2);
-		} catch (NoSuchElementException e) {
-			return null;
-		}
-	}
-
-	private int getTargetHp(String pos) {
-		String target;
-		if (pos.startsWith("2")) {
-			target = "@id='vs_hp11' or @id='vs_hp12' or @id='vs_hp13' or @id='vs_hp14'";
-		} else {
-			target = "@id='vs_hp21' or @id='vs_hp22' or @id='vs_hp23' or @id='vs_hp24'";
-		}
-		int hp = 0;
-		for (WebElement e : webdriver.findElements(By.xpath("//span[" + target
-				+ "]/i/span"))) {
-			hp += Integer.parseInt(e.getText());
-		}
-		return hp;
-	}
-
-	private boolean autoFight(String pos, String[] performs, String heal,
-			double safePercent, int fastKillHp, CombatContext context) {
-		// xdz_bar
-		try {
-			WebElement bar = webdriver.findElement(By.id("barxdz_bar"));
-			String style = bar.getAttribute("style");
-			int k = style.indexOf("width:");
-			if (k < 0) {
-				return false;
-			}
-			String width = style.substring(k + 6, style.indexOf(';', k)).trim();
-			if (!width.endsWith("%")) {
-				return false;
-			}
-			double point = Double.parseDouble(width.substring(0,
-					width.length() - 1));
-			if (point < 20) {
-				context.fast = false;
-				return true;
-			}
-			if (!context.heal && heal != null && safePercent > 0) {
-				bar = webdriver.findElement(By.id("barvader" + pos));
-				style = bar.getAttribute("style");
-				k = style.indexOf("width:");
-				if (k < 0) {
-					return false;
-				}
-				width = style.substring(k + 6, style.indexOf(';', k)).trim();
-				if (!width.endsWith("%")) {
-					return false;
-				}
-				double hp = Double.parseDouble(width.substring(0,
-						width.length() - 1));
-				if (hp < safePercent) {
-					context.fast = false;
-					context.heal = true;
-				}
-			}
-			if (context.heal) {
-				try {
-					WebElement button = webdriver
-							.findElement(By
-									.xpath("//button[@class='cmd_skill_button'][span[translate(normalize-space(text()),' ','')='"
-											+ heal + "']]"));
-					String onclick = button.getAttribute("onclick");
-					if (!"clickButton('0', 0)".equals(onclick)) {
-						System.out.println("perform " + heal);
-						button.click();
-						context.fast = false;
-						context.heal = false;
-					}
-					return true;
-				} catch (NoSuchElementException e) {
-					// no heal skill
-				}
-			}
-			if (!context.heal && !context.fast) {
-				if (getTargetHp(pos) < fastKillHp) {
-					if (point < 40) {
-						return true;
-					}
-				} else {
-					if (point < 100) {
-						return true;
-					}
-				}
-			}
-			Map<Integer, String> map = new LinkedHashMap<Integer, String>();
-			for (int i = context.index; i < performs.length; i++) {
-				map.put(i, performs[i]);
-			}
-			for (int i = 0; i < context.index; i++) {
-				map.put(i, performs[i]);
-			}
-			for (Integer i : map.keySet()) {
-				String perform = map.get(i);
-				try {
-					WebElement button = webdriver
-							.findElement(By
-									.xpath("//button[@class='cmd_skill_button'][span[translate(normalize-space(text()),' ','')='"
-											+ perform + "']]"));
-					String onclick = button.getAttribute("onclick");
-					if (!"clickButton('0', 0)".equals(onclick)) {
-						System.out.println("perform " + perform);
-						button.click();
-						context.index = ++i < performs.length ? i : 0;
-						context.fast = true;
-					}
-					return true;
-				} catch (NoSuchElementException e) {
-					// ignore
-				}
-			}
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
+	private String getCombatPosition() {
+		return (String) js(load("get_combat_position.js"));
 	}
 
 	private void stopTask() {
@@ -465,7 +441,7 @@ public class CommandLine {
 	private class LoopTask extends TimerTask {
 
 		private String originCmd;
-		private String processedCmd;
+		private ProcessedCommand processedCmd;
 
 		public LoopTask(String cmd) {
 			originCmd = cmd;
@@ -474,13 +450,13 @@ public class CommandLine {
 		@Override
 		public void run() {
 			if (processedCmd == null) {
-				String cmd = process(originCmd);
-				if (cmd.length() > 0) {
-					processedCmd = cmd;
+				ProcessedCommand pc = process(originCmd);
+				if (pc.command != null) {
+					processedCmd = pc;
 				}
 			}
 			if (processedCmd != null) {
-				send(processedCmd);
+				send(processedCmd.command);
 			}
 		}
 	}
@@ -497,13 +473,13 @@ public class CommandLine {
 		@Override
 		public void run() {
 			if (state == 0) {
-				String cmd = process("kill " + name);
-				if (cmd.length() > 0) {
-					send(cmd);
+				ProcessedCommand pc = process("kill " + name);
+				if (pc.command != null) {
+					send(pc.command);
 					state = 1;
 				}
 			} else if (state == 1) {
-				state = getCombatPos() != null ? 2 : 0;
+				state = getCombatPosition() != null ? 2 : 0;
 			} else if (state == 2) {
 				try {
 					webdriver
@@ -515,7 +491,7 @@ public class CommandLine {
 					// ignore
 				}
 			} else if (state == 3) {
-				String[] corpses = findTargets("item", name + "的尸体");
+				String[] corpses = findTargets("item", "corpse");
 				if (corpses.length > 0) {
 					StringBuilder sb = new StringBuilder();
 					for (String corpse : corpses) {
@@ -581,7 +557,7 @@ public class CommandLine {
 		private String heal;
 		private double safePercent;
 		private int fastKillHp;
-		private CombatContext context = new CombatContext();
+		private List<Object> context = new ArrayList<Object>(4);
 
 		public CombatTask(String pos, String[] performs, String heal,
 				double safePercent, int fastKillHp) {
@@ -591,13 +567,32 @@ public class CommandLine {
 			this.heal = heal;
 			this.safePercent = safePercent;
 			this.fastKillHp = fastKillHp;
+			this.context.add(0);
+			this.context.add(false);
+			this.context.add(false);
+			this.context.add(null);
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
-			if (!autoFight(pos, performs, heal, safePercent, fastKillHp,
-					context)) {
-				System.out.println("ok!");
+			try {
+				context = (List<Object>) js(load("auto_fight.js"), pos,
+						performs, heal, safePercent, fastKillHp, context);
+				if (context != null) {
+					if (context.get(3) != null) {
+						System.out.println(context.get(3));
+						context.set(3, null);
+					}
+				} else {
+					System.out.println("ok!");
+					this.cancel();
+					if (task == this) {
+						task = null;
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
 				this.cancel();
 				if (task == this) {
 					task = null;
@@ -606,9 +601,22 @@ public class CommandLine {
 		}
 	}
 
-	private static class CombatContext {
-		int index;
-		boolean fast;
-		boolean heal;
+	private class ChannelTask extends TimerTask {
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			List<String> msgs = (List<String>) js(load("get_chat_msgs.js"));
+			for (String msg : msgs) {
+				msg = removeSGR(msg);
+				System.out.print(msg);
+				js("notify_fail(arguments[0]);", msg);
+			}
+		}
+	}
+
+	public static class ProcessedCommand {
+		String command;
+		boolean isChat;
 	}
 }
