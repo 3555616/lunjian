@@ -7,12 +7,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -23,15 +25,19 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.io.IOUtils;
 
-public class CommandLine {
+public class CommandLine implements CommandExecutor {
 
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
 
 	private WebDriver webdriver;
 	private File aliasFile;
-	private Properties aliases;
+	private Properties defaultAliases;
+	private Properties userAliases;
+	private Thread pollingThread;
 	private Timer timer;
+	private SnoopTask snoopTask;
 	private TimerTask task;
+	private TriggerManager triggerManager;
 
 	static {
 		MAP_IDS.put("xueting", "1");
@@ -114,7 +120,7 @@ public class CommandLine {
 	private void start() throws Exception {
 		Properties properties = new Properties();
 		properties.load(CommandLine.class
-				.getResourceAsStream("/robot.properties"));
+				.getResourceAsStream("/lunjian.properties"));
 		String browser = properties.getProperty("webdriver.browser");
 		if (browser == null || "firefox".equalsIgnoreCase(browser)) {
 			System.setProperty("webdriver.firefox.bin",
@@ -138,9 +144,19 @@ public class CommandLine {
 		}
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
+		webdriver.manage().timeouts()
+				.setScriptTimeout(3000, TimeUnit.MILLISECONDS);
+		pollingThread = new PollingThread();
+		pollingThread.setDaemon(true);
+//		pollingThread.start();
 		timer = new Timer(true);
-		timer.schedule(new ChannelTask(), 1000, 1000);
-		loadAlias(properties.getProperty("alias.properties"));
+		String keywords = properties.getProperty("snoop.keywords");
+		snoopTask = new SnoopTask(keywords != null ? keywords.split(",")
+				: new String[0]);
+		timer.schedule(snoopTask, 1000, 1000);
+		loadAliases(properties.getProperty("alias.properties"));
+		String triggers = properties.getProperty("snoop.triggers");
+		loadTriggers(triggers != null ? triggers.split(",") : new String[0]);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				System.in, "gbk"));
 		for (;;) {
@@ -152,6 +168,7 @@ public class CommandLine {
 			execute(line);
 		}
 		timer.cancel();
+//		pollingThread.interrupt();
 		System.out.println("over!");
 	}
 
@@ -201,28 +218,41 @@ public class CommandLine {
 				value = null;
 			}
 			if (value != null) {
-				if (!value.equals(aliases.getProperty(key))) {
-					aliases.setProperty(key, value);
-					saveAlias();
+				if (!value.equals(userAliases.getProperty(key))) {
+					userAliases.setProperty(key, value);
+					saveAliases();
 					System.out.println("set alias ok.");
 				}
 			} else {
-				if (aliases.containsKey(key)) {
-					aliases.remove(key);
-					saveAlias();
+				if (userAliases.containsKey(key)) {
+					userAliases.remove(key);
+					saveAliases();
 					System.out.println("alias removed.");
 				}
 			}
+		} else if (line.startsWith("#snoop add ")) {
+			snoopTask.add(line.substring(11).trim());
+		} else if (line.startsWith("#snoop del ")) {
+			snoopTask.remove(line.substring(11).trim());
+		} else if (line.startsWith("#trigger add ")) {
+			triggerManager.add(line.substring(13).trim());
+		} else if (line.startsWith("#trigger del ")) {
+			triggerManager.remove(line.substring(13).trim());
 		} else if (line.length() > 0 && line.charAt(0) != '#') {
-			ProcessedCommand pc = process(line);
-			if (pc.isChat) {
-				send("go_chat");
-			} else {
-				send("quit_chat");
-			}
-			if (pc.command != null) {
-				send(pc.command);
-			}
+			executeCmd(line);
+		}
+	}
+
+	@Override
+	public void executeCmd(String command) {
+		ProcessedCommand pc = process(command);
+		if (pc.isChat) {
+			send("go_chat");
+		} else {
+			send("quit_chat");
+		}
+		if (pc.command != null) {
+			send(pc.command);
 		}
 	}
 
@@ -257,7 +287,10 @@ public class CommandLine {
 		} else {
 			cmd[0] = line;
 		}
-		String alias = aliases.getProperty(cmd[0]);
+		String alias = userAliases.getProperty(cmd[0]);
+		if (alias == null) {
+			alias = defaultAliases.getProperty(cmd[0]);
+		}
 		if (alias != null) {
 			line = alias.toLowerCase().trim();
 			if (cmd[1] != null) {
@@ -351,6 +384,11 @@ public class CommandLine {
 		} else if ("heal".equals(cmd[0])) {
 			cmd[0] = "recovery";
 			cmd[1] = null;
+		} else if ("task".equals(cmd[0])) {
+			cmd[0] = "task_quest";
+			if ("cancel".equals(cmd[1])) {
+				cmd[0] = "auto_tasks";
+			}
 		} else if ("chat".equals(cmd[0]) || "rumor".equals(cmd[0])) {
 			if (cmd[1] == null) {
 				cmd[0] = null;
@@ -358,6 +396,17 @@ public class CommandLine {
 			isChat = true;
 		}
 		return isChat;
+	}
+
+	@Override
+	public boolean isFighting() {
+		return getCombatPosition() != null;
+	}
+
+	@Override
+	public void notify(String message) {
+		System.out.println(message);
+		js("notify_fail(arguments[0]);", message);
 	}
 
 	private String[] findTarget(String[] types, String pattern) {
@@ -476,7 +525,7 @@ public class CommandLine {
 		return text;
 	}
 
-	private void loadAlias(String location) throws IOException {
+	private void loadAliases(String location) throws IOException {
 		if (location != null) {
 			aliasFile = new File(location);
 		}
@@ -484,17 +533,24 @@ public class CommandLine {
 			aliasFile = new File(System.getProperty("user.home"),
 					"alias.properties");
 		}
-		aliases = new Properties();
+		defaultAliases = new Properties();
+		defaultAliases.load(CommandLine.class
+				.getResourceAsStream("/alias.properties"));
+		userAliases = new Properties();
 		if (aliasFile.exists()) {
-			aliases.load(new FileInputStream(aliasFile));
-		} else {
-			aliases.load(CommandLine.class
-					.getResourceAsStream("/alias.properties"));
+			userAliases.load(new FileInputStream(aliasFile));
 		}
 	}
 
-	private void saveAlias() throws IOException {
-		aliases.store(new FileOutputStream(aliasFile), null);
+	private void saveAliases() throws IOException {
+		userAliases.store(new FileOutputStream(aliasFile), null);
+	}
+
+	private void loadTriggers(String[] triggers) {
+		triggerManager = new TriggerManager();
+		for (String trigger : triggers) {
+			triggerManager.add(trigger);
+		}
 	}
 
 	private void send(String command) {
@@ -524,6 +580,25 @@ public class CommandLine {
 			task.cancel();
 			task = null;
 			System.out.println("task stopped.");
+		}
+	}
+
+	private class PollingThread extends Thread {
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			while (!isInterrupted()) {
+				try {
+					List<String> msgs = (List<String>) ((JavascriptExecutor) webdriver)
+							.executeAsyncScript(load("polling.js"));
+					for (String msg : msgs) {
+						System.out.println(msg);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -690,16 +765,39 @@ public class CommandLine {
 		}
 	}
 
-	private class ChannelTask extends TimerTask {
+	private class SnoopTask extends TimerTask {
+
+		private List<String> keywords;
+
+		private SnoopTask(String[] keywords) {
+			this.keywords = new ArrayList<String>(Arrays.asList(keywords));
+		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
-			List<String> msgs = (List<String>) js(load("get_chat_msgs.js"));
+			if (keywords.isEmpty()) {
+				return;
+			}
+			List<String> msgs = (List<String>) js(load("get_chat_msgs.js"),
+					keywords);
 			for (String msg : msgs) {
 				msg = removeSGR(msg);
-				System.out.print(msg);
-				js("notify_fail(arguments[0]);", msg);
+				triggerManager.process(CommandLine.this, msg);
+			}
+		}
+
+		public void add(String keyword) {
+			if (!keywords.contains(keyword)) {
+				keywords.add(keyword);
+				System.out.println("ok!");
+			}
+		}
+
+		public void remove(String keyword) {
+			if (keywords.contains(keyword)) {
+				keywords.remove(keyword);
+				System.out.println("ok!");
 			}
 		}
 	}
