@@ -13,6 +13,7 @@ public class TriggerManager {
 		CLASSES.put("youxia", YouxiaTrigger.class);
 		CLASSES.put("qinglong", QinglongTrigger.class);
 		CLASSES.put("zhengxie", ZhengxieTrigger.class);
+		CLASSES.put("baozang", BaozangTrigger.class);
 	}
 
 	public void add(String name) {

@@ -1,4 +1,4 @@
-var callback = arguments[0], timestamp = $.now();
+var callback = arguments[0];
 window.snoop_loop_count = 0;
 if (!window.lunjian_snoops) {
 	window.lunjian_snoops = [];
@@ -18,7 +18,7 @@ if (!window.lunjian_snoops) {
 	};
 }
 var loop = function() {
-	if (++window.snoop_loop_count < 10) {
+	if (++window.snoop_loop_count < 1) {
 		setTimeout(loop, 200);
 	} else {
 		var p = window.lunjian_snoops;
@@ -27,4 +27,4 @@ var loop = function() {
 		callback(p);
 	}
 };
-setTimeout(loop, 200);
+setTimeout(loop, 100);

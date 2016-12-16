@@ -145,7 +145,7 @@ public class CommandLine implements CommandExecutor {
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
 		webdriver.manage().timeouts()
-				.setScriptTimeout(3000, TimeUnit.MILLISECONDS);
+				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
 		pollingThread = new PollingThread();
 		pollingThread.setDaemon(true);
 //		pollingThread.start();
@@ -234,10 +234,18 @@ public class CommandLine implements CommandExecutor {
 			snoopTask.add(line.substring(11).trim());
 		} else if (line.startsWith("#snoop del ")) {
 			snoopTask.remove(line.substring(11).trim());
+		} else if (line.startsWith("#s+ ")) {
+			snoopTask.add(line.substring(4).trim());
+		} else if (line.startsWith("#s- ")) {
+			snoopTask.remove(line.substring(4).trim());
 		} else if (line.startsWith("#trigger add ")) {
 			triggerManager.add(line.substring(13).trim());
 		} else if (line.startsWith("#trigger del ")) {
 			triggerManager.remove(line.substring(13).trim());
+		} else if (line.startsWith("#t+ ")) {
+			triggerManager.add(line.substring(4).trim());
+		} else if (line.startsWith("#t- ")) {
+			triggerManager.remove(line.substring(4).trim());
 		} else if (line.length() > 0 && line.charAt(0) != '#') {
 			executeCmd(line);
 		}
@@ -372,9 +380,6 @@ public class CommandLine implements CommandExecutor {
 		} else if ("tu".equals(cmd[0])) {
 			cmd[0] = "cangbaotu_op1";
 			cmd[1] = null;
-		} else if ("quest".equals(cmd[0])) {
-			cmd[0] = "task_quest";
-			cmd[1] = null;
 		} else if ("dig".equals(cmd[0])) {
 			cmd[0] = "dig go";
 			cmd[1] = null;
@@ -383,6 +388,9 @@ public class CommandLine implements CommandExecutor {
 			cmd[1] = null;
 		} else if ("heal".equals(cmd[0])) {
 			cmd[0] = "recovery";
+			cmd[1] = null;
+		} else if ("quest".equals(cmd[0])) {
+			cmd[0] = "family_quest";
 			cmd[1] = null;
 		} else if ("task".equals(cmd[0])) {
 			cmd[0] = "task_quest";
