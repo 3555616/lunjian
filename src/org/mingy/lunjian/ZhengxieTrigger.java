@@ -20,7 +20,7 @@ public class ZhengxieTrigger implements Trigger {
 		PATHS.put("卖花姑娘", "maihua");
 		PATHS.put("刘守财", "liushoucai");
 		PATHS.put("方老板", "fanglaoban");
-		PATHS.put("刘老伯", "zhulaobo");
+		PATHS.put("朱老伯", "zhulaobo");
 		PATHS.put("方寡妇", "fangguafu");
 	}
 
