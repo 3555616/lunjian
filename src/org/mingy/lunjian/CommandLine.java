@@ -753,7 +753,7 @@ public class CommandLine implements CommandExecutor {
 						performs, heal, safePercent, fastKillHp, context);
 				if (context != null) {
 					if (context.get(3) != null) {
-						System.out.println(context.get(3));
+						//System.out.println(context.get(3));
 						context.set(3, null);
 					}
 				} else {
