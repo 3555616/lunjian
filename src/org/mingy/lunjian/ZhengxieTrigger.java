@@ -39,7 +39,7 @@ public class ZhengxieTrigger implements Trigger {
 				System.out.println("path not found: " + good_npc);
 			} else {
 				System.out.println("goto " + path);
-				executor.executeCmd(path);
+				executor.executeCmd("halt;" + path);
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {

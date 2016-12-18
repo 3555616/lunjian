@@ -60,7 +60,7 @@ public class YouxiaTrigger implements Trigger {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));
-					executor.executeCmd("fly " + (i + 1) + ";look " + npc);
+					executor.executeCmd("halt;fly " + (i + 1) + ";look " + npc);
 					return true;
 				}
 			}
