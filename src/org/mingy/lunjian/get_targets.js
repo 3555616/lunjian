@@ -1,4 +1,7 @@
-var types = arguments[0], msg = g_obj_map.get('msg_room'), targets = [];
+if (!window.g_obj_map) {
+	return [];
+}
+var types = arguments[0], msg = window.g_obj_map.get('msg_room'), targets = [];
 if (!msg) {
 	return targets;
 }

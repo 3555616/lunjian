@@ -1,4 +1,4 @@
-var pos = arguments[0], pfms = arguments[1], heal = arguments[2], safe = arguments[3], fast = arguments[4], ctx = arguments[5], point, hp;
+var pos = arguments[0], pfms = arguments[1], wait = arguments[2], heal = arguments[3], safe = arguments[4], fast = arguments[5], ctx = arguments[6], point, hp;
 var style = $('#barxdz_bar').attr('style');
 if (!style) {
 	return null;
@@ -75,11 +75,11 @@ var getTargetHp = function() {
 };
 if (!ctx[1] && !ctx[2]) {
 	if (getTargetHp() < fast) {
-		if (point < 40) {
+		if (point < pfms.length * 20) {
 			return ctx;
 		}
 	} else {
-		if (point < 100) {
+		if (point < wait) {
 			return ctx;
 		}
 	}

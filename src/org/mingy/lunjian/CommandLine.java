@@ -31,6 +31,7 @@ public class CommandLine implements CommandExecutor {
 
 	private WebDriver webdriver;
 	private File aliasFile;
+	private Properties properties;
 	private Properties defaultAliases;
 	private Properties userAliases;
 	private Thread pollingThread;
@@ -114,13 +115,17 @@ public class CommandLine implements CommandExecutor {
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmdline = new CommandLine();
-		cmdline.start();
+		cmdline.start(args);
 	}
 
-	private void start() throws Exception {
-		Properties properties = new Properties();
-		properties.load(CommandLine.class
-				.getResourceAsStream("/lunjian.properties"));
+	private void start(String[] args) throws Exception {
+		properties = new Properties();
+		if (args.length > 0) {
+			properties.load(new FileInputStream(args[0]));
+		} else {
+			properties.load(CommandLine.class
+					.getResourceAsStream("/lunjian.properties"));
+		}
 		String browser = properties.getProperty("webdriver.browser");
 		if (browser == null || "firefox".equalsIgnoreCase(browser)) {
 			System.setProperty("webdriver.firefox.bin",
@@ -195,13 +200,26 @@ public class CommandLine implements CommandExecutor {
 			task = new LootTask();
 			timer.schedule(task, 0, 200);
 		} else if (line.equals("#combat")) {
-			String pos = getCombatPosition();
-			if (pos != null) {
-				stopTask();
-				System.out.println("starting auto combat...");
-				task = new CombatTask(pos, new String[] { "乾坤一阳指", "金玉拳" },
-						"枯荣禅功", 70, 5000);
-				timer.schedule(task, 0, 500);
+			String[] settings = properties.getProperty("auto.fight", "").split(",");
+			if (settings.length < 1) {
+				System.out.println("property auto.fight not set");
+			} else {
+				String[] pfms = settings[0].split("\\|");
+				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer.parseInt(settings[1]) : 0;
+				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2] : null;
+				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer.parseInt(settings[3]) : 0;
+				int fast = settings.length > 4 && settings[4].length() > 0 ? Integer.parseInt(settings[4]) : 0;
+				if (wait < pfms.length * 20) {
+					wait = pfms.length * 20;
+				}
+				String pos = getCombatPosition();
+				if (pos != null) {
+					stopTask();
+					System.out.println("starting auto combat...");
+					task = new CombatTask(pos, pfms, wait, 
+							heal, safe, fast);
+					timer.schedule(task, 0, 500);
+				}
 			}
 		} else if (line.equals("#stop")) {
 			stopTask();
@@ -397,6 +415,9 @@ public class CommandLine implements CommandExecutor {
 			if ("cancel".equals(cmd[1])) {
 				cmd[0] = "auto_tasks";
 			}
+		} else if ("map".equals(cmd[0])) {
+			cmd[0] = "client_map";
+			cmd[1] = null;
 		} else if ("chat".equals(cmd[0]) || "rumor".equals(cmd[0])) {
 			if (cmd[1] == null) {
 				cmd[0] = null;
@@ -725,17 +746,19 @@ public class CommandLine implements CommandExecutor {
 	private class CombatTask extends TimerTask {
 
 		private String pos;
+		private int waitPoint;
 		private String[] performs;
 		private String heal;
 		private double safePercent;
 		private int fastKillHp;
 		private List<Object> context = new ArrayList<Object>(4);
 
-		public CombatTask(String pos, String[] performs, String heal,
+		public CombatTask(String pos, String[] performs, int waitPoint, String heal,
 				double safePercent, int fastKillHp) {
 			super();
 			this.pos = pos;
 			this.performs = performs;
+			this.waitPoint = waitPoint;
 			this.heal = heal;
 			this.safePercent = safePercent;
 			this.fastKillHp = fastKillHp;
@@ -750,10 +773,10 @@ public class CommandLine implements CommandExecutor {
 		public void run() {
 			try {
 				context = (List<Object>) js(load("auto_fight.js"), pos,
-						performs, heal, safePercent, fastKillHp, context);
+						performs, waitPoint, heal, safePercent, fastKillHp, context);
 				if (context != null) {
 					if (context.get(3) != null) {
-						System.out.println(context.get(3));
+						//System.out.println(context.get(3));
 						context.set(3, null);
 					}
 				} else {

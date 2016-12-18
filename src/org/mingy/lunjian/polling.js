@@ -1,4 +1,9 @@
 var callback = arguments[0];
+if (!window.writeToScreen) {
+	setTimeout(function() {
+		callback([]);
+	}, 500);
+}
 window.snoop_loop_count = 0;
 if (!window.lunjian_snoops) {
 	window.lunjian_snoops = [];
