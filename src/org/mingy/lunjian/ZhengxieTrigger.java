@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 public class ZhengxieTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("【系统】(段延庆|叶二娘|南海鳄神|云中鹤)对着(.*)(淫笑|叫道)");
+			.compile("【系统】(段老大|二娘|岳老三|云老四)对着(.*)(淫笑|叫道)");
 	private static final Map<String, String> PATHS = new HashMap<String, String>();
 
 	static {
@@ -25,27 +25,27 @@ public class ZhengxieTrigger implements Trigger {
 	}
 
 	@Override
-	public boolean match(CommandExecutor executor, String message) {
+	public boolean match(CommandLine cmdline, String message) {
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;
 		}
 		String bad_npc = m.group(1);
 		String good_npc = m.group(2);
-		executor.notify("[正邪] " + good_npc + " vs " + bad_npc);
-		if (!executor.isFighting()) {
+		cmdline.notify("[正邪] " + good_npc + " vs " + bad_npc);
+		if (!cmdline.isFighting()) {
 			String path = PATHS.get(good_npc);
 			if (path == null) {
 				System.out.println("path not found: " + good_npc);
 			} else {
 				System.out.println("goto " + path);
-				executor.executeCmd("halt;" + path);
+				cmdline.executeCmd("halt;" + path);
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
 					// ignore
 				}
-				executor.executeCmd("watch " + bad_npc);
+				cmdline.executeCmd("watch " + bad_npc);
 			}
 		}
 		return true;

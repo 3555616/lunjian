@@ -25,7 +25,7 @@ public class QinglongTrigger implements Trigger {
 	}
 
 	@Override
-	public boolean match(CommandExecutor executor, String message) {
+	public boolean match(CommandLine cmdline, String message) {
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;
@@ -33,20 +33,20 @@ public class QinglongTrigger implements Trigger {
 		String npc = m.group(1);
 		String place = m.group(2);
 		String reward = m.group(3);
-		executor.notify("[青龙] " + npc + " at " + place + " rewards " + reward);
-		if (!executor.isFighting()) {
+		cmdline.notify("[青龙] " + npc + " at " + place + " rewards " + reward);
+		if (!cmdline.isFighting()) {
 			String path = PATHS.get(place);
 			if (path == null) {
 				System.out.println("path not found: " + place);
 			} else {
 				System.out.println("goto " + path);
-				executor.executeCmd("halt;" + path);
+				cmdline.executeCmd("halt;" + path);
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
 					// ignore
 				}
-				executor.executeCmd("watch " + npc);
+				cmdline.executeCmd("watch " + npc);
 			}
 		}
 		return true;

@@ -25,7 +25,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.io.IOUtils;
 
-public class CommandLine implements CommandExecutor {
+public class CommandLine {
 
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
 
@@ -75,8 +75,6 @@ public class CommandLine implements CommandExecutor {
 		MAP_IDS.put("xy", "16");
 		MAP_IDS.put("kaifang", "17");
 		MAP_IDS.put("kf", "17");
-		MAP_IDS.put("guangmingding", "18");
-		MAP_IDS.put("gmd", "18");
 		MAP_IDS.put("mingjiao", "18");
 		MAP_IDS.put("mj", "18");
 		MAP_IDS.put("quanzhen", "19");
@@ -97,8 +95,8 @@ public class CommandLine implements CommandExecutor {
 		MAP_IDS.put("dz", "26");
 		MAP_IDS.put("heimuya", "27");
 		MAP_IDS.put("hmy", "27");
-		MAP_IDS.put("riyue", "27");
-		MAP_IDS.put("ry", "27");
+		MAP_IDS.put("mojiao", "27");
+		MAP_IDS.put("mj2", "27");
 		MAP_IDS.put("xingxiu", "28");
 		MAP_IDS.put("xx", "28");
 		MAP_IDS.put("maoshan", "29");
@@ -153,7 +151,7 @@ public class CommandLine implements CommandExecutor {
 				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
 		pollingThread = new PollingThread();
 		pollingThread.setDaemon(true);
-//		pollingThread.start();
+		// pollingThread.start();
 		timer = new Timer(true);
 		String keywords = properties.getProperty("snoop.keywords");
 		snoopTask = new SnoopTask(keywords != null ? keywords.split(",")
@@ -173,7 +171,7 @@ public class CommandLine implements CommandExecutor {
 			execute(line);
 		}
 		timer.cancel();
-//		pollingThread.interrupt();
+		// pollingThread.interrupt();
 		System.out.println("over!");
 	}
 
@@ -181,44 +179,41 @@ public class CommandLine implements CommandExecutor {
 		if (line.startsWith("#loop ")) {
 			line = line.substring(6).trim();
 			if (line.length() > 0) {
-				stopTask();
 				System.out.println("starting loop...");
-				task = new LoopTask(line);
-				timer.schedule(task, 0, 500);
+				executeTask(new LoopTask(line), 500);
 			}
 		} else if (line.startsWith("#kill ")) {
 			String name = line.substring(6).trim();
 			if (name.length() > 0) {
-				stopTask();
 				System.out.println("starting auto kill...");
-				task = new KillTask(name);
-				timer.schedule(task, 0, 200);
+				executeTask(new KillTask(name), 200);
 			}
 		} else if (line.equals("#lc")) {
-			stopTask();
 			System.out.println("starting loot corpse...");
-			task = new LootTask();
-			timer.schedule(task, 0, 200);
+			executeTask(new LootTask(), 200);
 		} else if (line.equals("#combat")) {
-			String[] settings = properties.getProperty("auto.fight", "").split(",");
+			String[] settings = properties.getProperty("auto.fight", "").split(
+					",");
 			if (settings.length < 1) {
 				System.out.println("property auto.fight not set");
 			} else {
 				String[] pfms = settings[0].split("\\|");
-				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer.parseInt(settings[1]) : 0;
-				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2] : null;
-				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer.parseInt(settings[3]) : 0;
-				int fast = settings.length > 4 && settings[4].length() > 0 ? Integer.parseInt(settings[4]) : 0;
+				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
+						.parseInt(settings[1]) : 0;
+				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
+						: null;
+				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
+						.parseInt(settings[3]) : 0;
+				int fast = settings.length > 4 && settings[4].length() > 0 ? Integer
+						.parseInt(settings[4]) : 0;
 				if (wait < pfms.length * 20) {
 					wait = pfms.length * 20;
 				}
 				String pos = getCombatPosition();
 				if (pos != null) {
-					stopTask();
 					System.out.println("starting auto combat...");
-					task = new CombatTask(pos, pfms, wait, 
-							heal, safe, fast);
-					timer.schedule(task, 0, 500);
+					executeTask(new CombatTask(pos, pfms, wait, heal, safe,
+							fast), 500);
 				}
 			}
 		} else if (line.equals("#stop")) {
@@ -269,20 +264,28 @@ public class CommandLine implements CommandExecutor {
 		}
 	}
 
-	@Override
-	public void executeCmd(String command) {
-		ProcessedCommand pc = process(command);
+	/* package */boolean executeCmd(String command) {
+		ProcessedCommand pc = processCmd(command);
 		if (pc.isChat) {
-			send("go_chat");
+			sendCmd("go_chat");
 		} else {
-			send("quit_chat");
+			sendCmd("quit_chat");
 		}
 		if (pc.command != null) {
-			send(pc.command);
+			sendCmd(pc.command);
+			return true;
+		} else {
+			return false;
 		}
 	}
 
-	private ProcessedCommand process(String line) {
+	/* package */void executeTask(TimerTask task, int interval) {
+		stopTask();
+		this.task = task;
+		timer.schedule(task, 0, interval);
+	}
+
+	/* package */ProcessedCommand processCmd(String line) {
 		ProcessedCommand pc = new ProcessedCommand();
 		pc.isChat = true;
 		StringBuilder sb = new StringBuilder();
@@ -322,7 +325,7 @@ public class CommandLine implements CommandExecutor {
 			if (cmd[1] != null) {
 				line += " " + cmd[1];
 			}
-			return process(line);
+			return processCmd(line);
 		}
 		ProcessedCommand pc = new ProcessedCommand();
 		pc.isChat = translate(cmd);
@@ -427,13 +430,23 @@ public class CommandLine implements CommandExecutor {
 		return isChat;
 	}
 
-	@Override
-	public boolean isFighting() {
+	/* package */boolean isFighting() {
 		return getCombatPosition() != null;
 	}
 
-	@Override
-	public void notify(String message) {
+	/* package */boolean isCombatOver() {
+		try {
+			webdriver
+					.findElement(By
+							.xpath("//span[translate(normalize-space(text()),' ','')='战斗结束']"));
+			sendCmd("prev_combat");
+			return true;
+		} catch (NoSuchElementException e) {
+			return false;
+		}
+	}
+
+	/* package */void notify(String message) {
 		System.out.println(message);
 		js("notify_fail(arguments[0]);", message);
 	}
@@ -491,7 +504,7 @@ public class CommandLine implements CommandExecutor {
 		return null;
 	}
 
-	private String[] findTargets(String type, String name) {
+	/* package */String[] findTargets(String type, String name) {
 		List<String> list = new ArrayList<String>();
 		for (String[] target : getTargets(type)) {
 			boolean match = false;
@@ -543,7 +556,7 @@ public class CommandLine implements CommandExecutor {
 		return result;
 	}
 
-	private String removeSGR(String text) {
+	/* package */static String removeSGR(String text) {
 		for (int i = text.indexOf("\u001b["); i >= 0; i = text
 				.indexOf("\u001b[")) {
 			int j = text.indexOf('m', i + 2);
@@ -582,12 +595,12 @@ public class CommandLine implements CommandExecutor {
 		}
 	}
 
-	private void send(String command) {
+	/* package */void sendCmd(String command) {
 		command = command.replace(';', '\n');
 		js("clickButton(arguments[0]);", command);
 	}
 
-	private String load(String file) {
+	/* package */String load(String file) {
 		try {
 			return IOUtils.readFully(CommandLine.class
 					.getResourceAsStream(file));
@@ -596,12 +609,19 @@ public class CommandLine implements CommandExecutor {
 		}
 	}
 
-	private Object js(String script, Object... args) {
+	/* package */Object js(String script, Object... args) {
 		return ((JavascriptExecutor) webdriver).executeScript(script, args);
 	}
 
-	private String getCombatPosition() {
+	/* package */String getCombatPosition() {
 		return (String) js(load("get_combat_position.js"));
+	}
+
+	/* pakcage */void stopTask(TimerTask task) {
+		task.cancel();
+		if (this.task == task) {
+			this.task = null;
+		}
 	}
 
 	private void stopTask() {
@@ -643,13 +663,13 @@ public class CommandLine implements CommandExecutor {
 		@Override
 		public void run() {
 			if (processedCmd == null) {
-				ProcessedCommand pc = process(originCmd);
+				ProcessedCommand pc = processCmd(originCmd);
 				if (pc.command != null) {
 					processedCmd = pc;
 				}
 			}
 			if (processedCmd != null) {
-				send(processedCmd.command);
+				sendCmd(processedCmd.command);
 			}
 		}
 	}
@@ -666,22 +686,16 @@ public class CommandLine implements CommandExecutor {
 		@Override
 		public void run() {
 			if (state == 0) {
-				ProcessedCommand pc = process("kill " + name);
+				ProcessedCommand pc = processCmd("kill " + name);
 				if (pc.command != null) {
-					send(pc.command);
+					sendCmd(pc.command);
 					state = 1;
 				}
 			} else if (state == 1) {
 				state = getCombatPosition() != null ? 2 : 0;
 			} else if (state == 2) {
-				try {
-					webdriver
-							.findElement(By
-									.xpath("//span[translate(normalize-space(text()),' ','')='战斗结束']"));
-					send("prev_combat");
+				if (isCombatOver()) {
 					state = 3;
-				} catch (NoSuchElementException e) {
-					// ignore
 				}
 			} else if (state == 3) {
 				String[] corpses = findTargets("item", "corpse");
@@ -693,13 +707,10 @@ public class CommandLine implements CommandExecutor {
 						}
 						sb.append("get " + corpse);
 					}
-					send(sb.toString());
+					sendCmd(sb.toString());
 					state = 4;
 					System.out.println("ok!");
-					this.cancel();
-					if (task == this) {
-						task = null;
-					}
+					stopTask(this);
 				}
 			}
 		}
@@ -712,14 +723,8 @@ public class CommandLine implements CommandExecutor {
 		@Override
 		public void run() {
 			if (state == 0) {
-				try {
-					webdriver
-							.findElement(By
-									.xpath("//span[translate(normalize-space(text()),' ','')='战斗结束']"));
-					send("prev_combat");
+				if (isCombatOver()) {
 					state = 1;
-				} catch (NoSuchElementException e) {
-					// ignore
 				}
 			} else if (state == 1) {
 				String[] corpses = findTargets("item", "corpse");
@@ -731,13 +736,10 @@ public class CommandLine implements CommandExecutor {
 						}
 						sb.append("get " + corpse);
 					}
-					send(sb.toString());
+					sendCmd(sb.toString());
 					state = 2;
 					System.out.println("ok!");
-					this.cancel();
-					if (task == this) {
-						task = null;
-					}
+					stopTask(this);
 				}
 			}
 		}
@@ -753,8 +755,8 @@ public class CommandLine implements CommandExecutor {
 		private int fastKillHp;
 		private List<Object> context = new ArrayList<Object>(4);
 
-		public CombatTask(String pos, String[] performs, int waitPoint, String heal,
-				double safePercent, int fastKillHp) {
+		public CombatTask(String pos, String[] performs, int waitPoint,
+				String heal, double safePercent, int fastKillHp) {
 			super();
 			this.pos = pos;
 			this.performs = performs;
@@ -773,25 +775,20 @@ public class CommandLine implements CommandExecutor {
 		public void run() {
 			try {
 				context = (List<Object>) js(load("auto_fight.js"), pos,
-						performs, waitPoint, heal, safePercent, fastKillHp, context);
+						performs, waitPoint, heal, safePercent, fastKillHp,
+						context);
 				if (context != null) {
 					if (context.get(3) != null) {
-						//System.out.println(context.get(3));
+						// System.out.println(context.get(3));
 						context.set(3, null);
 					}
 				} else {
 					System.out.println("ok!");
-					this.cancel();
-					if (task == this) {
-						task = null;
-					}
+					stopTask(this);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				this.cancel();
-				if (task == this) {
-					task = null;
-				}
+				stopTask(this);
 			}
 		}
 	}

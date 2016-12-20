@@ -9,14 +9,14 @@ public class BaozangTrigger implements Trigger {
 			.compile("山河藏宝图：听说绝世高手遗落了许多宝物在秘密之所");
 
 	@Override
-	public boolean match(CommandExecutor executor, String message) {
+	public boolean match(CommandLine cmdline, String message) {
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;
 		}
-		executor.notify("[宝藏图]");
-		if (!executor.isFighting()) {
-			executor.executeCmd("items get_store /obj/quest/cangbaotu;tu");
+		cmdline.notify("[宝藏图]");
+		if (!cmdline.isFighting()) {
+			cmdline.executeCmd("items get_store /obj/quest/cangbaotu;tu");
 		}
 		return true;
 	}

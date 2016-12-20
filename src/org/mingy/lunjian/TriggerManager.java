@@ -13,6 +13,7 @@ public class TriggerManager {
 		CLASSES.put("youxia", YouxiaTrigger.class);
 		CLASSES.put("qinglong", QinglongTrigger.class);
 		CLASSES.put("zhengxie", ZhengxieTrigger.class);
+		CLASSES.put("guanfu", GuanfuTrigger.class);
 		CLASSES.put("baozang", BaozangTrigger.class);
 	}
 
@@ -40,9 +41,9 @@ public class TriggerManager {
 		}
 	}
 
-	public void process(CommandExecutor executor, String message) {
+	public void process(CommandLine cmdline, String message) {
 		for (Trigger trigger : triggers.values()) {
-			if (trigger.match(executor, message)) {
+			if (trigger.match(cmdline, message)) {
 				break;
 			}
 		}
