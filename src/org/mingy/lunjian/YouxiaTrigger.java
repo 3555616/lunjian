@@ -178,6 +178,7 @@ public class YouxiaTrigger implements Trigger {
 					for (Map<String, String> cmd : cmds) {
 						if ("取消跟班".equals(cmd.get("name"))) {
 							cmdline.sendCmd(cmd.get("action"));
+							cmdline.executeCmd("prepare_kill");
 							cmdline.sendCmd("kill " + id);
 							state = 7;
 							break;

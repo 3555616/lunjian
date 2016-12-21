@@ -186,6 +186,7 @@ public class CommandLine {
 			String name = line.substring(6).trim();
 			if (name.length() > 0) {
 				System.out.println("starting auto kill...");
+				executeCmd("prepare_kill");
 				executeTask(new KillTask(name), 200);
 			}
 		} else if (line.equals("#lc")) {

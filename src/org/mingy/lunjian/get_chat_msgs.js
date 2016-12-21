@@ -1,4 +1,8 @@
 var keywords = arguments[0], msgs = [];
+if (!window.sock && window.chatMsg && window.chatMsg.length > 0) {
+	window.chatMsg = [];
+	window.gSocketMsg2.save_channel();
+}
 if (window.chatMsg) {
 	$(window.chatMsg).each(function() {
 		if (!this.get('snoop')) {

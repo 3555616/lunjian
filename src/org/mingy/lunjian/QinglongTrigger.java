@@ -40,7 +40,7 @@ public class QinglongTrigger implements Trigger {
 				System.out.println("path not found: " + place);
 			} else {
 				System.out.println("goto " + path);
-				cmdline.executeCmd("halt;" + path);
+				cmdline.executeCmd("halt;" + path + ";prepare_kill");
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
