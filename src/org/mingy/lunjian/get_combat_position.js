@@ -1,4 +1,4 @@
-if (!window.g_obj_map) {
+if (!window.g_obj_map || !window.g_obj_map.get('msg_attrs')) {
 	return null;
 }
 var name = name || window.g_obj_map.get('msg_attrs').get('name'), pos;
