@@ -46,7 +46,7 @@ public class QinglongTrigger implements Trigger {
 				} catch (InterruptedException e) {
 					// ignore
 				}
-				cmdline.executeCmd("watch " + npc);
+				cmdline.executeCmd("watch " + npc + " -1");
 			}
 		}
 		return true;

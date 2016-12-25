@@ -1,6 +1,7 @@
 package org.mingy.lunjian;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
@@ -85,6 +86,7 @@ public class YouxiaTrigger implements Trigger {
 		private int state;
 		private String id;
 		private String corpse;
+		private List<String> fears;
 
 		public YouxiaTask(CommandLine cmdline, String name) {
 			this.cmdline = cmdline;
@@ -112,7 +114,16 @@ public class YouxiaTrigger implements Trigger {
 					for (Map<String, String> cmd : cmds) {
 						if ("跟班".equals(cmd.get("name"))) {
 							cmdline.sendCmd(cmd.get("action"));
-							state = 2;
+							String fear = cmdline.getProperty("youxia.fear");
+							if (fear != null) {
+								fears = Arrays.asList(fear.split(","));
+								state = 2;
+							} else if (Boolean.parseBoolean(cmdline
+									.getProperty("youxia.firstkill"))) {
+								state = 6;
+							} else {
+								state = 5;
+							}
 							break;
 						}
 					}
@@ -132,11 +143,12 @@ public class YouxiaTrigger implements Trigger {
 					Matcher m = DESC_PATTERN.matcher(CommandLine
 							.removeSGR((String) map.get("desc")));
 					if (m.find()) {
-						if ("可毁天灭地".equals(m.group(2))
-								|| "可开山裂石".equals(m.group(2))
-								|| "惊天动地".equals(m.group(2))) {
+						if (fears.contains(m.group(2))) {
 							System.out.println("fear :(");
 							state = 100;
+						} else if (Boolean.parseBoolean(cmdline
+								.getProperty("youxia.firstkill"))) {
+							state = 6;
 						} else {
 							state = 5;
 						}
