@@ -61,7 +61,7 @@ public class GuanfuTrigger implements Trigger {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));
-					cmdline.executeCmd("halt;fly " + (i + 1) + ";watch " + npc);
+					cmdline.executeCmd("halt;fly " + (i + 1) + ";watch " + npc + " -1");
 					return true;
 				}
 			}

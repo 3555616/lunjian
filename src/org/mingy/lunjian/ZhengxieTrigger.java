@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 public class ZhengxieTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("【系统】(段老大|二娘|岳老三|云老四)对着(.*)(淫笑|叫道)");
+			.compile("【系统】(段老大|二娘|岳老三|云老四|流寇|恶棍|剧盗)对着(.*)(淫笑|叫道)");
 	private static final Map<String, String> PATHS = new HashMap<String, String>();
 
 	static {
@@ -45,7 +45,7 @@ public class ZhengxieTrigger implements Trigger {
 				} catch (InterruptedException e) {
 					// ignore
 				}
-				cmdline.executeCmd("watch " + bad_npc);
+				cmdline.executeCmd("watch " + bad_npc + " -1");
 			}
 		}
 		return true;

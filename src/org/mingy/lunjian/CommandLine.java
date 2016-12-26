@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class CommandLine {
 	private SnoopTask snoopTask;
 	private TimerTask task;
 	private TriggerManager triggerManager;
+	private Map<String, String> jslibs = new HashMap<String, String>();
 
 	static {
 		MAP_IDS.put("xueting", "1");
@@ -119,7 +121,8 @@ public class CommandLine {
 	private void start(String[] args) throws Exception {
 		properties = new Properties();
 		if (args.length > 0) {
-			properties.load(new FileInputStream(args[0]));
+			properties.load(new InputStreamReader(new FileInputStream(args[0]),
+					"utf-8"));
 		} else {
 			properties.load(CommandLine.class
 					.getResourceAsStream("/lunjian.properties"));
@@ -263,6 +266,10 @@ public class CommandLine {
 		} else if (line.length() > 0 && line.charAt(0) != '#') {
 			executeCmd(line);
 		}
+	}
+
+	/* package */String getProperty(String key) {
+		return properties.getProperty(key);
 	}
 
 	/* package */boolean executeCmd(String command) {
@@ -470,7 +477,12 @@ public class CommandLine {
 				name = pattern;
 			}
 		}
-		for (String[] target : getTargets(types)) {
+		List<String[]> targets = getTargets(types);
+		if (index < 0) {
+			index = -index;
+			Collections.reverse(targets);
+		}
+		for (String[] target : targets) {
 			boolean match = false;
 			if (name != null) {
 				if ("corpse".equals(name)) {
@@ -602,12 +614,17 @@ public class CommandLine {
 	}
 
 	/* package */String load(String file) {
-		try {
-			return IOUtils.readFully(CommandLine.class
-					.getResourceAsStream(file));
-		} catch (IOException e) {
-			throw new IllegalArgumentException(e);
+		String js = jslibs.get(file);
+		if (js == null) {
+			try {
+				js = IOUtils.readFully(CommandLine.class
+						.getResourceAsStream(file));
+				jslibs.put(file, js);
+			} catch (IOException e) {
+				throw new IllegalArgumentException(e);
+			}
 		}
+		return js;
 	}
 
 	/* package */Object js(String script, Object... args) {
@@ -701,14 +718,12 @@ public class CommandLine {
 			} else if (state == 3) {
 				String[] corpses = findTargets("item", "corpse");
 				if (corpses.length > 0) {
-					StringBuilder sb = new StringBuilder();
-					for (String corpse : corpses) {
-						if (sb.length() > 0) {
-							sb.append(';');
-						}
-						sb.append("get " + corpse);
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// ignore
 					}
-					sendCmd(sb.toString());
+					sendCmd("get " + corpses[corpses.length - 1]);
 					state = 4;
 					System.out.println("ok!");
 					stopTask(this);
@@ -736,6 +751,11 @@ public class CommandLine {
 							sb.append(';');
 						}
 						sb.append("get " + corpse);
+					}
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// ignore
 					}
 					sendCmd(sb.toString());
 					state = 2;
