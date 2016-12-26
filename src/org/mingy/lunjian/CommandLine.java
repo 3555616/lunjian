@@ -1,5 +1,7 @@
 package org.mingy.lunjian;
 
+import java.awt.Frame;
+import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,6 +24,7 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.io.IOUtils;
@@ -31,6 +34,7 @@ public class CommandLine {
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
 
 	private WebDriver webdriver;
+	private WebDriver webdriver2;
 	private File aliasFile;
 	private Properties properties;
 	private Properties defaultAliases;
@@ -41,6 +45,7 @@ public class CommandLine {
 	private TimerTask task;
 	private TriggerManager triggerManager;
 	private Map<String, String> jslibs = new HashMap<String, String>();
+	private Toolkit toolkit = new Frame().getToolkit();
 
 	static {
 		MAP_IDS.put("xueting", "1");
@@ -132,10 +137,16 @@ public class CommandLine {
 			System.setProperty("webdriver.firefox.bin",
 					properties.getProperty("webdriver.firefox.bin"));
 			webdriver = new FirefoxDriver();
+			if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
+				webdriver2 = new FirefoxDriver();
+			}
 		} else if ("chrome".equalsIgnoreCase(browser)) {
 			System.setProperty("webdriver.chrome.driver",
 					properties.getProperty("webdriver.chrome.driver"));
 			webdriver = new ChromeDriver();
+			if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
+				webdriver2 = new ChromeDriver();
+			}
 		}
 		String size = properties.getProperty("browser.size");
 		int i = size.indexOf('*');
@@ -150,6 +161,10 @@ public class CommandLine {
 		}
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
+		if (webdriver2 != null) {
+			webdriver2.navigate().to("http://web2.qq.com");
+			webdriver2.switchTo().defaultContent();
+		}
 		webdriver.manage().timeouts()
 				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
 		pollingThread = new PollingThread();
@@ -178,6 +193,9 @@ public class CommandLine {
 			timer.cancel();
 			// pollingThread.interrupt();
 			webdriver.quit();
+			if (webdriver2 != null) {
+				webdriver2.quit();
+			}
 			System.out.println("over!");
 		}
 	}
@@ -459,8 +477,31 @@ public class CommandLine {
 	}
 
 	/* package */void notify(String message) {
+		new Thread() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 5; i++) {
+					toolkit.beep();
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						// ignore
+					}
+				}
+			}
+		}.start();
 		System.out.println(message);
 		js("notify_fail(arguments[0]);", message);
+		if (webdriver2 != null) {
+			try {
+				WebElement e = webdriver2.findElement(By.id("chat_textarea"));
+				e.clear();
+				e.sendKeys(message);
+				webdriver2.findElement(By.id("send_chat_btn")).click();
+			} catch (NoSuchElementException e) {
+				// ignore
+			}
+		}
 	}
 
 	private String[] findTarget(String[] types, String pattern) {
