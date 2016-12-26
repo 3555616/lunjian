@@ -34,7 +34,17 @@ public class QinglongTrigger implements Trigger {
 		String place = m.group(2);
 		String reward = m.group(3);
 		cmdline.notify("[青龙] " + npc + " at " + place + " rewards " + reward);
-		if (!cmdline.isFighting()) {
+		String ignores = cmdline.getProperty("qinglong.ignore");
+		boolean pass = true;
+		if (ignores != null) {
+			for (String ignore : ignores.split(",")) {
+				if (reward.contains(ignore)) {
+					pass = false;
+					break;
+				}
+			}
+		}
+		if (pass && !cmdline.isFighting()) {
 			String path = PATHS.get(place);
 			if (path == null) {
 				System.out.println("path not found: " + place);

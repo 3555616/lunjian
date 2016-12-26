@@ -165,17 +165,21 @@ public class CommandLine {
 		loadTriggers(triggers != null ? triggers.split(",") : new String[0]);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				System.in, "gbk"));
-		for (;;) {
-			String line = reader.readLine();
-			if (line == null
-					|| "#quit".equals((line = line.toLowerCase().trim()))) {
-				break;
+		try {
+			for (;;) {
+				String line = reader.readLine();
+				if (line == null
+						|| "#quit".equals((line = line.toLowerCase().trim()))) {
+					break;
+				}
+				execute(line);
 			}
-			execute(line);
+		} finally {
+			timer.cancel();
+			// pollingThread.interrupt();
+			webdriver.quit();
+			System.out.println("over!");
 		}
-		timer.cancel();
-		// pollingThread.interrupt();
-		System.out.println("over!");
 	}
 
 	private void execute(String line) throws IOException {
@@ -635,7 +639,7 @@ public class CommandLine {
 		return (String) js(load("get_combat_position.js"));
 	}
 
-	/* pakcage */void stopTask(TimerTask task) {
+	/* package */void stopTask(TimerTask task) {
 		task.cancel();
 		if (this.task == task) {
 			this.task = null;

@@ -18,7 +18,7 @@ public class GuanfuTrigger implements Trigger {
 		MAPS.add("华山");
 		MAPS.add("扬州");
 		MAPS.add("丐帮");
-		MAPS.add("乔银县");
+		MAPS.add("乔阴县");
 		MAPS.add("峨眉山");
 		MAPS.add("恒山");
 		MAPS.add("武当山");

@@ -1,3 +1,15 @@
+前言
+本程序目的是最大程度的还原文字mud的指令系统，熟悉文字mud的玩家应当对这些指令比较熟悉。
+本程序无法提供破坏游戏平衡的功能，目前看来论剑的后台校验还是做得很仔细的，无明显漏洞可钻。
+不得私自传播本程序，任何传播行为请先得到作者允许，需要源码可以联系作者获取。
+以下是本程序比较特色的功能，详细介绍可以看后面章节。
+1，完整的指令系统，基本上覆盖了游戏界面上80%的功能
+2，组合指令和别名，可以帮助你快速的行走，简化你的鼠标操作
+3，任何场景下可以清除谜题，帮助你快速寻找地图跳板
+4，自动战斗，可以设定战斗参数
+5，快速杀NPC捡尸体，帮助你更快的完成任务
+6，多种触发器，帮助你不会漏过游侠会、青龙等重要事件
+
 一、安装说明
 1，将lunjian.zip解压到指定的目录，下面假设是解压在C:\lunjian目录下
 2，修改配置文件C:\lunjian\lunjian.properties中的目录位置
@@ -15,7 +27,7 @@ browser.size=500*750
 二，运行程序
 win-R，键入cmd进入命令行窗口
 cd /D c:\lunjian   （进入你解压的目录）
-jre\bin\java -jar lunjian.jar c:\lunjian\lunjian.properties
+jre7\bin\java -jar lunjian.jar c:\lunjian\lunjian.properties
 等待游戏窗口打开完成，程序启动成功
 不要关闭命令行窗口，后面章节的指令也在命令行窗口中输入
 退出程序键入ctrl-c，程序退出后游戏窗口也会关闭
@@ -27,6 +39,7 @@ jre\bin\java -jar lunjian.jar c:\lunjian\lunjian.properties
 
 四，指令说明
 1，常规指令
+home，回到主页
 l|look，查看当前房间，效果同观察，在首页使用则进入师门
 score，查看当前状态，效果同状态
 skills，查看自己的技能，效果同状态——我的技能
@@ -42,7 +55,7 @@ se|southeast，东南方向行走
 u|up，上方行走
 d|down，下方行走
 fly <1-33>，进入江湖的1-33章（注意没有解锁的章节是无法进入的，该指令可以在任何地方使用）
-fly <地图简称>，同样是1-33章，支持地图的缩略拼写，避免记不住数字，简称如下
+fly <pinyin>，同样是1-33章，支持地图的缩略拼写，避免记不住数字，简称如下
 1-xt,2-ly,3-hsc,4-hs,5-yz,6-gb,7-qy,8-em,9-hs2,10-wd,11-wy,12-sy,13-sl,14-tm,15-qc,16-xy,17-kf,
 18-mj,19-qz,20-gm,21-bt,22-ss,23-mz,24-ts,25-dq,26-dz,27-mj2,28-xx,29-ms,30-thd,31-tx,32-mr,33-dl
 l|look <npc|item|player>，查看NPC或物品或玩家，指令详细介绍如下（后面涉及到名称的用法规则都和这一样）
@@ -60,6 +73,14 @@ get corpse，捡尸体
 halt，脱离战斗或观战（战斗中逃脱是可能失败的，观战不会）
 heal，战斗外疗伤
 jiali|enforce <number>，加力指定数字，jiali 0表示不加力
+wield <weapon>，装备武器
+这里提供几个常用的武器id
+风泉之剑 sword of windspring
+剑（天寒-斩龙级别） weapon_sword(6-10)
+拳套（天寒-斩龙级别） weapon_unarmed(6-10)
+unwield <weapon>，卸下武器
+wear <armor>，穿上装备
+unwear <armor>，脱下装备
 map，查看地图
 task，查看当前谜题
 task cancel，清除所有谜题（该指令无需在师门使用，用来找跳板超方便）
@@ -131,6 +152,9 @@ youxia.firstkill=false
 青龙提示出来后就会立即移动到相应的房间，并观战坏的NPC
 注意，如果有多个同名的坏的NPC，可能观战的对象是错误的，需要人工鉴别
 该触发器不会自动进入战斗
+lunjian.properties中可以设定忽略的奖励物品，比如下面的设置忽略所有level 1,2的物品
+qinglong.ignore=天寒,软甲衣,飞羽剑,斩空刀,拜月掌套,金弹子,新月棍,金刚杖,白蟒鞭,残雪,金丝宝甲衣,星河剑,血屠刀,霹雳掌套,生死符,玉清棍,疯魔杖,毒龙鞭
+忽略的奖励物品出现只会给出提示，不会移动
 6，zhengxie
 基本同qinglong，但有时会因为速度太快，NPC还未进入战斗而出现无法观战的现象
 7，baozang
