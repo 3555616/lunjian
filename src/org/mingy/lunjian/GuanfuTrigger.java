@@ -56,12 +56,13 @@ public class GuanfuTrigger implements Trigger {
 		String npc = m.group(1);
 		String place = m.group(2);
 		String room = m.group(3);
-		cmdline.notify("[官府] " + npc + " at " + place + " - " + room);
+		cmdline.notify("[官府] " + npc + " at " + place + " - " + room, true);
 		if (!cmdline.isFighting()) {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));
-					cmdline.executeCmd("halt;fly " + (i + 1) + ";watch " + npc + " -1");
+					cmdline.executeCmd("halt;fly " + (i + 1) + ";watch " + npc
+							+ " -1");
 					return true;
 				}
 			}

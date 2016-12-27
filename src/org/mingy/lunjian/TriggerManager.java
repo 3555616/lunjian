@@ -9,12 +9,9 @@ public class TriggerManager {
 
 	private Map<String, Trigger> triggers = new HashMap<String, Trigger>();
 
-	static {
-		CLASSES.put("youxia", YouxiaTrigger.class);
-		CLASSES.put("qinglong", QinglongTrigger.class);
-		CLASSES.put("zhengxie", ZhengxieTrigger.class);
-		CLASSES.put("guanfu", GuanfuTrigger.class);
-		CLASSES.put("baozang", BaozangTrigger.class);
+	public static void register(String name,
+			Class<? extends Trigger> triggerClass) {
+		CLASSES.put(name, triggerClass);
 	}
 
 	public void add(String name) {

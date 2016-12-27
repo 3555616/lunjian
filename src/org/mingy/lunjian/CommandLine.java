@@ -24,7 +24,6 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.io.IOUtils;
@@ -33,10 +32,9 @@ public class CommandLine {
 
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
 
-	private WebDriver webdriver;
-	private WebDriver webdriver2;
+	protected WebDriver webdriver;
 	private File aliasFile;
-	private Properties properties;
+	protected Properties properties;
 	private Properties defaultAliases;
 	private Properties userAliases;
 	private Thread pollingThread;
@@ -123,7 +121,7 @@ public class CommandLine {
 		cmdline.start(args);
 	}
 
-	private void start(String[] args) throws Exception {
+	protected void start(String[] args) throws Exception {
 		properties = new Properties();
 		if (args.length > 0) {
 			properties.load(new InputStreamReader(new FileInputStream(args[0]),
@@ -137,16 +135,10 @@ public class CommandLine {
 			System.setProperty("webdriver.firefox.bin",
 					properties.getProperty("webdriver.firefox.bin"));
 			webdriver = new FirefoxDriver();
-			if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
-				webdriver2 = new FirefoxDriver();
-			}
 		} else if ("chrome".equalsIgnoreCase(browser)) {
 			System.setProperty("webdriver.chrome.driver",
 					properties.getProperty("webdriver.chrome.driver"));
 			webdriver = new ChromeDriver();
-			if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
-				webdriver2 = new ChromeDriver();
-			}
 		}
 		String size = properties.getProperty("browser.size");
 		int i = size.indexOf('*');
@@ -161,12 +153,12 @@ public class CommandLine {
 		}
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
-		if (webdriver2 != null) {
-			webdriver2.navigate().to("http://web2.qq.com");
-			webdriver2.switchTo().defaultContent();
-		}
 		webdriver.manage().timeouts()
 				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
+		loadAliases(properties.getProperty("alias.properties"));
+		registerTriggers();
+		String triggers = properties.getProperty("snoop.triggers");
+		loadTriggers(triggers != null ? triggers.split(",") : new String[0]);
 		pollingThread = new PollingThread();
 		pollingThread.setDaemon(true);
 		// pollingThread.start();
@@ -175,9 +167,6 @@ public class CommandLine {
 		snoopTask = new SnoopTask(keywords != null ? keywords.split(",")
 				: new String[0]);
 		timer.schedule(snoopTask, 1000, 1000);
-		loadAliases(properties.getProperty("alias.properties"));
-		String triggers = properties.getProperty("snoop.triggers");
-		loadTriggers(triggers != null ? triggers.split(",") : new String[0]);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				System.in, "gbk"));
 		try {
@@ -190,34 +179,26 @@ public class CommandLine {
 				execute(line);
 			}
 		} finally {
-			timer.cancel();
-			// pollingThread.interrupt();
-			webdriver.quit();
-			if (webdriver2 != null) {
-				webdriver2.quit();
-			}
+			finish();
 			System.out.println("over!");
 		}
 	}
 
-	private void execute(String line) throws IOException {
-		if (line.startsWith("#loop ")) {
-			line = line.substring(6).trim();
-			if (line.length() > 0) {
-				System.out.println("starting loop...");
-				executeTask(new LoopTask(line), 500);
-			}
-		} else if (line.startsWith("#kill ")) {
-			String name = line.substring(6).trim();
-			if (name.length() > 0) {
-				System.out.println("starting auto kill...");
-				executeCmd("prepare_kill");
-				executeTask(new KillTask(name), 200);
-			}
-		} else if (line.equals("#lc")) {
-			System.out.println("starting loot corpse...");
-			executeTask(new LootTask(), 200);
-		} else if (line.equals("#combat")) {
+	protected void registerTriggers() {
+		TriggerManager.register("youxia", YouxiaTrigger.class);
+		TriggerManager.register("qinglong", QinglongTrigger.class);
+		TriggerManager.register("zhengxie", ZhengxieTrigger.class);
+		TriggerManager.register("baozang", BaozangTrigger.class);
+	}
+
+	protected void finish() throws Exception {
+		timer.cancel();
+		// pollingThread.interrupt();
+		webdriver.quit();
+	}
+
+	protected void execute(String line) throws IOException {
+		if (line.equals("#combat")) {
 			String[] settings = properties.getProperty("auto.fight", "").split(
 					",");
 			if (settings.length < 1) {
@@ -290,11 +271,11 @@ public class CommandLine {
 		}
 	}
 
-	/* package */String getProperty(String key) {
+	protected String getProperty(String key) {
 		return properties.getProperty(key);
 	}
 
-	/* package */boolean executeCmd(String command) {
+	protected boolean executeCmd(String command) {
 		ProcessedCommand pc = processCmd(command);
 		if (pc.isChat) {
 			sendCmd("go_chat");
@@ -309,13 +290,13 @@ public class CommandLine {
 		}
 	}
 
-	/* package */void executeTask(TimerTask task, int interval) {
+	protected void executeTask(TimerTask task, int interval) {
 		stopTask();
 		this.task = task;
 		timer.schedule(task, 0, interval);
 	}
 
-	/* package */ProcessedCommand processCmd(String line) {
+	protected ProcessedCommand processCmd(String line) {
 		ProcessedCommand pc = new ProcessedCommand();
 		pc.isChat = true;
 		StringBuilder sb = new StringBuilder();
@@ -460,11 +441,11 @@ public class CommandLine {
 		return isChat;
 	}
 
-	/* package */boolean isFighting() {
+	protected boolean isFighting() {
 		return getCombatPosition() != null;
 	}
 
-	/* package */boolean isCombatOver() {
+	protected boolean isCombatOver() {
 		try {
 			webdriver
 					.findElement(By
@@ -476,35 +457,27 @@ public class CommandLine {
 		}
 	}
 
-	/* package */void notify(String message) {
-		new Thread() {
-			@Override
-			public void run() {
-				for (int i = 0; i < 5; i++) {
-					toolkit.beep();
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						// ignore
+	protected void notify(String message, boolean important) {
+		if (important) {
+			new Thread() {
+				@Override
+				public void run() {
+					for (int i = 0; i < 5; i++) {
+						toolkit.beep();
+						try {
+							Thread.sleep(200);
+						} catch (InterruptedException e) {
+							// ignore
+						}
 					}
 				}
-			}
-		}.start();
+			}.start();
+		}
 		System.out.println(message);
 		js("notify_fail(arguments[0]);", message);
-		if (webdriver2 != null) {
-			try {
-				WebElement e = webdriver2.findElement(By.id("chat_textarea"));
-				e.clear();
-				e.sendKeys(message);
-				webdriver2.findElement(By.id("send_chat_btn")).click();
-			} catch (NoSuchElementException e) {
-				// ignore
-			}
-		}
 	}
 
-	private String[] findTarget(String[] types, String pattern) {
+	protected String[] findTarget(String[] types, String pattern) {
 		String name = null;
 		int index = 1;
 		int i = pattern.lastIndexOf(' ');
@@ -562,7 +535,7 @@ public class CommandLine {
 		return null;
 	}
 
-	/* package */String[] findTargets(String type, String name) {
+	protected String[] findTargets(String type, String name) {
 		List<String> list = new ArrayList<String>();
 		for (String[] target : getTargets(type)) {
 			boolean match = false;
@@ -614,7 +587,7 @@ public class CommandLine {
 		return result;
 	}
 
-	/* package */static String removeSGR(String text) {
+	protected static String removeSGR(String text) {
 		for (int i = text.indexOf("\u001b["); i >= 0; i = text
 				.indexOf("\u001b[")) {
 			int j = text.indexOf('m', i + 2);
@@ -653,12 +626,12 @@ public class CommandLine {
 		}
 	}
 
-	/* package */void sendCmd(String command) {
+	protected void sendCmd(String command) {
 		command = command.replace(';', '\n');
 		js("clickButton(arguments[0]);", command);
 	}
 
-	/* package */String load(String file) {
+	protected String load(String file) {
 		String js = jslibs.get(file);
 		if (js == null) {
 			try {
@@ -672,15 +645,15 @@ public class CommandLine {
 		return js;
 	}
 
-	/* package */Object js(String script, Object... args) {
+	protected Object js(String script, Object... args) {
 		return ((JavascriptExecutor) webdriver).executeScript(script, args);
 	}
 
-	/* package */String getCombatPosition() {
+	protected String getCombatPosition() {
 		return (String) js(load("get_combat_position.js"));
 	}
 
-	/* package */void stopTask(TimerTask task) {
+	protected void stopTask(TimerTask task) {
 		task.cancel();
 		if (this.task == task) {
 			this.task = null;
@@ -709,103 +682,6 @@ public class CommandLine {
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
-				}
-			}
-		}
-	}
-
-	private class LoopTask extends TimerTask {
-
-		private String originCmd;
-		private ProcessedCommand processedCmd;
-
-		public LoopTask(String cmd) {
-			originCmd = cmd;
-		}
-
-		@Override
-		public void run() {
-			if (processedCmd == null) {
-				ProcessedCommand pc = processCmd(originCmd);
-				if (pc.command != null) {
-					processedCmd = pc;
-				}
-			}
-			if (processedCmd != null) {
-				sendCmd(processedCmd.command);
-			}
-		}
-	}
-
-	private class KillTask extends TimerTask {
-
-		private String name;
-		private int state;
-
-		public KillTask(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public void run() {
-			if (state == 0) {
-				ProcessedCommand pc = processCmd("kill " + name);
-				if (pc.command != null) {
-					sendCmd(pc.command);
-					state = 1;
-				}
-			} else if (state == 1) {
-				state = getCombatPosition() != null ? 2 : 0;
-			} else if (state == 2) {
-				if (isCombatOver()) {
-					state = 3;
-				}
-			} else if (state == 3) {
-				String[] corpses = findTargets("item", "corpse");
-				if (corpses.length > 0) {
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-					sendCmd("get " + corpses[corpses.length - 1]);
-					state = 4;
-					System.out.println("ok!");
-					stopTask(this);
-				}
-			}
-		}
-	}
-
-	private class LootTask extends TimerTask {
-
-		private int state;
-
-		@Override
-		public void run() {
-			if (state == 0) {
-				if (isCombatOver()) {
-					state = 1;
-				}
-			} else if (state == 1) {
-				String[] corpses = findTargets("item", "corpse");
-				if (corpses.length > 0) {
-					StringBuilder sb = new StringBuilder();
-					for (String corpse : corpses) {
-						if (sb.length() > 0) {
-							sb.append(';');
-						}
-						sb.append("get " + corpse);
-					}
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-					sendCmd(sb.toString());
-					state = 2;
-					System.out.println("ok!");
-					stopTask(this);
 				}
 			}
 		}
