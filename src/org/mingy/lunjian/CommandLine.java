@@ -223,6 +223,12 @@ public class CommandLine {
 							fast), 500);
 				}
 			}
+		} else if (line.startsWith("#findway ")) {
+			line = line.substring(9).trim();
+			if (line.length() > 0) {
+				System.out.println("starting find way...");
+				executeTask(new FindWayTask(line), 500);
+			}
 		} else if (line.equals("#stop")) {
 			stopTask();
 		} else if (line.startsWith("#alias ")) {
@@ -384,7 +390,7 @@ public class CommandLine {
 				cmd[0] = null;
 			}
 		} else if ("kill".equals(cmd[0]) || "ask".equals(cmd[0])
-				|| "give".equals(cmd[0])) {
+				|| "give".equals(cmd[0]) || "buy".equals(cmd[0])) {
 			String[] target = findTarget(new String[] { "npc" }, cmd[1]);
 			if (target != null) {
 				cmd[1] = target[0];
@@ -417,6 +423,18 @@ public class CommandLine {
 			cmd[1] = null;
 		} else if ("halt".equals(cmd[0])) {
 			cmd[0] = "escape";
+			cmd[1] = null;
+		} else if ("1".equals(cmd[0])) {
+			cmd[0] = "playskill 1";
+			cmd[1] = null;
+		} else if ("2".equals(cmd[0])) {
+			cmd[0] = "playskill 2";
+			cmd[1] = null;
+		} else if ("3".equals(cmd[0])) {
+			cmd[0] = "playskill 3";
+			cmd[1] = null;
+		} else if ("4".equals(cmd[0])) {
+			cmd[0] = "playskill 4";
 			cmd[1] = null;
 		} else if ("heal".equals(cmd[0])) {
 			cmd[0] = "recovery";
@@ -727,6 +745,46 @@ public class CommandLine {
 				} else {
 					System.out.println("ok!");
 					stopTask(this);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+	}
+
+	private class FindWayTask extends TimerTask {
+
+		private String target;
+		private String current;
+
+		public FindWayTask(String target) {
+			super();
+			this.target = target;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				List<List<String>> rooms = (List<List<String>>) js(load("get_rooms.js"));
+				String room = removeSGR(rooms.get(0).get(1));
+				if (current == null || !current.equals(room)) {
+					current = room;
+					if (!current.equals(target)) {
+						for (int i = 1; i < rooms.size(); i++) {
+							if (target.equals(removeSGR(rooms.get(i).get(1)))) {
+								sendCmd("go " + rooms.get(i).get(0));
+								return;
+							}
+						}
+						int i = (int) Math.floor(Math.random()
+								* (rooms.size() - 1)) + 1;
+						sendCmd("go " + rooms.get(i).get(0));
+					} else {
+						System.out.println("ok!");
+						stopTask(this);
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

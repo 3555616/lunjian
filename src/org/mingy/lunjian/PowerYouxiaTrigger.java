@@ -91,7 +91,12 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 				ProcessedCommand pc = cmdline.processCmd("look " + name);
 				if (pc.command != null) {
 					cmdline.sendCmd(pc.command);
-					state = 1;
+					if (Boolean.parseBoolean(cmdline
+							.getProperty("youxia.manual"))) {
+						state = 100;
+					} else {
+						state = 1;
+					}
 				}
 			} else if (state == 1) {
 				Map<String, Object> map = (Map<String, Object>) cmdline
