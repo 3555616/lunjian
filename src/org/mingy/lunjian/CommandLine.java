@@ -158,14 +158,16 @@ public class CommandLine {
 		loadAliases(properties.getProperty("alias.properties"));
 		registerTriggers();
 		String triggers = properties.getProperty("snoop.triggers");
-		loadTriggers(triggers != null ? triggers.split(",") : new String[0]);
+		loadTriggers(triggers != null && triggers.length() > 0 ? triggers
+				.split(",") : new String[0]);
 		pollingThread = new PollingThread();
 		pollingThread.setDaemon(true);
 		// pollingThread.start();
 		timer = new Timer(true);
 		String keywords = properties.getProperty("snoop.keywords");
-		snoopTask = new SnoopTask(keywords != null ? keywords.split(",")
-				: new String[0]);
+		snoopTask = new SnoopTask(
+				keywords != null && keywords.length() > 0 ? keywords.split(",")
+						: new String[0]);
 		timer.schedule(snoopTask, 1000, 1000);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				System.in, "gbk"));

@@ -34,7 +34,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 		MAPS.add("青城山");
 		MAPS.add("逍遥林");
 		MAPS.add("开封");
-		MAPS.add("明教");
+		MAPS.add("光明顶");
 		MAPS.add("全真教");
 		MAPS.add("古墓");
 		MAPS.add("白驮山");
@@ -144,7 +144,20 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 							state = 100;
 						} else if (Boolean.parseBoolean(cmdline
 								.getProperty("youxia.firstkill"))) {
-							state = 6;
+							String exclude = cmdline
+									.getProperty("youxia.firstkill.exclude");
+							if (exclude != null) {
+								List<String> list = Arrays.asList(exclude
+										.split(","));
+								if (list.contains(m.group(2))) {
+									System.out.println("fear to first kill");
+									state = 5;
+								} else {
+									state = 6;
+								}
+							} else {
+								state = 6;
+							}
 						} else {
 							state = 5;
 						}
@@ -194,7 +207,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					}
 				}
 				if (state == 6) {
-					state = 4;
+					cmdline.sendCmd("look_npc " + id);
 				}
 			} else if (state == 7) {
 				state = cmdline.getCombatPosition() != null ? 8 : 0;

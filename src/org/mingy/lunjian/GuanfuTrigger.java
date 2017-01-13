@@ -29,7 +29,7 @@ public class GuanfuTrigger implements Trigger {
 		MAPS.add("青城山");
 		MAPS.add("逍遥林");
 		MAPS.add("开封");
-		MAPS.add("明教");
+		MAPS.add("光明顶");
 		MAPS.add("全真教");
 		MAPS.add("古墓");
 		MAPS.add("白驮山");
