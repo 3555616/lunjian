@@ -229,7 +229,7 @@ public class CommandLine {
 			line = line.substring(9).trim();
 			if (line.length() > 0) {
 				System.out.println("starting find way...");
-				executeTask(new FindWayTask(line), 500);
+				executeTask(new FindWayTask(line), 100);
 			}
 		} else if (line.equals("#stop")) {
 			stopTask();
@@ -770,22 +770,25 @@ public class CommandLine {
 		public void run() {
 			try {
 				List<List<String>> rooms = (List<List<String>>) js(load("get_rooms.js"));
-				String room = removeSGR(rooms.get(0).get(1));
-				if (current == null || !current.equals(room)) {
-					current = room;
-					if (!current.equals(target)) {
-						for (int i = 1; i < rooms.size(); i++) {
-							if (target.equals(removeSGR(rooms.get(i).get(1)))) {
-								sendCmd("go " + rooms.get(i).get(0));
-								return;
+				if (!rooms.isEmpty()) {
+					String room = removeSGR(rooms.get(0).get(1));
+					if (current == null || !current.equals(room)) {
+						current = room;
+						if (!current.equals(target)) {
+							for (int i = 1; i < rooms.size(); i++) {
+								if (target
+										.equals(removeSGR(rooms.get(i).get(1)))) {
+									sendCmd("go " + rooms.get(i).get(0));
+									return;
+								}
 							}
+							int i = (int) Math.floor(Math.random()
+									* (rooms.size() - 1)) + 1;
+							sendCmd("go " + rooms.get(i).get(0));
+						} else {
+							System.out.println("ok!");
+							stopTask(this);
 						}
-						int i = (int) Math.floor(Math.random()
-								* (rooms.size() - 1)) + 1;
-						sendCmd("go " + rooms.get(i).get(0));
-					} else {
-						System.out.println("ok!");
-						stopTask(this);
 					}
 				}
 			} catch (Exception e) {

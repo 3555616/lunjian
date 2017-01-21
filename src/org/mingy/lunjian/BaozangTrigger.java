@@ -14,10 +14,14 @@ public class BaozangTrigger implements Trigger {
 		if (!m.find()) {
 			return false;
 		}
+		process(cmdline);
+		return true;
+	}
+
+	protected void process(CommandLine cmdline) {
 		cmdline.notify("[宝藏图]", false);
 		if (!cmdline.isFighting()) {
 			cmdline.executeCmd("items get_store /obj/quest/cangbaotu;tu");
 		}
-		return true;
 	}
 }
