@@ -14,7 +14,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 
 public class Power extends CommandLine {
 
-	private WorkTask workTask;
+	private List<Work> works;
 	private WebDriver webdriver2;
 
 	public static void main(String[] args) throws Exception {
@@ -25,7 +25,7 @@ public class Power extends CommandLine {
 	@Override
 	protected void start(String[] args) throws Exception {
 		super.start(args);
-		List<Work> works = new ArrayList<Work>();
+		works = new ArrayList<Work>();
 		works.add(new Work("work click maikuli", 5500));
 		works.add(new Work("work click duancha", 10500));
 		works.add(new Work("work click dalie", 301000));
@@ -38,8 +38,6 @@ public class Power extends CommandLine {
 		works.add(new Work("work click zhidaodiying", 3601000));
 		works.add(new Work("work click dantiaoqunmen", 3601000));
 		works.add(new Work("work click shenshanxiulian", 3601000));
-		workTask = new WorkTask(works);
-		timer.schedule(workTask, 500, 500);
 		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
 			String browser = properties.getProperty("webdriver.browser");
 			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
@@ -88,6 +86,9 @@ public class Power extends CommandLine {
 		} else if (line.equals("#lc")) {
 			System.out.println("starting loot corpse...");
 			executeTask(new LootTask(), 200);
+		} else if (line.equals("#work")) {
+			System.out.println("starting auto work...");
+			executeTask(new WorkTask(works), 1000);
 		} else {
 			super.execute(line);
 		}
