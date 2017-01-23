@@ -38,7 +38,7 @@ public class CommandLine {
 	private Properties defaultAliases;
 	private Properties userAliases;
 	private Thread pollingThread;
-	private Timer timer;
+	protected Timer timer;
 	private SnoopTask snoopTask;
 	private TimerTask task;
 	private TriggerManager triggerManager;
