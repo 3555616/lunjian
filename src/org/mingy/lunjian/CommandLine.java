@@ -118,7 +118,26 @@ public class CommandLine {
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmdline = new CommandLine();
-		cmdline.start(args);
+		cmdline.run(args);
+	}
+
+	public void run(String[] args) throws Exception {
+		start(args);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				System.in, "gbk"));
+		try {
+			for (;;) {
+				String line = reader.readLine();
+				if (line == null
+						|| "#quit".equals((line = line.toLowerCase().trim()))) {
+					break;
+				}
+				execute(line);
+			}
+		} finally {
+			finish();
+			System.out.println("over!");
+		}
 	}
 
 	protected void start(String[] args) throws Exception {
@@ -169,21 +188,6 @@ public class CommandLine {
 				keywords != null && keywords.length() > 0 ? keywords.split(",")
 						: new String[0]);
 		timer.schedule(snoopTask, 1000, 1000);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(
-				System.in, "gbk"));
-		try {
-			for (;;) {
-				String line = reader.readLine();
-				if (line == null
-						|| "#quit".equals((line = line.toLowerCase().trim()))) {
-					break;
-				}
-				execute(line);
-			}
-		} finally {
-			finish();
-			System.out.println("over!");
-		}
 	}
 
 	protected void registerTriggers() {

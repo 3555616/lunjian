@@ -19,7 +19,7 @@ public class Power extends CommandLine {
 
 	public static void main(String[] args) throws Exception {
 		Power cmdline = new Power();
-		cmdline.start(args);
+		cmdline.run(args);
 	}
 
 	@Override
