@@ -29,15 +29,15 @@ public class Power extends CommandLine {
 		works.add(new Work("work click maikuli", 5500));
 		works.add(new Work("work click duancha", 10500));
 		works.add(new Work("work click dalie", 301000));
-		works.add(new Work("work click baobiao", 3601000));
-		works.add(new Work("work click maiyi", 3601000));
-		works.add(new Work("work click xuncheng", 3601000));
-		works.add(new Work("work click datufei", 3601000));
-		works.add(new Work("work click dalei", 3601000));
-		works.add(new Work("work click kangjijinbin", 3601000));
-		works.add(new Work("work click zhidaodiying", 3601000));
-		works.add(new Work("work click dantiaoqunmen", 3601000));
-		works.add(new Work("work click shenshanxiulian", 3601000));
+		works.add(new Work("work click baobiao", 301000));
+		works.add(new Work("work click maiyi", 301000));
+		works.add(new Work("work click xuncheng", 301000));
+		works.add(new Work("work click datufei", 301000));
+		works.add(new Work("work click dalei", 301000));
+		works.add(new Work("work click kangjijinbin", 301000));
+		works.add(new Work("work click zhidaodiying", 301000));
+		works.add(new Work("work click dantiaoqunmen", 301000));
+		works.add(new Work("work click shenshanxiulian", 301000));
 		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
 			String browser = properties.getProperty("webdriver.browser");
 			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
@@ -58,6 +58,7 @@ public class Power extends CommandLine {
 		TriggerManager.register("zhengxie", PowerZhengxieTrigger.class);
 		TriggerManager.register("baozang", PowerBaozangTrigger.class);
 		TriggerManager.register("guanfu", GuanfuTrigger.class);
+		TriggerManager.register("hongbao", PowerHongbaoTrigger.class);
 	}
 
 	@Override
