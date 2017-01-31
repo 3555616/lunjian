@@ -59,7 +59,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));
-					cmdline.executeCmd("halt;fly " + (i + 1));
+					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;fly " + (i + 1));
 					System.out.println("start auto youxia...");
 					YouxiaTask task = new YouxiaTask(cmdline, npc);
 					cmdline.executeTask(task, 500);
@@ -93,6 +93,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					cmdline.sendCmd(pc.command);
 					if (Boolean.parseBoolean(cmdline
 							.getProperty("youxia.manual"))) {
+						cmdline.executeCmd("prepare_kill");
 						state = 100;
 					} else {
 						state = 1;

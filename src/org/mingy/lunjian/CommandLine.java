@@ -8,9 +8,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,15 +27,18 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.io.IOUtils;
 
 public class CommandLine {
 
+	private static final DateFormat FORMAT_TIME = new SimpleDateFormat("HH:mm");
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
 
 	protected WebDriver webdriver;
+	private WebDriver webdriver2;
 	private File aliasFile;
 	protected Properties properties;
 	private Properties defaultAliases;
@@ -188,6 +194,15 @@ public class CommandLine {
 				keywords != null && keywords.length() > 0 ? keywords.split(",")
 						: new String[0]);
 		timer.schedule(snoopTask, 1000, 1000);
+		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
+			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
+				webdriver2 = new FirefoxDriver();
+			} else if ("chrome".equalsIgnoreCase(browser)) {
+				webdriver2 = new ChromeDriver();
+			}
+			webdriver2.navigate().to("http://web2.qq.com");
+			webdriver2.switchTo().defaultContent();
+		}
 	}
 
 	protected void registerTriggers() {
@@ -201,6 +216,9 @@ public class CommandLine {
 		timer.cancel();
 		// pollingThread.interrupt();
 		webdriver.quit();
+		if (webdriver2 != null) {
+			webdriver2.quit();
+		}
 	}
 
 	protected void execute(String line) throws IOException {
@@ -260,6 +278,33 @@ public class CommandLine {
 					userAliases.remove(key);
 					saveAliases();
 					System.out.println("alias removed.");
+				}
+			}
+		} else if (line.equals("#set")) {
+			properties.list(System.out);
+		} else if (line.startsWith("#set ")) {
+			String alias = line.substring(5).trim();
+			String key;
+			String value;
+			int i = alias.indexOf(' ');
+			if (i >= 0) {
+				key = alias.substring(0, i).trim();
+				value = alias.substring(i + 1).trim();
+			} else {
+				key = alias;
+				value = null;
+			}
+			if (value != null) {
+				if (!value.equals(properties.getProperty(key))) {
+					properties.setProperty(key, value);
+					// saveConfig();
+					System.out.println("set property ok.");
+				}
+			} else {
+				if (properties.containsKey(key)) {
+					properties.remove(key);
+					// saveConfig();
+					System.out.println("property removed.");
 				}
 			}
 		} else if (line.startsWith("#snoop add ")) {
@@ -497,8 +542,18 @@ public class CommandLine {
 				}
 			}.start();
 		}
-		System.out.println(message);
+		System.out.println(message + " (" + FORMAT_TIME.format(new Date()) + ")");
 		js("notify_fail(arguments[0]);", message);
+		if (important && webdriver2 != null) {
+			try {
+				WebElement e = webdriver2.findElement(By.id("chat_textarea"));
+				e.clear();
+				e.sendKeys(message);
+				webdriver2.findElement(By.id("send_chat_btn")).click();
+			} catch (NoSuchElementException e) {
+				// ignore
+			}
+		}
 	}
 
 	protected String[] findTarget(String[] types, String pattern) {

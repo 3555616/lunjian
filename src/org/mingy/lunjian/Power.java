@@ -5,21 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
 public class Power extends CommandLine {
 
 	private List<Work> works;
-	private WebDriver webdriver2;
 
 	public static void main(String[] args) throws Exception {
-		Power cmdline = new Power();
-		cmdline.run(args);
+		if (args.length > 1 && "--no_power".equalsIgnoreCase(args[1])) {
+			CommandLine cmdline = new CommandLine();
+			cmdline.run(args);
+		} else {
+			Power cmdline = new Power();
+			cmdline.run(args);
+		}
 	}
 
 	@Override
@@ -38,16 +35,7 @@ public class Power extends CommandLine {
 		works.add(new Work("work click zhidaodiying", 301000));
 		works.add(new Work("work click dantiaoqunmen", 301000));
 		works.add(new Work("work click shenshanxiulian", 301000));
-		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
-			String browser = properties.getProperty("webdriver.browser");
-			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
-				webdriver2 = new FirefoxDriver();
-			} else if ("chrome".equalsIgnoreCase(browser)) {
-				webdriver2 = new ChromeDriver();
-			}
-			webdriver2.navigate().to("http://web2.qq.com");
-			webdriver2.switchTo().defaultContent();
-		}
+		works.add(new Work("public_op3", 301000));
 	}
 
 	@Override
@@ -59,14 +47,6 @@ public class Power extends CommandLine {
 		TriggerManager.register("baozang", PowerBaozangTrigger.class);
 		TriggerManager.register("guanfu", GuanfuTrigger.class);
 		TriggerManager.register("hongbao", PowerHongbaoTrigger.class);
-	}
-
-	@Override
-	protected void finish() throws Exception {
-		if (webdriver2 != null) {
-			webdriver2.quit();
-		}
-		super.finish();
 	}
 
 	@Override
@@ -92,21 +72,6 @@ public class Power extends CommandLine {
 			executeTask(new WorkTask(works), 1000);
 		} else {
 			super.execute(line);
-		}
-	}
-
-	@Override
-	protected void notify(String message, boolean important) {
-		super.notify(message, important);
-		if (important && webdriver2 != null) {
-			try {
-				WebElement e = webdriver2.findElement(By.id("chat_textarea"));
-				e.clear();
-				e.sendKeys(message);
-				webdriver2.findElement(By.id("send_chat_btn")).click();
-			} catch (NoSuchElementException e) {
-				// ignore
-			}
 		}
 	}
 
