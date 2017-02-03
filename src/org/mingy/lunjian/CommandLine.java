@@ -653,6 +653,9 @@ public class CommandLine {
 	}
 
 	protected boolean matchText(String text, String name) {
+		if (text == null || text.length() == 0) {
+			return false;
+		}
 		if (text.contains(name)) {
 			return true;
 		} else {
