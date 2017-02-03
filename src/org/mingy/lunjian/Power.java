@@ -54,8 +54,20 @@ public class Power extends CommandLine {
 		if (line.startsWith("#loop ")) {
 			line = line.substring(6).trim();
 			if (line.length() > 0) {
-				System.out.println("starting loop...");
-				executeTask(new LoopTask(line), 500);
+				int interval = 500;
+				int i = line.indexOf(' ');
+				if (i >= 0) {
+					try {
+						interval = Integer.parseInt(line.substring(0, i));
+						line = line.substring(i + 1).trim();
+					} catch (NumberFormatException e) {
+						// ignore
+					}
+				}
+				if (line.length() > 0) {
+					System.out.println("starting loop...");
+					executeTask(new LoopTask(line), interval);
+				}
 			}
 		} else if (line.startsWith("#kill ")) {
 			String name = line.substring(6).trim();

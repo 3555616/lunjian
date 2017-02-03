@@ -475,6 +475,36 @@ public class CommandLine {
 		} else if ("halt".equals(cmd[0])) {
 			cmd[0] = "escape";
 			cmd[1] = null;
+		} else if ("pfm".equals(cmd[0]) || "perform".equals(cmd[0])) {
+			String skills = cmd[1];
+			if (skills == null) {
+				String[] settings = properties.getProperty("auto.fight", "")
+						.split(",");
+				if (settings.length > 0) {
+					skills = settings[0];
+				}
+			}
+			if (skills != null) {
+				StringBuilder sb = new StringBuilder();
+				String[] pfms = skills.split("\\|");
+				List<String> list = getCombatSkills();
+				if (list != null && !list.isEmpty()) {
+					for (String pfm : pfms) {
+						for (int i = 0; i < list.size(); i++) {
+							String text = list.get(i);
+							if (matchText(text, pfm)) {
+								if (sb.length() > 0) {
+									sb.append(';');
+								}
+								sb.append("playskill ").append(i + 1);
+							}
+						}
+					}
+				}
+				cmd[0] = sb.length() > 0 ? sb.toString() : null;
+			} else {
+				cmd[0] = null;
+			}
 		} else if ("1".equals(cmd[0])) {
 			cmd[0] = "playskill 1";
 			cmd[1] = null;
@@ -542,7 +572,8 @@ public class CommandLine {
 				}
 			}.start();
 		}
-		System.out.println(message + " (" + FORMAT_TIME.format(new Date()) + ")");
+		System.out.println(message + " (" + FORMAT_TIME.format(new Date())
+				+ ")");
 		js("notify_fail(arguments[0]);", message);
 		if (important && webdriver2 != null) {
 			try {
@@ -587,22 +618,7 @@ public class CommandLine {
 						match = true;
 					}
 				} else if (target[1] != null) {
-					if (target[1].contains(name)) {
-						match = true;
-					} else {
-						for (String pinyin : Pinyin.convertToPinyin(target[1])) {
-							if (pinyin.contains(name)) {
-								match = true;
-								break;
-							}
-						}
-						if (!match) {
-							if (Pinyin.convertToFirstPinyin(target[1])
-									.contains(name)) {
-								match = true;
-							}
-						}
-					}
+					match = matchText(target[1], name);
 				}
 			} else {
 				match = true;
@@ -624,22 +640,7 @@ public class CommandLine {
 						match = true;
 					}
 				} else if (target[1] != null) {
-					if (target[1].contains(name)) {
-						match = true;
-					} else {
-						for (String pinyin : Pinyin.convertToPinyin(target[1])) {
-							if (pinyin.contains(name)) {
-								match = true;
-								break;
-							}
-						}
-						if (!match) {
-							if (Pinyin.convertToFirstPinyin(target[1])
-									.contains(name)) {
-								match = true;
-							}
-						}
-					}
+					match = matchText(target[1], name);
 				}
 			} else {
 				match = true;
@@ -649,6 +650,22 @@ public class CommandLine {
 			}
 		}
 		return list.toArray(new String[list.size()]);
+	}
+
+	protected boolean matchText(String text, String name) {
+		if (text.contains(name)) {
+			return true;
+		} else {
+			for (String pinyin : Pinyin.convertToPinyin(text)) {
+				if (pinyin.contains(name)) {
+					return true;
+				}
+			}
+			if (Pinyin.convertToFirstPinyin(text).contains(name)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -730,6 +747,11 @@ public class CommandLine {
 
 	protected String getCombatPosition() {
 		return (String) js(load("get_combat_position.js"));
+	}
+
+	@SuppressWarnings("unchecked")
+	protected List<String> getCombatSkills() {
+		return (List<String>) js(load("get_combat_skills.js"));
 	}
 
 	protected void stopTask(TimerTask task) {
