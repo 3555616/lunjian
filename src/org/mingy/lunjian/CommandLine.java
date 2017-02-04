@@ -323,7 +323,22 @@ public class CommandLine {
 			triggerManager.add(line.substring(4).trim());
 		} else if (line.startsWith("#t- ")) {
 			triggerManager.remove(line.substring(4).trim());
-		} else if (line.length() > 0 && line.charAt(0) != '#') {
+		} else if (line.length() > 0 && line.charAt(0) == '#') {
+			int i = line.indexOf(' ');
+			if (i >= 0) {
+				try {
+					int times = Integer.parseInt(line.substring(1, i));
+					line = line.substring(i + 1).trim();
+					if (times > 0 && line.length() > 0) {
+						for (int j = 0; j < times; j++) {
+							executeCmd(line);
+						}
+					}
+				} catch (NumberFormatException e) {
+					// ignore
+				}
+			}
+		} else if (line.length() > 0) {
 			executeCmd(line);
 		}
 	}
@@ -754,7 +769,11 @@ public class CommandLine {
 
 	@SuppressWarnings("unchecked")
 	protected List<String> getCombatSkills() {
-		return (List<String>) js(load("get_combat_skills.js"));
+		List<String> skills = (List<String>) js(load("get_combat_skills.js"));
+		for (int i = 0; i < skills.size(); i++) {
+			skills.set(i, skills.get(i).trim());
+		}
+		return skills;
 	}
 
 	protected void stopTask(TimerTask task) {
