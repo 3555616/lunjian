@@ -323,6 +323,8 @@ public class CommandLine {
 			triggerManager.add(line.substring(4).trim());
 		} else if (line.startsWith("#t- ")) {
 			triggerManager.remove(line.substring(4).trim());
+		} else if (line.startsWith("#tt ")) {
+			triggerManager.process(this, line.substring(4).trim());
 		} else if (line.length() > 0 && line.charAt(0) == '#') {
 			int i = line.indexOf(' ');
 			if (i >= 0) {

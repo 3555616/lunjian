@@ -1,5 +1,7 @@
 package org.mingy.lunjian;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -7,8 +9,6 @@ import java.util.Map;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.mingy.lunjian.CommandLine.ProcessedCommand;
 
 public class PowerYouxiaTrigger extends YouxiaTrigger {
 
@@ -59,9 +59,10 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));
-					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;fly " + (i + 1));
+					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;fly "
+							+ (i + 1));
 					System.out.println("start auto youxia...");
-					YouxiaTask task = new YouxiaTask(cmdline, npc);
+					YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
 					cmdline.executeTask(task, 500);
 					return;
 				}
@@ -73,14 +74,18 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 	private static class YouxiaTask extends TimerTask {
 
 		private CommandLine cmdline;
+		private int mapId;
 		private String name;
 		private int state;
 		private String id;
 		private String corpse;
 		private List<String> fears;
+		private List<String> rooms;
+		private int step = 0;
 
-		public YouxiaTask(CommandLine cmdline, String name) {
+		public YouxiaTask(CommandLine cmdline, int mapId, String name) {
 			this.cmdline = cmdline;
+			this.mapId = mapId;
 			this.name = name;
 		}
 
@@ -88,16 +93,23 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 		@Override
 		public void run() {
 			if (state == 0) {
-				ProcessedCommand pc = cmdline.processCmd("look " + name);
-				if (pc.command != null) {
-					cmdline.sendCmd(pc.command);
-					if (Boolean.parseBoolean(cmdline
-							.getProperty("youxia.manual"))) {
-						cmdline.executeCmd("prepare_kill");
-						state = 100;
-					} else {
-						state = 1;
+				try {
+					String data = cmdline.load("maps/" + mapId + ".map");
+					BufferedReader reader = new BufferedReader(
+							new StringReader(data));
+					rooms = new ArrayList<String>();
+					String line;
+					while ((line = reader.readLine()) != null) {
+						line = line.trim();
+						if (line.length() > 0) {
+							rooms.add(line);
+						}
 					}
+					reader.close();
+					state = 200;
+				} catch (Exception e) {
+					System.out.println("map not found: " + mapId);
+					cmdline.stopTask(this);
 				}
 			} else if (state == 1) {
 				Map<String, Object> map = (Map<String, Object>) cmdline
@@ -230,6 +242,37 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 			} else if (state == 100) {
 				System.out.println("ok!");
 				cmdline.stopTask(this);
+			} else if (state == 200) {
+				Map<String, Object> map = (Map<String, Object>) cmdline
+						.js(cmdline.load("get_room.js"));
+				if (map != null) {
+					for (String key : map.keySet()) {
+						if (key.startsWith("npc")) {
+							String[] values = map.get(key).toString()
+									.split(",");
+							if (name.equals(CommandLine.removeSGR(values[1]))) {
+								id = values[0];
+								System.out.println("find " + name + ": " + id);
+								cmdline.sendCmd("look_npc " + id);
+								if (Boolean.parseBoolean(cmdline
+										.getProperty("youxia.manual"))) {
+									cmdline.executeCmd("prepare_kill");
+									state = 100;
+								} else {
+									state = 1;
+								}
+								return;
+							}
+						}
+					}
+					if (step < rooms.size()) {
+						cmdline.sendCmd(rooms.get(step));
+						step++;
+					} else {
+						System.out.println("target not found :(");
+						cmdline.stopTask(this);
+					}
+				}
 			}
 		}
 	}
