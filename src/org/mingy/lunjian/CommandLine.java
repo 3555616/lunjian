@@ -323,8 +323,8 @@ public class CommandLine {
 			triggerManager.add(line.substring(4).trim());
 		} else if (line.startsWith("#t- ")) {
 			triggerManager.remove(line.substring(4).trim());
-		} else if (line.startsWith("#tt ")) {
-			triggerManager.process(this, line.substring(4).trim());
+		} else if (line.equals("#tt")) {
+			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往武当山的路上。");
 		} else if (line.length() > 0 && line.charAt(0) == '#') {
 			int i = line.indexOf(' ');
 			if (i >= 0) {

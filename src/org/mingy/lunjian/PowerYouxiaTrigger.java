@@ -63,7 +63,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 							+ (i + 1));
 					System.out.println("start auto youxia...");
 					YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
-					cmdline.executeTask(task, 500);
+					cmdline.executeTask(task, 200);
 					return;
 				}
 			}
@@ -136,9 +136,6 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 							break;
 						}
 					}
-				}
-				if (state == 1) {
-					state = 0;
 				}
 			} else if (state == 2) {
 				cmdline.sendCmd("look_npc " + id);
@@ -244,7 +241,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 				cmdline.stopTask(this);
 			} else if (state == 200) {
 				Map<String, Object> map = (Map<String, Object>) cmdline
-						.js(cmdline.load("get_room.js"));
+						.js(cmdline.load("get_room_msg.js"));
 				if (map != null) {
 					for (String key : map.keySet()) {
 						if (key.startsWith("npc")) {
@@ -252,7 +249,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 									.split(",");
 							if (name.equals(CommandLine.removeSGR(values[1]))) {
 								id = values[0];
-								System.out.println("find " + name + ": " + id);
+								System.out.println("find " + name + " at " + map.get("short"));
 								cmdline.sendCmd("look_npc " + id);
 								if (Boolean.parseBoolean(cmdline
 										.getProperty("youxia.manual"))) {
