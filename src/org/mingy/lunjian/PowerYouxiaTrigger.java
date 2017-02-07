@@ -63,7 +63,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 							+ (i + 1));
 					System.out.println("start auto youxia...");
 					YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
-					cmdline.executeTask(task, 200);
+					cmdline.executeTask(task, 500);
 					return;
 				}
 			}
