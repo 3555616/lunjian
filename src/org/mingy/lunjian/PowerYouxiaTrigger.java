@@ -229,10 +229,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 				String[] corpses = cmdline.findTargets("item", name + "的尸体");
 				if (corpses.length > 0) {
 					corpse = corpses[corpses.length - 1];
-					cmdline.sendCmd("get " + corpse);
 					state = 10;
-				} else {
-					state = 100;
 				}
 			} else if (state == 10) {
 				cmdline.sendCmd("get " + corpse);
@@ -249,12 +246,13 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 									.split(",");
 							if (name.equals(CommandLine.removeSGR(values[1]))) {
 								id = values[0];
-								System.out.println("find " + name + " at " + map.get("short"));
+								System.out.println("find " + name + " at "
+										+ map.get("short"));
 								cmdline.sendCmd("look_npc " + id);
 								if (Boolean.parseBoolean(cmdline
 										.getProperty("youxia.manual"))) {
 									cmdline.executeCmd("prepare_kill");
-									state = 100;
+									state = 9;
 								} else {
 									state = 1;
 								}
