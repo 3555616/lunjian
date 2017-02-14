@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,7 +62,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 							+ (i + 1));
 					System.out.println("start auto youxia...");
 					YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
-					cmdline.executeTask(task, 500);
+					cmdline.executeTask(task, 100);
 					return;
 				}
 			}
@@ -71,7 +70,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 		}
 	}
 
-	private static class YouxiaTask extends TimerTask {
+	private static class YouxiaTask extends TimerTaskDelegate {
 
 		private CommandLine cmdline;
 		private int mapId;
@@ -84,6 +83,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 		private int step = 0;
 
 		public YouxiaTask(CommandLine cmdline, int mapId, String name) {
+			super(100);
 			this.cmdline = cmdline;
 			this.mapId = mapId;
 			this.name = name;
@@ -91,7 +91,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public void run() {
+		protected void onTimer() throws Exception {
 			if (state == 0) {
 				try {
 					String data = cmdline.load("maps/" + mapId + ".map");
@@ -106,6 +106,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 						}
 					}
 					reader.close();
+					setTick(500);
 					state = 200;
 				} catch (Exception e) {
 					System.out.println("map not found: " + mapId);
@@ -256,6 +257,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 								} else {
 									state = 1;
 								}
+								setTick(500);
 								return;
 							}
 						}
@@ -263,6 +265,15 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					if (step < rooms.size()) {
 						cmdline.sendCmd(rooms.get(step));
 						step++;
+						if (step < 10) {
+							setTick(500);
+						} else if (step < 20) {
+							setTick(300);
+						} else if (step < 30) {
+							setTick(200);
+						} else {
+							setTick(100);
+						}
 					} else {
 						System.out.println("target not found :(");
 						cmdline.stopTask(this);
