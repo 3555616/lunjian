@@ -387,6 +387,8 @@ public class CommandLine {
 			triggerManager.process(this, line.substring(6).trim());
 		} else if (line.startsWith("#sh ")) {
 			triggerManager.process(this, line.substring(4).trim());
+		} else if (line.equals("#tt")) {
+			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往雪亭镇的路上。");
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
 			webqqQueue.offer(line.substring(6).trim());
 		} else if (webqqQueue != null && line.equals("#ping")) {
@@ -490,6 +492,7 @@ public class CommandLine {
 		return pc;
 	}
 
+	@SuppressWarnings("unchecked")
 	private boolean translate(String[] cmd) {
 		boolean isChat = false;
 		if ("look".equals(cmd[0])) {
@@ -543,7 +546,14 @@ public class CommandLine {
 				|| "southeast".equals(cmd[0]) || "southwest".equals(cmd[0])
 				|| "northeast".equals(cmd[0]) || "northwest".equals(cmd[0])
 				|| "up".equals(cmd[0]) || "down".equals(cmd[0])) {
-			cmd[1] = cmd[0];
+			Map<String, Object> map = (Map<String, Object>) js(
+					load("get_room_msg.js"), false);
+			Object random = map.get("go_random");
+			if (random != null) {
+				cmd[1] = cmd[0] + "." + random;
+			} else {
+				cmd[1] = cmd[0];
+			}
 			cmd[0] = "go";
 		} else if ("fly".equals(cmd[0])) {
 			cmd[0] = "jh";
@@ -809,6 +819,11 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
+	protected void walk(String path, String commands) {
+		System.out.println("starting walk...");
+		executeTask(new WalkTask(path, commands), 100);
+	}
+
 	protected String load(String file) {
 		String js = jslibs.get(file);
 		if (js == null) {
@@ -855,11 +870,11 @@ public class CommandLine {
 		}
 	}
 
-	private void switchWebqq(String id) {
+	private void switchWebqq(String name) {
 		webdriver2
 				.findElement(
-						By.xpath("//ul[@id='current_chat_list']/li[@_uin='"
-								+ id + "']")).click();
+						By.xpath("//ul[@id='current_chat_list']/li/p[@class='member_nick'][normalize-space(text())='"
+								+ name + "']")).click();
 	}
 
 	private void sendWebqq(String message) {
@@ -974,10 +989,65 @@ public class CommandLine {
 		}
 	}
 
+	private class WalkTask extends TimerTask {
+
+		private List<String> steps;
+		private String commands;
+		private int index = 0;
+
+		public WalkTask(String path, String commands) {
+			super();
+			String[] arr = path.split(";");
+			this.steps = new ArrayList<String>(arr.length);
+			for (String step : arr) {
+				step = step.trim();
+				if (step.length() > 0) {
+					this.steps.add(step);
+				}
+			}
+			this.commands = commands;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				Map<String, Object> map = (Map<String, Object>) js(
+						load("get_room_msg.js"), true);
+				if (map != null) {
+					if (index < steps.size()) {
+						String cmd = steps.get(index);
+						Object random = map.get("go_random");
+						if (random != null) {
+							ProcessedCommand pc = processCmd(cmd);
+							if (pc != null) {
+								cmd = pc.command;
+								if (cmd.startsWith("go ")) {
+									sendCmd(cmd + "." + random);
+								} else {
+									sendCmd(cmd);
+								}
+							}
+						} else {
+							sendCmd(cmd);
+						}
+						index++;
+					} else {
+						System.out.println("ok!");
+						stopTask(this);
+						execute(commands);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+	}
+
 	private class FindWayTask extends TimerTask {
 
 		private String target;
-		private String current;
 
 		public FindWayTask(String target) {
 			super();
@@ -988,26 +1058,32 @@ public class CommandLine {
 		@Override
 		public void run() {
 			try {
-				List<List<String>> rooms = (List<List<String>>) js(load("get_rooms.js"));
-				if (!rooms.isEmpty()) {
+				List<List<String>> rooms = (List<List<String>>) js(
+						load("get_rooms.js"), null, true);
+				if (rooms != null && !rooms.isEmpty()) {
 					String room = removeSGR(rooms.get(0).get(1));
-					if (current == null || !current.equals(room)) {
-						current = room;
-						if (!current.equals(target)) {
-							for (int i = 1; i < rooms.size(); i++) {
-								if (target
-										.equals(removeSGR(rooms.get(i).get(1)))) {
-									sendCmd("go " + rooms.get(i).get(0));
-									return;
+					if (!room.equals(target)) {
+						String random = rooms.get(1).get(1);
+						for (int i = 2; i < rooms.size(); i++) {
+							if (target.equals(removeSGR(rooms.get(i).get(1)))) {
+								String cmd = "go " + rooms.get(i).get(0);
+								if (random != null && random.length() > 0) {
+									cmd += "." + random;
 								}
+								sendCmd(cmd);
+								return;
 							}
-							int i = (int) Math.floor(Math.random()
-									* (rooms.size() - 1)) + 1;
-							sendCmd("go " + rooms.get(i).get(0));
-						} else {
-							System.out.println("ok!");
-							stopTask(this);
 						}
+						int i = (int) Math.floor(Math.random()
+								* (rooms.size() - 2)) + 2;
+						String cmd = "go " + rooms.get(i).get(0);
+						if (random != null && random.length() > 0) {
+							cmd += "." + random;
+						}
+						sendCmd(cmd);
+					} else {
+						System.out.println("ok!");
+						stopTask(this);
 					}
 				}
 			} catch (Exception e) {
@@ -1058,7 +1134,6 @@ public class CommandLine {
 
 		@Override
 		public void run() {
-			System.out.println("send ping");
 			webqqQueue.offer("__ping__");
 		}
 	}

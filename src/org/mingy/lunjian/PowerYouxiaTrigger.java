@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.mingy.lunjian.CommandLine.ProcessedCommand;
+
 public class PowerYouxiaTrigger extends YouxiaTrigger {
 
 	private static final Pattern DESC_PATTERN = Pattern
@@ -103,7 +105,13 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					while ((line = reader.readLine()) != null) {
 						line = line.trim();
 						if (line.length() > 0) {
-							rooms.add(line);
+							String[] cmds = line.split(";");
+							for (String cmd : cmds) {
+								cmd = cmd.trim();
+								if (cmd.length() > 0) {
+									rooms.add(cmd);
+								}
+							}
 						}
 					}
 					reader.close();
@@ -240,7 +248,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 				cmdline.stopTask(this);
 			} else if (state == 200) {
 				Map<String, Object> map = (Map<String, Object>) cmdline
-						.js(cmdline.load("get_room_msg.js"));
+						.js(cmdline.load("get_room_msg.js"), true);
 				if (map != null) {
 					for (String key : map.keySet()) {
 						if (key.startsWith("npc")) {
@@ -264,7 +272,21 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 						}
 					}
 					if (step < rooms.size()) {
-						cmdline.sendCmd(rooms.get(step));
+						String cmd = rooms.get(step);
+						Object random = map.get("go_random");
+						if (random != null) {
+							ProcessedCommand pc = cmdline.processCmd(cmd);
+							if (pc != null) {
+								cmd = pc.command;
+								if (cmd.startsWith("go ")) {
+									cmdline.sendCmd(cmd + "." + random);
+								} else {
+									cmdline.sendCmd(cmd);
+								}
+							}
+						} else {
+							cmdline.sendCmd(cmd);
+						}
 						step++;
 						if (step < 10) {
 							setTick(500);

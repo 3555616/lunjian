@@ -8,16 +8,16 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 	private static final Map<String, String> PATHS = new HashMap<String, String>();
 
 	static {
-		PATHS.put("王铁匠", "wangtiejiang");
-		PATHS.put("杨掌柜", "yangzhanggui");
-		PATHS.put("柳绘心", "liuhuixin");
-		PATHS.put("客商", "keshang");
-		PATHS.put("柳小花", "liuxiaohua");
-		PATHS.put("卖花姑娘", "maihua");
-		PATHS.put("刘守财", "liushoucai");
-		PATHS.put("方老板", "fanglaoban");
-		PATHS.put("朱老伯", "zhulaobo");
-		PATHS.put("方寡妇", "fangguafu");
+		PATHS.put("王铁匠", "fly 1;e;n;n;w");
+		PATHS.put("杨掌柜", "fly 1;e;n;n;n;w");
+		PATHS.put("柳绘心", "fly 1;e;n;e;e;e;e;n");
+		PATHS.put("客商", "fly 2;n;n;e");
+		PATHS.put("柳小花", "fly 2;n;n;n;n;w;s;w");
+		PATHS.put("卖花姑娘", "fly 2;n;n;n;n;n;n;n");
+		PATHS.put("刘守财", "fly 2;n;n;n;n;n;n;n;e");
+		PATHS.put("方老板", "fly 3;s;s;e");
+		PATHS.put("朱老伯", "fly 3;s;s;w");
+		PATHS.put("方寡妇", "fly 3;s;s;w;n");
 	}
 
 	@Override
@@ -30,13 +30,8 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 				System.out.println("path not found: " + good_npc);
 			} else {
 				System.out.println("goto " + path);
-				cmdline.executeCmd("halt;" + path);
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// ignore
-				}
-				cmdline.executeCmd("watch " + bad_npc + " -1");
+				cmdline.executeCmd("halt");
+				cmdline.walk(path, "watch " + bad_npc + " -1");
 			}
 		}
 	}
