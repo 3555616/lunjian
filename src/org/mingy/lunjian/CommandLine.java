@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
@@ -43,10 +45,12 @@ public class CommandLine {
 	protected Properties properties;
 	private Properties defaultAliases;
 	private Properties userAliases;
-	private Thread pollingThread;
 	protected Timer timer;
 	private SnoopTask snoopTask;
+	private WebqqTask webqqTask;
 	private TimerTask task;
+	private BlockingQueue<String> webqqQueue;
+	private Thread webqqThread;
 	private TriggerManager triggerManager;
 	private Map<String, String> jslibs = new HashMap<String, String>();
 	private Toolkit toolkit = new Frame().getToolkit();
@@ -185,9 +189,6 @@ public class CommandLine {
 		String triggers = properties.getProperty("snoop.triggers");
 		loadTriggers(triggers != null && triggers.length() > 0 ? triggers
 				.split(",") : new String[0]);
-		pollingThread = new PollingThread();
-		pollingThread.setDaemon(true);
-		// pollingThread.start();
 		timer = new Timer(true);
 		String keywords = properties.getProperty("snoop.keywords");
 		snoopTask = new SnoopTask(
@@ -200,8 +201,41 @@ public class CommandLine {
 			} else if ("chrome".equalsIgnoreCase(browser)) {
 				webdriver2 = new ChromeDriver();
 			}
+			webdriver2.manage().window().setSize(new Dimension(1052, 768));
 			webdriver2.navigate().to("http://web2.qq.com");
 			webdriver2.switchTo().defaultContent();
+			final String groupId = properties.getProperty("notify.group");
+			final String pingId = properties.getProperty("notify.ping");
+			long interval = Long.parseLong(properties
+					.getProperty("notify.interval"));
+			if (groupId != null && groupId.length() > 0 && pingId != null
+					&& pingId.length() > 0) {
+				webqqTask = new WebqqTask();
+				timer.schedule(webqqTask, interval, interval);
+			}
+			webqqQueue = new LinkedBlockingDeque<String>();
+			webqqThread = new Thread() {
+				@Override
+				public void run() {
+					while (!isInterrupted()) {
+						try {
+							String message = webqqQueue.take();
+							if ("__ping__".equals(message)) {
+								switchWebqq(pingId);
+								sendWebqq("1");
+								switchWebqq(groupId);
+							} else {
+								sendWebqq(message);
+							}
+						} catch (NoSuchElementException e) {
+							e.printStackTrace();
+						} catch (InterruptedException e) {
+							// ignore
+						}
+					}
+				}
+			};
+			webqqThread.start();
 		}
 	}
 
@@ -214,7 +248,9 @@ public class CommandLine {
 
 	protected void finish() throws Exception {
 		timer.cancel();
-		// pollingThread.interrupt();
+		if (webqqThread != null) {
+			webqqThread.interrupt();
+		}
 		webdriver.quit();
 		if (webdriver2 != null) {
 			webdriver2.quit();
@@ -246,6 +282,30 @@ public class CommandLine {
 					executeTask(new CombatTask(pos, pfms, wait, heal, safe,
 							fast), 500);
 				}
+			}
+		} else if (line.equals("#combat continue")) {
+			String[] settings = properties.getProperty("continue.fight", "")
+					.split(",");
+			if (settings.length < 1) {
+				System.out.println("property continue.fight not set");
+			} else {
+				String[] pfms = settings[0].split("\\|");
+				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
+						.parseInt(settings[1]) : 0;
+				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
+						: null;
+				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
+						.parseInt(settings[3]) : 0;
+				int fast = settings.length > 4 && settings[4].length() > 0 ? Integer
+						.parseInt(settings[4]) : 0;
+				String fastpfm = settings.length > 5
+						&& settings[5].length() > 0 ? settings[5] : null;
+				if (wait < pfms.length * 20) {
+					wait = pfms.length * 20;
+				}
+				System.out.println("starting continue combat...");
+				executeTask(new ContinueCombatTask(pfms, wait, heal, safe,
+						fast, fastpfm), 500);
 			}
 		} else if (line.startsWith("#findway ")) {
 			line = line.substring(9).trim();
@@ -323,8 +383,14 @@ public class CommandLine {
 			triggerManager.add(line.substring(4).trim());
 		} else if (line.startsWith("#t- ")) {
 			triggerManager.remove(line.substring(4).trim());
-//		} else if (line.equals("#tt")) {
-//			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往光明顶的路上。");
+		} else if (line.startsWith("#show ")) {
+			triggerManager.process(this, line.substring(6).trim());
+		} else if (line.startsWith("#sh ")) {
+			triggerManager.process(this, line.substring(4).trim());
+		} else if (webqqQueue != null && line.startsWith("#send ")) {
+			webqqQueue.offer(line.substring(6).trim());
+		} else if (webqqQueue != null && line.equals("#ping")) {
+			webqqQueue.offer("__ping__");
 		} else if (line.length() > 0 && line.charAt(0) == '#') {
 			int i = line.indexOf(' ');
 			if (i >= 0) {
@@ -573,7 +639,7 @@ public class CommandLine {
 		}
 	}
 
-	protected void notify(String message, boolean important) {
+	protected void notify(String message, boolean important, boolean send) {
 		if (important) {
 			new Thread() {
 				@Override
@@ -589,18 +655,14 @@ public class CommandLine {
 				}
 			}.start();
 		}
-		System.out.println(message + " (" + FORMAT_TIME.format(new Date())
-				+ ")");
+		String details = message + " (" + FORMAT_TIME.format(new Date()) + ")";
+		System.out.println(details);
 		js("notify_fail(arguments[0]);", message);
-		if (important && webdriver2 != null) {
-			try {
-				WebElement e = webdriver2.findElement(By.id("chat_textarea"));
-				e.clear();
-				e.sendKeys(message);
-				webdriver2.findElement(By.id("send_chat_btn")).click();
-			} catch (NoSuchElementException e) {
-				// ignore
+		if (send && webdriver2 != null) {
+			if (important) {
+				details += " @全体成员";
 			}
+			webqqQueue.offer(details);
 		}
 	}
 
@@ -793,23 +855,18 @@ public class CommandLine {
 		}
 	}
 
-	private class PollingThread extends Thread {
+	private void switchWebqq(String id) {
+		webdriver2
+				.findElement(
+						By.xpath("//ul[@id='current_chat_list']/li[@_uin='"
+								+ id + "']")).click();
+	}
 
-		@SuppressWarnings("unchecked")
-		@Override
-		public void run() {
-			while (!isInterrupted()) {
-				try {
-					List<String> msgs = (List<String>) ((JavascriptExecutor) webdriver)
-							.executeAsyncScript(load("polling.js"));
-					for (String msg : msgs) {
-						System.out.println(msg);
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
+	private void sendWebqq(String message) {
+		WebElement e = webdriver2.findElement(By.id("chat_textarea"));
+		e.clear();
+		e.sendKeys(message);
+		webdriver2.findElement(By.id("send_chat_btn")).click();
 	}
 
 	private class CombatTask extends TimerTask {
@@ -852,6 +909,63 @@ public class CommandLine {
 				} else {
 					System.out.println("ok!");
 					stopTask(this);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+	}
+
+	private class ContinueCombatTask extends TimerTask {
+
+		private int waitPoint;
+		private String[] performs;
+		private String heal;
+		private int safeHp;
+		private int fastKillHp;
+		private String fastPerform;
+		private List<Object> context = new ArrayList<Object>(5);
+
+		public ContinueCombatTask(String[] performs, int waitPoint,
+				String heal, int safeHp, int fastKillHp, String fastPerform) {
+			super();
+			this.performs = performs;
+			this.waitPoint = waitPoint;
+			this.heal = heal;
+			this.safeHp = safeHp;
+			this.fastKillHp = fastKillHp;
+			this.fastPerform = fastPerform;
+			this.context.add(0);
+			this.context.add(false);
+			this.context.add(false);
+			this.context.add(null);
+			this.context.add(false);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				List<Object> ctx = (List<Object>) js(load("continue_fight.js"),
+						performs, waitPoint, heal, safeHp, fastKillHp,
+						fastPerform, context);
+				if (ctx != null) {
+					context = ctx;
+					if (context.get(3) != null) {
+						// System.out.println(context.get(3));
+						context.set(3, null);
+					}
+				} else if ((Boolean) context.get(4)) {
+					ProcessedCommand pc = processCmd("get corpse; get corpse 2;get corpse 3;get corpse 4");
+					if (pc.command != null) {
+						sendCmd(pc.command);
+					}
+					context.set(0, 0);
+					context.set(1, false);
+					context.set(2, false);
+					context.set(3, null);
+					context.set(4, false);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -937,6 +1051,15 @@ public class CommandLine {
 				keywords.remove(keyword);
 				System.out.println("ok!");
 			}
+		}
+	}
+
+	private class WebqqTask extends TimerTask {
+
+		@Override
+		public void run() {
+			System.out.println("send ping");
+			webqqQueue.offer("__ping__");
 		}
 	}
 

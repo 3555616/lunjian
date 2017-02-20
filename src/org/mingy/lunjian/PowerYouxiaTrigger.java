@@ -54,7 +54,8 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 	@Override
 	protected void process(CommandLine cmdline, String npc, String place) {
 		super.process(cmdline, npc, place);
-		if (!cmdline.isFighting()) {
+		if (!Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
+				&& !cmdline.isFighting()) {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));

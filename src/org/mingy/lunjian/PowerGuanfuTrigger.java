@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GuanfuTrigger implements Trigger {
+public class PowerGuanfuTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
 			.compile("官府：(.*)慌不择路，逃往了(.*)-(.*)");
@@ -56,7 +56,8 @@ public class GuanfuTrigger implements Trigger {
 		String npc = m.group(1);
 		String place = m.group(2);
 		String room = m.group(3);
-		cmdline.notify("[官府] " + npc + " at " + place + " - " + room, true);
+		cmdline.notify("[官府] " + npc + " at " + place + " - " + room, true,
+				true);
 		if (!cmdline.isFighting()) {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {

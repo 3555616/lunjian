@@ -19,7 +19,7 @@ public class BaozangTrigger implements Trigger {
 	}
 
 	protected void process(CommandLine cmdline) {
-		cmdline.notify("[宝藏图]", false);
+		cmdline.notify("[宝藏图]", false, false);
 		if (!cmdline.isFighting()) {
 			cmdline.executeCmd("items get_store /obj/quest/cangbaotu;tu");
 		}

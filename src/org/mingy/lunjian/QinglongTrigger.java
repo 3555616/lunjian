@@ -34,6 +34,6 @@ public class QinglongTrigger implements Trigger {
 	protected void process(CommandLine cmdline, String npc, String place,
 			String reward, boolean ignore) {
 		cmdline.notify("[青龙] " + npc + " at " + place + " rewards " + reward,
-				!ignore);
+				!ignore, true);
 	}
 }

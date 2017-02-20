@@ -23,7 +23,8 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 	@Override
 	protected void process(CommandLine cmdline, String good_npc, String bad_npc) {
 		super.process(cmdline, good_npc, bad_npc);
-		if (!cmdline.isFighting()) {
+		if (!Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
+				&& !cmdline.isFighting()) {
 			String path = PATHS.get(good_npc);
 			if (path == null) {
 				System.out.println("path not found: " + good_npc);

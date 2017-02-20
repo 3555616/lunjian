@@ -24,7 +24,9 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 	protected void process(CommandLine cmdline, String npc, String place,
 			String reward, boolean ignore) {
 		super.process(cmdline, npc, place, reward, ignore);
-		if (!ignore && !cmdline.isFighting()) {
+		if (!ignore
+				&& !Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
+				&& !cmdline.isFighting()) {
 			String path = PATHS.get(place);
 			if (path == null) {
 				System.out.println("path not found: " + place);
