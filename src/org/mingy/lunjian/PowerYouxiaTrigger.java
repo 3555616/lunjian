@@ -63,9 +63,12 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					System.out.println("goto map " + (i + 1));
 					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;fly "
 							+ (i + 1));
-					System.out.println("start auto youxia...");
-					YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
-					cmdline.executeTask(task, 100);
+					if (Boolean
+							.parseBoolean(cmdline.getProperty("youxia.auto"))) {
+						System.out.println("start auto youxia...");
+						YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
+						cmdline.executeTask(task, 100);
+					}
 					return;
 				}
 			}
@@ -247,8 +250,8 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 				System.out.println("ok!");
 				cmdline.stopTask(this);
 			} else if (state == 200) {
-				Map<String, Object> map = (Map<String, Object>) cmdline
-						.js(cmdline.load("get_room_msg.js"), true);
+				Map<String, Object> map = (Map<String, Object>) cmdline.js(
+						cmdline.load("get_room_msg.js"), true);
 				if (map != null) {
 					for (String key : map.keySet()) {
 						if (key.startsWith("npc")) {

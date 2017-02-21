@@ -36,6 +36,7 @@ public class Ping {
 		webdriver.manage().window().setSize(new Dimension(1052, 768));
 		webdriver.navigate().to("http://web2.qq.com");
 		webdriver.switchTo().defaultContent();
+		Thread.sleep(120000);
 		while (true) {
 			Thread.sleep(25000);
 			WebElement e = webdriver.findElement(By.id("chat_textarea"));

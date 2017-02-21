@@ -49,7 +49,7 @@ public class CommandLine {
 	private SnoopTask snoopTask;
 	private WebqqTask webqqTask;
 	private TimerTask task;
-	private BlockingQueue<String> webqqQueue;
+	private BlockingQueue<Message> webqqQueue;
 	private Thread webqqThread;
 	private TriggerManager triggerManager;
 	private Map<String, String> jslibs = new HashMap<String, String>();
@@ -206,26 +206,37 @@ public class CommandLine {
 			webdriver2.switchTo().defaultContent();
 			final String groupId = properties.getProperty("notify.group");
 			final String pingId = properties.getProperty("notify.ping");
+			final String tellId = properties.getProperty("notify.tell");
 			long interval = Long.parseLong(properties
 					.getProperty("notify.interval"));
-			if (groupId != null && groupId.length() > 0 && pingId != null
-					&& pingId.length() > 0) {
+			if (pingId != null && pingId.length() > 0) {
 				webqqTask = new WebqqTask();
-				timer.schedule(webqqTask, interval, interval);
+				timer.schedule(webqqTask, 120000, interval);
 			}
-			webqqQueue = new LinkedBlockingDeque<String>();
+			webqqQueue = new LinkedBlockingDeque<Message>();
 			webqqThread = new Thread() {
 				@Override
 				public void run() {
 					while (!isInterrupted()) {
 						try {
-							String message = webqqQueue.take();
-							if ("__ping__".equals(message)) {
+							Message message = webqqQueue.take();
+							if ("ping".equals(message.target)) {
 								switchWebqq(pingId);
-								sendWebqq("1");
-								switchWebqq(groupId);
+								Thread.sleep(200);
+								sendWebqq(message.text);
+								Thread.sleep(200);
+							} else if ("tell".equals(message.target)) {
+								if (tellId != null && tellId.length() > 0) {
+									switchWebqq(tellId);
+									Thread.sleep(200);
+									sendWebqq(message.text);
+									Thread.sleep(200);
+								}
 							} else {
-								sendWebqq(message);
+								switchWebqq(groupId);
+								Thread.sleep(200);
+								sendWebqq(message.text);
+								Thread.sleep(200);
 							}
 						} catch (NoSuchElementException e) {
 							e.printStackTrace();
@@ -390,9 +401,15 @@ public class CommandLine {
 		} else if (line.equals("#tt")) {
 			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往雪亭镇的路上。");
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
-			webqqQueue.offer(line.substring(6).trim());
+			Message message = new Message();
+			message.text = line.substring(6).trim();
+			message.target = "all";
+			webqqQueue.offer(message);
 		} else if (webqqQueue != null && line.equals("#ping")) {
-			webqqQueue.offer("__ping__");
+			Message message = new Message();
+			message.text = "1";
+			message.target = "ping";
+			webqqQueue.offer(message);
 		} else if (line.length() > 0 && line.charAt(0) == '#') {
 			int i = line.indexOf(' ');
 			if (i >= 0) {
@@ -672,7 +689,19 @@ public class CommandLine {
 			if (important) {
 				details += " @全体成员";
 			}
-			webqqQueue.offer(details);
+			Message msg = new Message();
+			msg.text = details;
+			msg.target = "all";
+			webqqQueue.offer(msg);
+		}
+	}
+
+	protected void tell(String message) {
+		if (webdriver2 != null) {
+			Message msg = new Message();
+			msg.text = message;
+			msg.target = "tell";
+			webqqQueue.offer(msg);
 		}
 	}
 
@@ -819,9 +848,10 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
-	protected void walk(String path, String commands) {
+	protected void walk(String[] steps, String stepCmds, String finishCmds,
+			int interval) {
 		System.out.println("starting walk...");
-		executeTask(new WalkTask(path, commands), 100);
+		executeTask(new WalkTask(steps, stepCmds, finishCmds), interval);
 	}
 
 	protected String load(String file) {
@@ -989,23 +1019,35 @@ public class CommandLine {
 		}
 	}
 
+	private static class Step {
+		String path;
+		boolean through;
+	}
+
 	private class WalkTask extends TimerTask {
 
-		private List<String> steps;
-		private String commands;
+		private List<Step> steps;
+		private String stepCmds;
+		private String finishCmds;
 		private int index = 0;
 
-		public WalkTask(String path, String commands) {
+		public WalkTask(String[] steps, String stepCmds, String finishCmds) {
 			super();
-			String[] arr = path.split(";");
-			this.steps = new ArrayList<String>(arr.length);
-			for (String step : arr) {
-				step = step.trim();
-				if (step.length() > 0) {
-					this.steps.add(step);
+			this.steps = new ArrayList<Step>();
+			for (String step : steps) {
+				String[] arr = step.split(";");
+				for (int i = 0; i < arr.length; i++) {
+					String path = arr[i].trim();
+					if (path.length() > 0) {
+						Step st = new Step();
+						st.path = path;
+						st.through = i < arr.length - 1;
+						this.steps.add(st);
+					}
 				}
 			}
-			this.commands = commands;
+			this.stepCmds = stepCmds;
+			this.finishCmds = finishCmds;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -1016,26 +1058,30 @@ public class CommandLine {
 						load("get_room_msg.js"), true);
 				if (map != null) {
 					if (index < steps.size()) {
-						String cmd = steps.get(index);
+						Step step = steps.get(index);
+						String cmd = step.path;
 						Object random = map.get("go_random");
 						if (random != null) {
 							ProcessedCommand pc = processCmd(cmd);
 							if (pc != null) {
 								cmd = pc.command;
 								if (cmd.startsWith("go ")) {
-									sendCmd(cmd + "." + random);
-								} else {
-									sendCmd(cmd);
+									cmd += "." + random;
 								}
 							}
-						} else {
-							sendCmd(cmd);
 						}
+						if (!step.through && stepCmds != null
+								&& stepCmds.length() > 0) {
+							cmd += ";" + stepCmds;
+						}
+						sendCmd(cmd);
 						index++;
 					} else {
 						System.out.println("ok!");
 						stopTask(this);
-						execute(commands);
+						if (finishCmds != null && finishCmds.length() > 0) {
+							execute(finishCmds);
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -1134,8 +1180,16 @@ public class CommandLine {
 
 		@Override
 		public void run() {
-			webqqQueue.offer("__ping__");
+			Message message = new Message();
+			message.text = "1";
+			message.target = "ping";
+			webqqQueue.offer(message);
 		}
+	}
+
+	private static class Message {
+		String text;
+		String target;
 	}
 
 	public static class ProcessedCommand {
