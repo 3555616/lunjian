@@ -42,6 +42,7 @@ public class Power extends CommandLine {
 	protected void registerTriggers() {
 		super.registerTriggers();
 		TriggerManager.register("youxia", PowerYouxiaTrigger.class);
+		TriggerManager.register("location", YouxiaLocationTrigger.class);
 		TriggerManager.register("qinglong", PowerQinglongTrigger.class);
 		TriggerManager.register("zhengxie", PowerZhengxieTrigger.class);
 		TriggerManager.register("baozang", PowerBaozangTrigger.class);

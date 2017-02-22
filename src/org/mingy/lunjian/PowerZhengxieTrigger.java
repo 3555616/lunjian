@@ -31,7 +31,8 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 			} else {
 				System.out.println("goto " + path);
 				cmdline.executeCmd("halt");
-				cmdline.walk(path, "watch " + bad_npc + " -1");
+				cmdline.walk(new String[] { path }, null, "watch " + bad_npc
+						+ " -1", 400);
 			}
 		}
 	}

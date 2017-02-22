@@ -33,7 +33,8 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 			} else {
 				System.out.println("goto " + path);
 				cmdline.executeCmd("halt;prepare_kill");
-				cmdline.walk(path, "watch " + npc + " -1");
+				cmdline.walk(new String[] { path }, null, "watch " + npc
+						+ " -1", 100);
 			}
 		}
 	}
