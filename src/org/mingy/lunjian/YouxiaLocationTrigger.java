@@ -139,6 +139,30 @@ public class YouxiaLocationTrigger extends YouxiaTrigger {
 								cmd = pc.command;
 								if (cmd.startsWith("go ")) {
 									cmdline.sendCmd(cmd + "." + random);
+								} else if (cmd.startsWith("wield ")
+										|| cmd.startsWith("unwield ")) {
+									cmdline.sendCmd(cmd);
+									boolean ok = false;
+									while (++step < rooms.size()) {
+										cmd = rooms.get(step);
+										pc = cmdline.processCmd(cmd);
+										if (pc != null) {
+											cmd = pc.command;
+											cmdline.sendCmd(cmd);
+											if (!cmd.startsWith("wield ")
+													&& !cmd.startsWith("unwield ")) {
+												ok = true;
+												break;
+											}
+										}
+									}
+									if (!ok) {
+										System.out
+												.println("target not found :(");
+										cmdline.stopTask(this);
+										cmdline.sendCmd("home");
+										return;
+									}
 								} else {
 									cmdline.sendCmd(cmd);
 								}

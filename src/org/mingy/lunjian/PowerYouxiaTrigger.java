@@ -66,7 +66,13 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					if (Boolean
 							.parseBoolean(cmdline.getProperty("youxia.auto"))) {
 						System.out.println("start auto youxia...");
-						YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc);
+						YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc,
+								0, 100);
+						cmdline.executeTask(task, 100);
+					} else {
+						System.out.println("start manual youxia...");
+						YouxiaTask task = new YouxiaTask(cmdline, i + 1, npc,
+								9, 500);
 						cmdline.executeTask(task, 100);
 					}
 					return;
@@ -88,11 +94,13 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 		private List<String> rooms;
 		private int step = 0;
 
-		public YouxiaTask(CommandLine cmdline, int mapId, String name) {
-			super(100);
+		public YouxiaTask(CommandLine cmdline, int mapId, String name,
+				int state, int tick) {
+			super(tick);
 			this.cmdline = cmdline;
 			this.mapId = mapId;
 			this.name = name;
+			this.state = state;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -283,6 +291,29 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 								cmd = pc.command;
 								if (cmd.startsWith("go ")) {
 									cmdline.sendCmd(cmd + "." + random);
+								} else if (cmd.startsWith("wield ")
+										|| cmd.startsWith("unwield ")) {
+									cmdline.sendCmd(cmd);
+									boolean ok = false;
+									while (++step < rooms.size()) {
+										cmd = rooms.get(step);
+										pc = cmdline.processCmd(cmd);
+										if (pc != null) {
+											cmd = pc.command;
+											cmdline.sendCmd(cmd);
+											if (!cmd.startsWith("wield ")
+													&& !cmd.startsWith("unwield ")) {
+												ok = true;
+												break;
+											}
+										}
+									}
+									if (!ok) {
+										System.out
+												.println("target not found :(");
+										cmdline.stopTask(this);
+										return;
+									}
 								} else {
 									cmdline.sendCmd(cmd);
 								}
