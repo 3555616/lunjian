@@ -295,7 +295,8 @@ public class CommandLine {
 							fast), 500);
 				}
 			}
-		} else if (line.equals("#combat continue")) {
+		} else if (line.equals("#combat continue")
+				|| line.equals("#combat continue no_loot")) {
 			String[] settings = properties.getProperty("continue.fight", "")
 					.split(",");
 			if (settings.length < 1) {
@@ -317,7 +318,7 @@ public class CommandLine {
 				}
 				System.out.println("starting continue combat...");
 				executeTask(new ContinueCombatTask(pfms, wait, heal, safe,
-						fast, fastpfm), 500);
+						fast, fastpfm, !line.endsWith("no_loot")), 500);
 			}
 		} else if (line.startsWith("#findway ")) {
 			line = line.substring(9).trim();
@@ -971,10 +972,12 @@ public class CommandLine {
 		private int safeHp;
 		private int fastKillHp;
 		private String fastPerform;
+		private boolean loot;
 		private List<Object> context = new ArrayList<Object>(5);
 
 		public ContinueCombatTask(String[] performs, int waitPoint,
-				String heal, int safeHp, int fastKillHp, String fastPerform) {
+				String heal, int safeHp, int fastKillHp, String fastPerform,
+				boolean loot) {
 			super();
 			this.performs = performs;
 			this.waitPoint = waitPoint;
@@ -982,6 +985,7 @@ public class CommandLine {
 			this.safeHp = safeHp;
 			this.fastKillHp = fastKillHp;
 			this.fastPerform = fastPerform;
+			this.loot = loot;
 			this.context.add(0);
 			this.context.add(false);
 			this.context.add(false);
@@ -1003,9 +1007,11 @@ public class CommandLine {
 						context.set(3, null);
 					}
 				} else if ((Boolean) context.get(4)) {
-					ProcessedCommand pc = processCmd("get corpse; get corpse 2;get corpse 3;get corpse 4");
-					if (pc.command != null) {
-						sendCmd(pc.command);
+					if (loot) {
+						ProcessedCommand pc = processCmd("get corpse; get corpse 2;get corpse 3;get corpse 4");
+						if (pc.command != null) {
+							sendCmd(pc.command);
+						}
 					}
 					context.set(0, 0);
 					context.set(1, false);

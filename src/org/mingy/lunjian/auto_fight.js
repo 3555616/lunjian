@@ -67,7 +67,7 @@ if (ctx[2]) {
 	}
 }
 var getTargetHp = function() {
-	var hp = 0, $t = pos.charAt(0) == '1' ? $('#vs_hp21,#vs_hp22,vs_hp23，vs_hp24') : $('#vs_hp11,#vs_hp12,vs_hp13，vs_hp14');
+	var hp = 0, $t = pos.charAt(0) == '1' ? $('#vs_hp21,#vs_hp22,vs_hp23,vs_hp24') : $('#vs_hp11,#vs_hp12,vs_hp13,vs_hp14');
 	$t.each(function () {
 		hp += parseInt($('> i > span', this).text());
 	});
