@@ -143,15 +143,20 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 							.get("cmds");
 					for (Map<String, String> cmd : cmds) {
 						if ("跟班".equals(cmd.get("name"))) {
-							cmdline.sendCmd(cmd.get("action"));
 							String fear = cmdline.getProperty("youxia.fear");
-							if (fear != null) {
+							if (fear != null
+									|| cmdline
+											.getProperty("youxia.firstkill.exclude") != null) {
+								cmdline.sendCmd(cmd.get("action"));
 								fears = Arrays.asList(fear.split(","));
 								state = 2;
 							} else if (Boolean.parseBoolean(cmdline
 									.getProperty("youxia.firstkill"))) {
-								state = 6;
+								cmdline.executeCmd("prepare_kill");
+								cmdline.sendCmd("kill " + id);
+								state = 7;
 							} else {
+								cmdline.sendCmd(cmd.get("action"));
 								state = 5;
 							}
 							break;

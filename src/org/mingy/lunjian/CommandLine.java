@@ -1008,6 +1008,7 @@ public class CommandLine {
 					}
 				} else if ((Boolean) context.get(4)) {
 					if (loot) {
+						Thread.sleep(200);
 						ProcessedCommand pc = processCmd("get corpse;get corpse 2;get corpse 3;get corpse 4");
 						if (pc.command != null) {
 							sendCmd(pc.command);
