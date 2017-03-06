@@ -73,9 +73,17 @@ var getTargetHp = function() {
 	});
 	return hp;
 };
+var pfms_point = pfms.length * 20;
+$(pfms).each(function() {
+	if (this == '覆雨剑法' || this == '织冰剑法' || this == '翻云刀法' || this == '飞刀绝技'
+		|| this == '九天龙吟剑法' || this == '排云掌法' || this == '孔雀翎' || this == '如来神掌'
+		|| this == '雪饮狂刀') {
+		pfms_point += 10;
+	}
+});
 if (!ctx[1] && !ctx[2]) {
 	if (getTargetHp() < fast) {
-		if (point < pfms.length * 20) {
+		if (point < pfms_point) {
 			return ctx;
 		}
 	} else {
