@@ -35,6 +35,7 @@ public class Power extends CommandLine {
 		works.add(new Work("work click zhidaodiying", 301000));
 		works.add(new Work("work click dantiaoqunmen", 301000));
 		works.add(new Work("work click shenshanxiulian", 301000));
+		works.add(new Work("work click jianmenlipai", 301000));
 		works.add(new Work("public_op3", 301000));
 	}
 

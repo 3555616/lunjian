@@ -61,7 +61,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					System.out.println("goto map " + (i + 1));
-					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;fly "
+					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;prepare_kill;fly "
 							+ (i + 1));
 					if (Boolean
 							.parseBoolean(cmdline.getProperty("youxia.auto"))) {
@@ -153,7 +153,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 								state = 2;
 							} else if (Boolean.parseBoolean(cmdline
 									.getProperty("youxia.firstkill"))) {
-								cmdline.executeCmd("prepare_kill");
+								// cmdline.executeCmd("prepare_kill");
 								cmdline.sendCmd("kill " + id);
 								state = 7;
 							} else {
@@ -236,7 +236,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 					for (Map<String, String> cmd : cmds) {
 						if ("取消跟班".equals(cmd.get("name"))) {
 							cmdline.sendCmd(cmd.get("action"));
-							cmdline.executeCmd("prepare_kill");
+							// cmdline.executeCmd("prepare_kill");
 							cmdline.sendCmd("kill " + id);
 							state = 7;
 							break;
@@ -278,7 +278,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 								cmdline.sendCmd("look_npc " + id);
 								if (Boolean.parseBoolean(cmdline
 										.getProperty("youxia.manual"))) {
-									cmdline.executeCmd("prepare_kill");
+									// cmdline.executeCmd("prepare_kill");
 									state = 9;
 								} else {
 									state = 1;
