@@ -401,7 +401,7 @@ public class CommandLine {
 		} else if (line.startsWith("#sh ")) {
 			triggerManager.process(this, line.substring(4).trim());
 		} else if (line.equals("#tt")) {
-			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往雪亭镇的路上。");
+			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往唐门的路上。");
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
 			Message message = new Message();
 			message.text = line.substring(6).trim();
@@ -733,7 +733,9 @@ public class CommandLine {
 		for (String[] target : targets) {
 			boolean match = false;
 			if (name != null) {
-				if ("corpse".equals(name)) {
+				if (name.equals(target[0])) {
+					match = true;
+				} else if ("corpse".equals(name)) {
 					if (target[0].startsWith("corpse")) {
 						match = true;
 					}
@@ -755,7 +757,9 @@ public class CommandLine {
 		for (String[] target : getTargets(type)) {
 			boolean match = false;
 			if (name != null) {
-				if ("corpse".equals(name)) {
+				if (name.equals(target[0])) {
+					match = true;
+				} else if ("corpse".equals(name)) {
 					if (target[0].startsWith("corpse")) {
 						match = true;
 					}

@@ -140,7 +140,8 @@ public class YouxiaLocationTrigger extends YouxiaTrigger {
 								if (cmd.startsWith("go ")) {
 									cmdline.sendCmd(cmd + "." + random);
 								} else if (cmd.startsWith("wield ")
-										|| cmd.startsWith("unwield ")) {
+										|| cmd.startsWith("unwield ")
+										|| cmd.startsWith("ask ")) {
 									cmdline.sendCmd(cmd);
 									boolean ok = false;
 									while (++step < rooms.size()) {
@@ -150,7 +151,8 @@ public class YouxiaLocationTrigger extends YouxiaTrigger {
 											cmd = pc.command;
 											cmdline.sendCmd(cmd);
 											if (!cmd.startsWith("wield ")
-													&& !cmd.startsWith("unwield ")) {
+													&& !cmd.startsWith("unwield ")
+													&& !cmd.startsWith("ask ")) {
 												ok = true;
 												break;
 											}
