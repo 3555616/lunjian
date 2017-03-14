@@ -113,7 +113,7 @@ public class YouxiaLocationTrigger extends YouxiaTrigger {
 				}
 			} else if (state == 1) {
 				Map<String, Object> map = (Map<String, Object>) cmdline.js(
-						cmdline.load("get_room_msg.js"), true);
+						cmdline.load("get_msgs.js"), "msg_room", true);
 				if (map != null) {
 					for (String key : map.keySet()) {
 						if (key.startsWith("npc")) {

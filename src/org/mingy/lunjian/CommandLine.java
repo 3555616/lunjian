@@ -49,6 +49,7 @@ public class CommandLine {
 	protected Timer timer;
 	private SnoopTask snoopTask;
 	private WebqqTask webqqTask;
+	private MonitorTask monitorTask;
 	private TimerTask task;
 	private BlockingQueue<Message> webqqQueue;
 	private Thread webqqThread;
@@ -248,6 +249,10 @@ public class CommandLine {
 				}
 			};
 			webqqThread.start();
+		}
+		if (Boolean.parseBoolean(properties.getProperty("monitor.ranks"))) {
+			monitorTask = new MonitorTask();
+			timer.schedule(monitorTask, 30000, 180000);
 		}
 	}
 
@@ -566,7 +571,7 @@ public class CommandLine {
 				|| "northeast".equals(cmd[0]) || "northwest".equals(cmd[0])
 				|| "up".equals(cmd[0]) || "down".equals(cmd[0])) {
 			Map<String, Object> map = (Map<String, Object>) js(
-					load("get_room_msg.js"), false);
+					load("get_msgs.js"), "msg_room", false);
 			Object random = map != null ? map.get("go_random") : null;
 			if (random != null) {
 				cmd[1] = cmd[0] + "." + random;
@@ -1067,7 +1072,7 @@ public class CommandLine {
 		public void run() {
 			try {
 				Map<String, Object> map = (Map<String, Object>) js(
-						load("get_room_msg.js"), true);
+						load("get_msgs.js"), "msg_room", true);
 				if (map != null) {
 					if (index < steps.size()) {
 						Step step = steps.get(index);
@@ -1185,6 +1190,60 @@ public class CommandLine {
 				keywords.remove(keyword);
 				System.out.println("ok!");
 			}
+		}
+	}
+
+	private class MonitorTask extends TimerTask {
+
+		private String[] ranks;
+
+		@Override
+		public void run() {
+			String[] current = getCurrentRanks();
+			if (current != null) {
+				if (ranks == null) {
+					ranks = current;
+				} else {
+					for (int i = 0; i < ranks.length; i++) {
+						if (!ranks[i].equals(current[i])) {
+							ranks = current;
+							CommandLine.this.notify("ranks refreshed", false,
+									true);
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private String[] getCurrentRanks() {
+			sendCmd("sort");
+			long time = System.currentTimeMillis();
+			while (System.currentTimeMillis() - time < 1000) {
+				Map<String, Object> map = (Map<String, Object>) js(
+						load("get_msgs.js"), "msg_sorts", true);
+				if (map != null) {
+					sendCmd("prev");
+					String[] ranks = new String[50];
+					for (int i = 0; i < ranks.length; i++) {
+						Object o = map.get("info" + (i + 1));
+						if (o != null) {
+							String[] values = o.toString().split(",");
+							ranks[i] = values[1];
+						} else {
+							ranks[i] = "";
+						}
+					}
+					return ranks;
+				}
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			return null;
 		}
 	}
 
