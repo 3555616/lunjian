@@ -260,6 +260,7 @@ public class CommandLine {
 		TriggerManager.register("youxia", YouxiaTrigger.class);
 		TriggerManager.register("qinglong", QinglongTrigger.class);
 		TriggerManager.register("zhengxie", ZhengxieTrigger.class);
+		TriggerManager.register("taofan", TaofanTrigger.class);
 		TriggerManager.register("baozang", BaozangTrigger.class);
 	}
 
