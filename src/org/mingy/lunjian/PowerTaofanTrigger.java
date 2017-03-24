@@ -49,20 +49,37 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 	protected void process(CommandLine cmdline, String npc, String map,
 			String place) {
 		super.process(cmdline, npc, map, place);
-		if (!Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
+		String taofan = cmdline.getProperty("taofan.target");
+		if (taofan == null) {
+			taofan = "岳老三";
+		} else if (taofan.equals("1")) {
+			taofan = "段老大";
+		} else if (taofan.equals("2")) {
+			taofan = "二娘";
+		} else if (taofan.equals("3")) {
+			taofan = "岳老三";
+		} else if (taofan.equals("4")) {
+			taofan = "云老四";
+		}
+		if (npc.equals(taofan)
+				&& !Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
 				&& !cmdline.isFighting()) {
-			Map<String, Object> msgs = (Map<String, Object>) cmdline.js(
-					cmdline.load("get_msgs.js"), "msg_room", true);
-			if (msgs != null && "武林广场10".equals(msgs.get("short"))) {
-				for (int i = 0; i < MAPS.size(); i++) {
-					if (place.startsWith(MAPS.get(i))) {
-						System.out.println("goto map " + (i + 1));
-						cmdline.executeCmd("halt;heal;heal;heal;heal;heal;prepare_kill;fly "
-								+ (i + 1));
-						return;
-					}
-				}
+			int id = MAPS.indexOf(map) + 1;
+			if (id == 0) {
 				System.out.println("map not found: " + place);
+				return;
+			}
+			System.out.println("goto map " + id);
+			String cmds = "halt;heal;heal;heal;heal;heal;prepare_kill;fly "
+					+ id;
+			Map<String, Object> msgs = (Map<String, Object>) cmdline.js(
+					cmdline.load("get_msgs.js"), "msg_room", false);
+			if (msgs != null && "武林广场10".equals(msgs.get("short"))) {
+				cmdline.executeCmd(cmds);
+			} else {
+				cmdline.walk(
+						new String[] { "fly 1;e;n;n;n;n;w;event_1_36344468;e;e;e;e;e;e;e;e;e" },
+						"武林广场10", null, cmds, 100);
 			}
 		}
 	}

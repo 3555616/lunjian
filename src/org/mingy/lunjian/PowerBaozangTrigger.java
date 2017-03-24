@@ -27,8 +27,8 @@ public class PowerBaozangTrigger extends BaozangTrigger {
 				reader.close();
 				System.out.println("auto search map 1");
 				cmdline.executeCmd("halt;fly 1");
-				cmdline.walk(steps.toArray(new String[steps.size()]), "dig go",
-						null, 100);
+				cmdline.walk(steps.toArray(new String[steps.size()]), null,
+						"dig go", null, 100);
 			} catch (Exception e) {
 				System.out.println("map not found: 1");
 			}

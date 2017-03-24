@@ -303,29 +303,7 @@ public class CommandLine {
 			}
 		} else if (line.equals("#combat continue")
 				|| line.equals("#combat continue no_loot")) {
-			String[] settings = properties.getProperty("continue.fight", "")
-					.split(",");
-			if (settings.length < 1) {
-				System.out.println("property continue.fight not set");
-			} else {
-				String[] pfms = settings[0].split("\\|");
-				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
-						.parseInt(settings[1]) : 0;
-				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
-						: null;
-				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
-						.parseInt(settings[3]) : 0;
-				int fast = settings.length > 4 && settings[4].length() > 0 ? Integer
-						.parseInt(settings[4]) : 0;
-				String fastpfm = settings.length > 5
-						&& settings[5].length() > 0 ? settings[5] : null;
-				if (wait < pfms.length * 20) {
-					wait = pfms.length * 20;
-				}
-				System.out.println("starting continue combat...");
-				executeTask(new ContinueCombatTask(pfms, wait, heal, safe,
-						fast, fastpfm, !line.endsWith("no_loot")), 500);
-			}
+			fastCombat(!line.endsWith("no_loot"));
 		} else if (line.startsWith("#findway ")) {
 			line = line.substring(9).trim();
 			if (line.length() > 0) {
@@ -406,8 +384,6 @@ public class CommandLine {
 			triggerManager.process(this, line.substring(6).trim());
 		} else if (line.startsWith("#sh ")) {
 			triggerManager.process(this, line.substring(4).trim());
-		} else if (line.equals("#tt")) {
-			triggerManager.process(this, "游侠会：听说花不为出来闯荡江湖了，目前正在前往唐门的路上。");
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
 			Message message = new Message();
 			message.text = line.substring(6).trim();
@@ -802,7 +778,7 @@ public class CommandLine {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<String[]> getTargets(String... types) {
+	protected List<String[]> getTargets(String... types) {
 		List<List<String>> targets = (List<List<String>>) js(
 				load("get_targets.js"), new Object[] { types });
 		List<String[]> result = new ArrayList<String[]>(targets.size());
@@ -817,11 +793,13 @@ public class CommandLine {
 	}
 
 	protected static String removeSGR(String text) {
-		for (int i = text.indexOf("\u001b["); i >= 0; i = text
-				.indexOf("\u001b[")) {
-			int j = text.indexOf('m', i + 2);
-			if (j >= 0) {
-				text = text.substring(0, i) + text.substring(j + 1);
+		if (text != null) {
+			for (int i = text.indexOf("\u001b["); i >= 0; i = text
+					.indexOf("\u001b[")) {
+				int j = text.indexOf('m', i + 2);
+				if (j >= 0) {
+					text = text.substring(0, i) + text.substring(j + 1);
+				}
 			}
 		}
 		return text;
@@ -860,10 +838,45 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
-	protected void walk(String[] steps, String stepCmds, String finishCmds,
-			int interval) {
+	protected void fastCombat(boolean loot) {
+		String[] settings = properties.getProperty("continue.fight", "").split(
+				",");
+		if (settings.length < 1) {
+			System.out
+					.println("property continue.fight not set, open auto fight");
+			sendCmd("auto_fight 1");
+		} else {
+			String[] pfms = settings[0].split("\\|");
+			int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
+					.parseInt(settings[1]) : 0;
+			String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
+					: null;
+			int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
+					.parseInt(settings[3]) : 0;
+			int fast = settings.length > 4 && settings[4].length() > 0 ? Integer
+					.parseInt(settings[4]) : 0;
+			String fastpfm = settings.length > 5 && settings[5].length() > 0 ? settings[5]
+					: null;
+			if (wait < pfms.length * 20) {
+				wait = pfms.length * 20;
+			}
+			System.out.println("starting continue combat...");
+			executeTask(new ContinueCombatTask(pfms, wait, heal, safe, fast,
+					fastpfm, loot), 500);
+		}
+	}
+
+	protected void walk(String[] steps, String dest, String stepCmds,
+			String finishCmds, int interval) {
 		System.out.println("starting walk...");
-		executeTask(new WalkTask(steps, stepCmds, finishCmds), interval);
+		executeTask(new WalkTask(steps, dest, stepCmds, finishCmds), interval);
+	}
+
+	protected void walk(String[] steps, String dest, Runnable stepCallback,
+			Runnable finishCallback, int interval) {
+		System.out.println("starting walk...");
+		executeTask(new WalkTask(steps, dest, stepCallback, finishCallback),
+				interval);
 	}
 
 	protected String load(String file) {
@@ -1045,13 +1058,33 @@ public class CommandLine {
 	private class WalkTask extends TimerTask {
 
 		private List<Step> steps;
+		private String dest;
 		private String stepCmds;
 		private String finishCmds;
+		private Runnable stepCallback;
+		private Runnable finishCallback;
 		private int index = 0;
 
-		public WalkTask(String[] steps, String stepCmds, String finishCmds) {
+		public WalkTask(String[] steps, String dest, String stepCmds,
+				String finishCmds) {
 			super();
-			this.steps = new ArrayList<Step>();
+			this.steps = parseSteps(steps);
+			this.dest = dest;
+			this.stepCmds = stepCmds;
+			this.finishCmds = finishCmds;
+		}
+
+		public WalkTask(String[] steps, String dest, Runnable stepCallback,
+				Runnable finishCallback) {
+			super();
+			this.steps = parseSteps(steps);
+			this.dest = dest;
+			this.stepCallback = stepCallback;
+			this.finishCallback = finishCallback;
+		}
+
+		private List<Step> parseSteps(String[] steps) {
+			List<Step> list = new ArrayList<Step>();
 			for (String step : steps) {
 				String[] arr = step.split(";");
 				for (int i = 0; i < arr.length; i++) {
@@ -1060,12 +1093,11 @@ public class CommandLine {
 						Step st = new Step();
 						st.path = path;
 						st.through = i < arr.length - 1;
-						this.steps.add(st);
+						list.add(st);
 					}
 				}
 			}
-			this.stepCmds = stepCmds;
-			this.finishCmds = finishCmds;
+			return list;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -1075,7 +1107,9 @@ public class CommandLine {
 				Map<String, Object> map = (Map<String, Object>) js(
 						load("get_msgs.js"), "msg_room", true);
 				if (map != null) {
-					if (index < steps.size()) {
+					if (index < steps.size()
+							&& (dest == null || !dest
+									.equals(removeSGR((String) map.get("short"))))) {
 						Step step = steps.get(index);
 						String cmd = step.path;
 						Object random = map.get("go_random");
@@ -1093,12 +1127,18 @@ public class CommandLine {
 							cmd += ";" + stepCmds;
 						}
 						sendCmd(cmd);
+						if (!step.through && stepCallback != null) {
+							stepCallback.run();
+						}
 						index++;
 					} else {
 						System.out.println("ok!");
 						stopTask(this);
 						if (finishCmds != null && finishCmds.length() > 0) {
 							execute(finishCmds);
+						}
+						if (finishCallback != null) {
+							finishCallback.run();
 						}
 					}
 				}
