@@ -128,11 +128,11 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				} else {
 					cmdline.sendCmd("kill " + target[2] + ";kill " + target[0]);
 				}
-				setTick(500);
+				setTick(5000);
 				state = 2;
 			} else if (state == 2) {
 				if (cmdline.getCombatPosition() != null) {
-					cmdline.fastCombat(false);
+					cmdline.fastCombat(false, true);
 				} else {
 					System.out.println("failed to kill");
 					cmdline.stopTask(this);
@@ -158,7 +158,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 							cmdline.load("get_msgs.js"), "msg_vs_info", false);
 					long hp = Long
 							.parseLong(String.valueOf(map.get("vs"
-									+ pos.substring(0, 1) + "_kee"
+									+ pos.substring(0, 1) + "_max_kee"
 									+ pos.substring(1))));
 					if (hp > 750000) {
 						state = 1;

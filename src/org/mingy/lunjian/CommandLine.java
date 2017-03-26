@@ -303,7 +303,7 @@ public class CommandLine {
 			}
 		} else if (line.equals("#combat continue")
 				|| line.equals("#combat continue no_loot")) {
-			fastCombat(!line.endsWith("no_loot"));
+			fastCombat(!line.endsWith("no_loot"), false);
 		} else if (line.startsWith("#findway ")) {
 			line = line.substring(9).trim();
 			if (line.length() > 0) {
@@ -838,7 +838,7 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
-	protected void fastCombat(boolean loot) {
+	protected void fastCombat(boolean loot, boolean once) {
 		String[] settings = properties.getProperty("continue.fight", "").split(
 				",");
 		if (settings.length < 1) {
@@ -862,7 +862,7 @@ public class CommandLine {
 			}
 			System.out.println("starting continue combat...");
 			executeTask(new ContinueCombatTask(pfms, wait, heal, safe, fast,
-					fastpfm, loot), 500);
+					fastpfm, loot, once), 500);
 		}
 	}
 
@@ -996,11 +996,12 @@ public class CommandLine {
 		private int fastKillHp;
 		private String fastPerform;
 		private boolean loot;
+		private boolean once;
 		private List<Object> context = new ArrayList<Object>(5);
 
 		public ContinueCombatTask(String[] performs, int waitPoint,
 				String heal, int safeHp, int fastKillHp, String fastPerform,
-				boolean loot) {
+				boolean loot, boolean once) {
 			super();
 			this.performs = performs;
 			this.waitPoint = waitPoint;
@@ -1009,6 +1010,7 @@ public class CommandLine {
 			this.fastKillHp = fastKillHp;
 			this.fastPerform = fastPerform;
 			this.loot = loot;
+			this.once = once;
 			this.context.add(0);
 			this.context.add(false);
 			this.context.add(false);
@@ -1037,11 +1039,16 @@ public class CommandLine {
 							sendCmd(pc.command);
 						}
 					}
-					context.set(0, 0);
-					context.set(1, false);
-					context.set(2, false);
-					context.set(3, null);
-					context.set(4, false);
+					if (!once) {
+						context.set(0, 0);
+						context.set(1, false);
+						context.set(2, false);
+						context.set(3, null);
+						context.set(4, false);
+					} else {
+						System.out.println("ok!");
+						stopTask(this);
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
