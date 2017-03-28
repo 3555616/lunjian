@@ -23,6 +23,8 @@ import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -39,6 +41,7 @@ public class CommandLine {
 
 	private static final DateFormat FORMAT_TIME = new SimpleDateFormat("HH:mm");
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
+	private static final Map<String, Integer> SECRET_ACCEPT_REWARDS = new HashMap<String, Integer>();
 
 	protected WebDriver webdriver;
 	private WebDriver webdriver2;
@@ -126,6 +129,13 @@ public class CommandLine {
 		MAP_IDS.put("mr", "32");
 		MAP_IDS.put("dali", "33");
 		MAP_IDS.put("dl", "33");
+		MAP_IDS.put("duanjian", "34");
+		MAP_IDS.put("dj", "34");
+		SECRET_ACCEPT_REWARDS.put("daojiangu", 1535);
+		SECRET_ACCEPT_REWARDS.put("taohuadu", 1785);
+		SECRET_ACCEPT_REWARDS.put("lvzhou", 2035);
+		SECRET_ACCEPT_REWARDS.put("luanshishan", 2350);
+		SECRET_ACCEPT_REWARDS.put("fomenshiku", 2425);
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -275,32 +285,10 @@ public class CommandLine {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	protected void execute(String line) throws IOException {
 		if (line.equals("#combat")) {
-			String[] settings = properties.getProperty("auto.fight", "").split(
-					",");
-			if (settings.length < 1) {
-				System.out.println("property auto.fight not set");
-			} else {
-				String[] pfms = settings[0].split("\\|");
-				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
-						.parseInt(settings[1]) : 0;
-				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
-						: null;
-				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
-						.parseInt(settings[3]) : 0;
-				int fast = settings.length > 4 && settings[4].length() > 0 ? Integer
-						.parseInt(settings[4]) : 0;
-				if (wait < pfms.length * 20) {
-					wait = pfms.length * 20;
-				}
-				String pos = getCombatPosition();
-				if (pos != null) {
-					System.out.println("starting auto combat...");
-					executeTask(new CombatTask(pos, pfms, wait, heal, safe,
-							fast), 500);
-				}
-			}
+			autoCombat();
 		} else if (line.equals("#combat continue")
 				|| line.equals("#combat continue no_loot")) {
 			fastCombat(!line.endsWith("no_loot"), false);
@@ -384,6 +372,36 @@ public class CommandLine {
 			triggerManager.process(this, line.substring(6).trim());
 		} else if (line.startsWith("#sh ")) {
 			triggerManager.process(this, line.substring(4).trim());
+		} else if (line.equals("#secret") || line.startsWith("#secret ")) {
+			Map<String, Object> map = (Map<String, Object>) js(
+					load("get_msgs.js"), "msg_room", false);
+			if (map != null) {
+				Integer accept;
+				if (line.equals("#secret")) {
+					accept = SECRET_ACCEPT_REWARDS.get(map.get("map_id"));
+				} else {
+					try {
+						accept = Integer.parseInt(line.substring(8));
+					} catch (NumberFormatException e) {
+						accept = null;
+					}
+				}
+				if (accept != null) {
+					for (int i = 1;; i++) {
+						String name = (String) map.get("cmd" + i + "_name");
+						if (name == null) {
+							break;
+						}
+						if ("扫荡".equals(removeSGR(name))) {
+							String cmd = "cancel_prompt;"
+									+ (String) map.get("cmd" + i);
+							System.out.println("starting clean out secret...");
+							executeTask(new SaodangTask(cmd, accept), 100);
+							break;
+						}
+					}
+				}
+			}
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
 			Message message = new Message();
 			message.text = line.substring(6).trim();
@@ -838,6 +856,32 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
+	protected void autoCombat() {
+		String[] settings = properties.getProperty("auto.fight", "").split(",");
+		if (settings.length < 1) {
+			System.out.println("property auto.fight not set");
+		} else {
+			String[] pfms = settings[0].split("\\|");
+			int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
+					.parseInt(settings[1]) : 0;
+			String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
+					: null;
+			int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
+					.parseInt(settings[3]) : 0;
+			int fast = settings.length > 4 && settings[4].length() > 0 ? Integer
+					.parseInt(settings[4]) : 0;
+			if (wait < pfms.length * 20) {
+				wait = pfms.length * 20;
+			}
+			String pos = getCombatPosition();
+			if (pos != null) {
+				System.out.println("starting auto combat...");
+				executeTask(new CombatTask(pos, pfms, wait, heal, safe, fast),
+						500);
+			}
+		}
+	}
+
 	protected void fastCombat(boolean loot, boolean once) {
 		String[] settings = properties.getProperty("continue.fight", "").split(
 				",");
@@ -1195,6 +1239,54 @@ public class CommandLine {
 					} else {
 						System.out.println("ok!");
 						stopTask(this);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+	}
+
+	private class SaodangTask extends TimerTask {
+
+		private String command;
+		private int accept;
+		private int state = 0;
+
+		public SaodangTask(String command, int accept) {
+			super();
+			this.command = command;
+			this.accept = accept;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				if (state == 0) {
+					sendCmd(command);
+					state = 1;
+				} else if (state == 1) {
+					Map<String, Object> map = (Map<String, Object>) js(
+							load("get_msgs.js"), "msg_prompt", true);
+					if (map != null) {
+						String msg = (String) map.get("msg");
+						Matcher m = Pattern
+								.compile(
+										"您已经通关过此副本，可以扫荡完成，扫荡完成的奖励为：玄铁令x(\\d+)、朱果x(\\d+)。")
+								.matcher(msg);
+						if (m.find()) {
+							System.out.println(m.group(2));
+							if (Integer.parseInt(m.group(2)) > accept) {
+								System.out.println("ok!");
+								stopTask(this);
+							}
+						} else {
+							System.out.println("prompt cannot match.");
+							stopTask(this);
+						}
+						state = 0;
 					}
 				}
 			} catch (Exception e) {

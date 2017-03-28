@@ -1,4 +1,4 @@
-if (!window.g_obj_map || !window.g_obj_map.get('msg_attrs')) {
+if (!window.g_obj_map || !window.g_obj_map.get('msg_attrs') || !window.is_fighting) {
 	return null;
 }
 var name, pos;
