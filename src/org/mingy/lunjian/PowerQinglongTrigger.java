@@ -1,6 +1,7 @@
 package org.mingy.lunjian;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,11 +45,13 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 			if (path == null) {
 				System.out.println("path not found: " + place);
 			} else {
+				cmdline.closeTrigger("zhengxie");
 				final String good_npc = GOOD_NPCS.get(place);
 				System.out.println("goto " + path);
 				cmdline.executeCmd("halt;prepare_kill");
 				Runnable callback = null;
-				if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))) {
+				if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))
+						&& Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 6) {
 					boolean pass = false;
 					String items = cmdline.getProperty("qinglong.auto.items");
 					if (items != null) {
@@ -156,10 +159,9 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				if (pos != null) {
 					Map<String, Object> map = (Map<String, Object>) cmdline.js(
 							cmdline.load("get_msgs.js"), "msg_vs_info", false);
-					long hp = Long
-							.parseLong(String.valueOf(map.get("vs"
-									+ pos.substring(0, 1) + "_max_kee"
-									+ pos.substring(1))));
+					long hp = Long.parseLong(String.valueOf(map.get("vs"
+							+ pos.substring(0, 1) + "_max_kee"
+							+ pos.substring(1))));
 					if (hp > 750000) {
 						state = 1;
 					} else {

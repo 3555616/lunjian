@@ -131,10 +131,12 @@ public class CommandLine {
 		MAP_IDS.put("dl", "33");
 		MAP_IDS.put("duanjian", "34");
 		MAP_IDS.put("dj", "34");
+		SECRET_ACCEPT_REWARDS.put("lvshuige", 1255);
 		SECRET_ACCEPT_REWARDS.put("daojiangu", 1535);
 		SECRET_ACCEPT_REWARDS.put("taohuadu", 1785);
 		SECRET_ACCEPT_REWARDS.put("lvzhou", 2035);
 		SECRET_ACCEPT_REWARDS.put("luanshishan", 2350);
+		SECRET_ACCEPT_REWARDS.put("dilongling", 2385);
 		SECRET_ACCEPT_REWARDS.put("fomenshiku", 2425);
 	}
 
@@ -288,7 +290,7 @@ public class CommandLine {
 	@SuppressWarnings("unchecked")
 	protected void execute(String line) throws IOException {
 		if (line.equals("#combat")) {
-			autoCombat();
+			autoCombat(null);
 		} else if (line.equals("#combat continue")
 				|| line.equals("#combat continue no_loot")) {
 			fastCombat(!line.endsWith("no_loot"), false);
@@ -361,13 +363,13 @@ public class CommandLine {
 		} else if (line.startsWith("#s- ")) {
 			snoopTask.remove(line.substring(4).trim());
 		} else if (line.startsWith("#trigger add ")) {
-			triggerManager.add(line.substring(13).trim());
+			openTrigger(line.substring(13).trim());
 		} else if (line.startsWith("#trigger del ")) {
-			triggerManager.remove(line.substring(13).trim());
+			closeTrigger(line.substring(13).trim());
 		} else if (line.startsWith("#t+ ")) {
-			triggerManager.add(line.substring(4).trim());
+			openTrigger(line.substring(4).trim());
 		} else if (line.startsWith("#t- ")) {
-			triggerManager.remove(line.substring(4).trim());
+			closeTrigger(line.substring(4).trim());
 		} else if (line.startsWith("#show ")) {
 			triggerManager.process(this, line.substring(6).trim());
 		} else if (line.startsWith("#sh ")) {
@@ -856,7 +858,7 @@ public class CommandLine {
 		js("clickButton(arguments[0]);", command);
 	}
 
-	protected void autoCombat() {
+	protected void autoCombat(Runnable callback) {
 		String[] settings = properties.getProperty("auto.fight", "").split(",");
 		if (settings.length < 1) {
 			System.out.println("property auto.fight not set");
@@ -876,8 +878,8 @@ public class CommandLine {
 			String pos = getCombatPosition();
 			if (pos != null) {
 				System.out.println("starting auto combat...");
-				executeTask(new CombatTask(pos, pfms, wait, heal, safe, fast),
-						500);
+				executeTask(new CombatTask(pos, pfms, wait, heal, safe, fast,
+						callback), 500);
 			}
 		}
 	}
@@ -969,6 +971,14 @@ public class CommandLine {
 		}
 	}
 
+	protected void openTrigger(String name) {
+		triggerManager.add(name);
+	}
+
+	protected void closeTrigger(String name) {
+		triggerManager.remove(name);
+	}
+
 	private void switchWebqq(String name) {
 		webdriver2
 				.findElement(
@@ -991,10 +1001,12 @@ public class CommandLine {
 		private String heal;
 		private double safePercent;
 		private int fastKillHp;
+		private Runnable callback;
 		private List<Object> context = new ArrayList<Object>(4);
 
 		public CombatTask(String pos, String[] performs, int waitPoint,
-				String heal, double safePercent, int fastKillHp) {
+				String heal, double safePercent, int fastKillHp,
+				Runnable callback) {
 			super();
 			this.pos = pos;
 			this.performs = performs;
@@ -1002,6 +1014,7 @@ public class CommandLine {
 			this.heal = heal;
 			this.safePercent = safePercent;
 			this.fastKillHp = fastKillHp;
+			this.callback = callback;
 			this.context.add(0);
 			this.context.add(false);
 			this.context.add(false);
@@ -1023,6 +1036,9 @@ public class CommandLine {
 				} else {
 					System.out.println("ok!");
 					stopTask(this);
+					if (callback != null) {
+						callback.run();
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

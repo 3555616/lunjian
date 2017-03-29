@@ -163,7 +163,13 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 				state = 3;
 			} else if (state == 3) {
 				if (cmdline.getCombatPosition() != null) {
-					cmdline.autoCombat();
+					Runnable callback = new Runnable() {
+						@Override
+						public void run() {
+							cmdline.sendCmd("home");
+						}
+					};
+					cmdline.autoCombat(callback);
 				} else {
 					System.out.println("failed to kill");
 					cmdline.stopTask(this);
