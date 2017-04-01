@@ -85,6 +85,26 @@ public class Power extends CommandLine {
 		} else if (line.equals("#work")) {
 			System.out.println("starting auto work...");
 			executeTask(new WorkTask(works), 1000);
+		} else if (line.equals("#tianjiangu")) {
+			String[] settings = properties.getProperty("continue.fight", "")
+					.split(",");
+			if (settings.length < 1) {
+				System.out.println("property continue.fight not set");
+			} else {
+				String[] pfms = settings[0].split("\\|");
+				int wait = settings.length > 1 && settings[1].length() > 0 ? Integer
+						.parseInt(settings[1]) : 0;
+				String heal = settings.length > 2 && settings[2].length() > 0 ? settings[2]
+						: null;
+				int safe = settings.length > 3 && settings[3].length() > 0 ? Integer
+						.parseInt(settings[3]) : 0;
+				if (wait < pfms.length * 20) {
+					wait = pfms.length * 20;
+				}
+				System.out.println("starting tianjiangu combat...");
+				executeTask(new TianjianguCombatTask(pfms, wait, heal, safe),
+						500);
+			}
 		} else {
 			super.execute(line);
 		}
@@ -215,6 +235,73 @@ public class Power extends CommandLine {
 					System.out.println("ok!");
 					stopTask(this);
 				}
+			}
+		}
+	}
+
+	private class TianjianguCombatTask extends TimerTask {
+
+		private int waitPoint;
+		private String[] performs;
+		private String heal;
+		private int safeHp;
+		private List<Object> context = new ArrayList<Object>(5);
+
+		public TianjianguCombatTask(String[] performs, int waitPoint,
+				String heal, int safeHp) {
+			super();
+			this.performs = performs;
+			this.waitPoint = waitPoint;
+			this.heal = heal;
+			this.safeHp = safeHp;
+			this.context.add(0);
+			this.context.add(false);
+			this.context.add(false);
+			this.context.add(null);
+			this.context.add(false);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				List<Object> ctx = (List<Object>) js(load("continue_fight.js"),
+						performs, waitPoint, heal, safeHp, 0, null, context);
+				if (ctx != null) {
+					context = ctx;
+					if (context.get(3) != null) {
+						context.set(3, null);
+					}
+				} else {
+					context.set(0, 0);
+					context.set(1, false);
+					context.set(2, false);
+					context.set(3, null);
+					context.set(4, false);
+					List<String[]> targets = getTargets("npc");
+					if (!targets.isEmpty()) {
+						List<String> list = new ArrayList<String>(
+								targets.size());
+						for (String[] target : targets) {
+							if ("天剑谷卫士".equals(target[1])) {
+								list.add(target[0]);
+							} else {
+								list.add(0, target[0]);
+							}
+						}
+						StringBuilder sb = new StringBuilder();
+						for (String npc : list) {
+							if (sb.length() > 0) {
+								sb.append(";");
+							}
+							sb.append("kill ").append(npc);
+						}
+						sendCmd(sb.toString());
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
 			}
 		}
 	}
