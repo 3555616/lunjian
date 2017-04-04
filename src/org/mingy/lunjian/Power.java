@@ -285,7 +285,8 @@ public class Power extends CommandLine {
 						for (String[] target : targets) {
 							if ("天剑谷卫士".equals(target[1])) {
 								list.add(target[0]);
-							} else {
+							} else if (!"金甲符兵".equals(target[1])
+									&& !"玄阴符兵".equals(target[1])) {
 								list.add(0, target[0]);
 							}
 						}
