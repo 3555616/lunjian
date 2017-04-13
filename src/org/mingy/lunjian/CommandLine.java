@@ -1326,11 +1326,15 @@ public class CommandLine {
 			if (keywords.isEmpty()) {
 				return;
 			}
-			List<String> msgs = (List<String>) js(load("get_chat_msgs.js"),
-					keywords);
-			for (String msg : msgs) {
-				msg = removeSGR(msg);
-				triggerManager.process(CommandLine.this, msg);
+			try {
+				List<String> msgs = (List<String>) js(load("get_chat_msgs.js"),
+						keywords);
+				for (String msg : msgs) {
+					msg = removeSGR(msg);
+					triggerManager.process(CommandLine.this, msg);
+				}
+			} catch (Exception e) {
+				e.fillInStackTrace();
 			}
 		}
 

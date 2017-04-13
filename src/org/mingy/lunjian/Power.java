@@ -285,16 +285,15 @@ public class Power extends CommandLine {
 						for (String[] target : targets) {
 							if ("天剑谷卫士".equals(target[1])) {
 								list.add(target[0]);
-							} else if (!"金甲符兵".equals(target[1])
+							} else if (!"天剑谷接引".equals(target[1])
+									&& !"金甲符兵".equals(target[1])
 									&& !"玄阴符兵".equals(target[1])) {
 								list.add(0, target[0]);
 							}
 						}
-						StringBuilder sb = new StringBuilder();
+						StringBuilder sb = new StringBuilder("prev_combat");
 						for (String npc : list) {
-							if (sb.length() > 0) {
-								sb.append(";");
-							}
+							sb.append(";");
 							sb.append("kill ").append(npc);
 						}
 						sendCmd(sb.toString());

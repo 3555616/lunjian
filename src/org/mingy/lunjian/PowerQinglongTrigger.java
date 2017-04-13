@@ -50,8 +50,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				System.out.println("goto " + path);
 				cmdline.executeCmd("halt;prepare_kill");
 				Runnable callback = null;
-				if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))
-						&& Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 6) {
+				if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))) {
 					boolean pass = false;
 					String items = cmdline.getProperty("qinglong.auto.items");
 					if (items != null) {
@@ -83,10 +82,18 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 									}
 								}
 								if (!list.isEmpty()) {
+									int priority = -1;
+									String str = cmdline
+											.getProperty("qinglong.auto.priority");
+									if ("++".equals(str)) {
+										priority = 1;
+									} else if (Boolean.parseBoolean(str)) {
+										priority = 0;
+									}
 									System.out
 											.println("start auto qinglong...");
 									QinglongTask task = new QinglongTask(
-											cmdline, list, 0, 100);
+											cmdline, list, priority, 0, 100);
 									cmdline.executeTask(task, 100);
 								} else {
 									System.out.println("npc not found: " + npc);
@@ -104,13 +111,15 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 
 		private CommandLine cmdline;
 		private List<String[]> targets;
+		private int priority;
 		private int state;
 
 		public QinglongTask(CommandLine cmdline, List<String[]> targets,
-				int state, int tick) {
+				int priority, int state, int tick) {
 			super(tick);
 			this.cmdline = cmdline;
 			this.targets = targets;
+			this.priority = priority;
 			this.state = state;
 		}
 
@@ -121,21 +130,40 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				if (targets.size() > 1) {
 					state = 10;
 				} else {
+					if (priority == 0) {
+						setTick(1000);
+					} else if (priority < 0) {
+						setTick(2000);
+					}
 					state = 1;
 				}
 			} else if (state == 1) {
 				String[] target = targets.get(0);
 				if ("恶棍".equals(target[1]) || "流寇".equals(target[1])
 						|| "剧盗".equals(target[1])) {
-					cmdline.sendCmd("kill " + target[0] + ";kill " + target[2]);
+					if (priority > 0) {
+						cmdline.sendCmd("kill " + target[0] + ";kill "
+								+ target[2]);
+					} else {
+						cmdline.sendCmd("kill " + target[0]);
+					}
 				} else {
-					cmdline.sendCmd("kill " + target[2] + ";kill " + target[0]);
+					if (priority > 0) {
+						cmdline.sendCmd("kill " + target[2] + ";kill "
+								+ target[0]);
+					} else {
+						cmdline.sendCmd("kill " + target[2]);
+					}
 				}
 				setTick(5000);
 				state = 2;
 			} else if (state == 2) {
 				if (cmdline.getCombatPosition() != null) {
-					cmdline.fastCombat(false, true);
+					if (Boolean.parseBoolean(cmdline
+							.getProperty("qinglong.auto.combat"))
+							&& Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 6) {
+						cmdline.fastCombat(false, true);
+					}
 				} else {
 					System.out.println("failed to kill");
 					cmdline.stopTask(this);
@@ -163,6 +191,11 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 							+ pos.substring(0, 1) + "_max_kee"
 							+ pos.substring(1))));
 					if (hp > 750000) {
+						if (priority == 0) {
+							setTick(1000);
+						} else if (priority < 0) {
+							setTick(2000);
+						}
 						state = 1;
 					} else {
 						targets.remove(0);

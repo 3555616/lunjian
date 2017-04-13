@@ -122,7 +122,7 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 									.get("vs" + pos.substring(0, 1)
 											+ "_max_kee" + pos.substring(1))));
 							System.out.println(target[1] + ": " + hp);
-							if (hp > 430000 && hp < 450000) {
+							if (hp >= 430000 && hp < 450000) {
 								npc = target[0];
 								state = 2;
 							}
@@ -142,7 +142,7 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 								+ pos.substring(0, 1) + "_max_kee"
 								+ pos.substring(1))));
 						System.out.println(target[3] + ": " + hp);
-						if (hp > 700000 && hp < 750000) {
+						if (hp >= 700000 && hp < 750000) {
 							npc = target[2];
 							state = 2;
 						}
@@ -163,13 +163,16 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 				state = 3;
 			} else if (state == 3) {
 				if (cmdline.getCombatPosition() != null) {
-					Runnable callback = new Runnable() {
-						@Override
-						public void run() {
-							cmdline.sendCmd("home");
-						}
-					};
-					cmdline.autoCombat(callback);
+					if (Boolean.parseBoolean(cmdline
+							.getProperty("zhengxie.auto.combat"))) {
+						Runnable callback = new Runnable() {
+							@Override
+							public void run() {
+								cmdline.sendCmd("home");
+							}
+						};
+						cmdline.autoCombat(callback);
+					}
 				} else {
 					System.out.println("failed to kill");
 					cmdline.stopTask(this);
