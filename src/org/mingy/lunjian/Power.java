@@ -22,6 +22,11 @@ public class Power extends CommandLine {
 	@Override
 	protected void start(String[] args) throws Exception {
 		super.start(args);
+		String hotkeys = properties.getProperty("hotkey.performs");
+		if (hotkeys != null && hotkeys.trim().length() > 0) {
+			HotkeyTask hotkeyTask = new HotkeyTask(hotkeys.trim());
+			timer.schedule(hotkeyTask, 1000, 3000);
+		}
 		works = new ArrayList<Work>();
 		works.add(new Work("work click maikuli", 5500));
 		works.add(new Work("work click duancha", 10500));
@@ -107,6 +112,25 @@ public class Power extends CommandLine {
 			}
 		} else {
 			super.execute(line);
+		}
+	}
+
+	private class HotkeyTask extends TimerTask {
+
+		private Object[] args;
+
+		public HotkeyTask(String hotkeys) {
+			super();
+			String[] pfms = hotkeys.split(",");
+			args = new Object[pfms.length];
+			for (int i = 0; i < pfms.length; i++) {
+				args[i] = pfms[i].trim();
+			}
+		}
+
+		@Override
+		public void run() {
+			js(load("hotkeys.js"), args);
 		}
 	}
 
