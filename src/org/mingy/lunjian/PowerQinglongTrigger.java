@@ -163,6 +163,8 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 							.getProperty("qinglong.auto.combat"))
 							&& Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 6) {
 						cmdline.fastCombat(false, true);
+					} else {
+						cmdline.stopTask(this);
 					}
 				} else {
 					System.out.println("failed to kill");

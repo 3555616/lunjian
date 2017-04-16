@@ -9,7 +9,7 @@ public class TaofanTrigger implements Trigger {
 
 	private static final Map<String, String> LOCATIONS = new HashMap<String, String>();
 	private static final Pattern PATTERN = Pattern
-			.compile("跨服：\\[1\\-5区\\](.*)逃到了跨服时空(.*)之中，众位英雄快来诛杀。");
+			.compile("^【系统】跨服：\\[1\\-5区\\](.*)逃到了跨服时空(.*)之中，众位英雄快来诛杀。$");
 
 	static {
 		LOCATIONS.put("饮风客栈", "雪亭镇");

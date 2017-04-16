@@ -297,11 +297,14 @@ public class Power extends CommandLine {
 						context.set(3, null);
 					}
 				} else {
-					context.set(0, 0);
-					context.set(1, false);
-					context.set(2, false);
-					context.set(3, null);
-					context.set(4, false);
+					if ((Boolean) context.get(4)) {
+						context.set(0, 0);
+						context.set(1, false);
+						context.set(2, false);
+						context.set(3, null);
+						context.set(4, false);
+						sendCmd("prev_combat");
+					}
 					List<String[]> targets = getTargets("npc");
 					if (!targets.isEmpty()) {
 						List<String> list = new ArrayList<String>(
@@ -315,12 +318,16 @@ public class Power extends CommandLine {
 								list.add(0, target[0]);
 							}
 						}
-						StringBuilder sb = new StringBuilder("prev_combat");
+						StringBuilder sb = new StringBuilder();
 						for (String npc : list) {
-							sb.append(";");
+							if (sb.length() > 0) {
+								sb.append(";");
+							}
 							sb.append("kill ").append(npc);
 						}
-						sendCmd(sb.toString());
+						if (sb.length() > 0) {
+							sendCmd(sb.toString());
+						}
 					}
 				}
 			} catch (Exception e) {

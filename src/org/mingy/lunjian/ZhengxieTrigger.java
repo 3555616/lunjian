@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class ZhengxieTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("【系统】(段老大|二娘|岳老三|云老四|流寇|恶棍|剧盗)(不怀好意地对着|对着)(.*)(笑道|叫道)");
+			.compile("^【系统】(段老大|二娘|岳老三|云老四|流寇|恶棍|剧盗)(不怀好意地对着|对着)(.*)(笑道|叫道)");
 
 	@Override
 	public boolean match(CommandLine cmdline, String message) {

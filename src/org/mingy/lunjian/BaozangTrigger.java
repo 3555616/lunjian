@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class BaozangTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("山河藏宝图：听说绝世高手遗落了许多宝物在秘密之所");
+			.compile("^【系统】山河藏宝图：听说绝世高手遗落了许多宝物在秘密之所");
 
 	@Override
 	public boolean match(CommandLine cmdline, String message) {

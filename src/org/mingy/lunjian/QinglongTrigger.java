@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class QinglongTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("青龙会组织：(.*)正在(.*)施展力量，本会愿出(.*)的战利品奖励给本场战斗的最终获胜者。");
+			.compile("^【系统】青龙会组织：(.*)正在(.*)施展力量，本会愿出(.*)的战利品奖励给本场战斗的最终获胜者。$");
 
 	@Override
 	public boolean match(CommandLine cmdline, String message) {

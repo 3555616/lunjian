@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class YouxiaTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("游侠会：听说(.*)出来闯荡江湖了，目前正在前往(.*)的路上。");
+			.compile("^【系统】游侠会：听说(.*)出来闯荡江湖了，目前正在前往(.*)的路上。$");
 
 	@Override
 	public boolean match(CommandLine cmdline, String message) {
