@@ -30,6 +30,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.NoSuchFrameException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
@@ -196,6 +197,15 @@ public class CommandLine {
 		}
 		webdriver.navigate().to(properties.getProperty("lunjian.url"));
 		webdriver.switchTo().defaultContent();
+		try {
+			webdriver.switchTo().frame("frame2");
+			String url = (String) js("return window.location.href;");
+			webdriver.switchTo().defaultContent();
+			webdriver.navigate().to(url);
+			webdriver.switchTo().defaultContent();
+		} catch (NoSuchFrameException e) {
+			// ignore
+		}
 		webdriver.manage().timeouts()
 				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
 		loadAliases(properties.getProperty("alias.properties"));
@@ -293,7 +303,7 @@ public class CommandLine {
 			autoCombat(null);
 		} else if (line.equals("#combat continue")
 				|| line.equals("#combat continue no_loot")) {
-			fastCombat(!line.endsWith("no_loot"), false);
+			fastCombat(!line.endsWith("no_loot"), false, null);
 		} else if (line.startsWith("#findway ")) {
 			line = line.substring(9).trim();
 			if (line.length() > 0) {
@@ -884,7 +894,7 @@ public class CommandLine {
 		}
 	}
 
-	protected void fastCombat(boolean loot, boolean once) {
+	protected void fastCombat(boolean loot, boolean once, Runnable callback) {
 		String[] settings = properties.getProperty("continue.fight", "").split(
 				",");
 		if (settings.length < 1) {
@@ -908,7 +918,7 @@ public class CommandLine {
 			}
 			System.out.println("starting continue combat...");
 			executeTask(new ContinueCombatTask(pfms, wait, heal, safe, fast,
-					fastpfm, loot, once), 500);
+					fastpfm, loot, once, callback), 500);
 		}
 	}
 
@@ -1057,11 +1067,12 @@ public class CommandLine {
 		private String fastPerform;
 		private boolean loot;
 		private boolean once;
+		private Runnable callback;
 		private List<Object> context = new ArrayList<Object>(5);
 
 		public ContinueCombatTask(String[] performs, int waitPoint,
 				String heal, int safeHp, int fastKillHp, String fastPerform,
-				boolean loot, boolean once) {
+				boolean loot, boolean once, Runnable callback) {
 			super();
 			this.performs = performs;
 			this.waitPoint = waitPoint;
@@ -1071,6 +1082,7 @@ public class CommandLine {
 			this.fastPerform = fastPerform;
 			this.loot = loot;
 			this.once = once;
+			this.callback = callback;
 			this.context.add(0);
 			this.context.add(false);
 			this.context.add(false);
@@ -1108,6 +1120,9 @@ public class CommandLine {
 					} else {
 						System.out.println("ok!");
 						stopTask(this);
+					}
+					if (callback != null) {
+						callback.run();
 					}
 				}
 			} catch (Exception e) {
@@ -1359,20 +1374,24 @@ public class CommandLine {
 
 		@Override
 		public void run() {
-			String[] current = getCurrentRanks();
-			if (current != null) {
-				if (ranks == null) {
-					ranks = current;
-				} else {
-					for (int i = 0; i < ranks.length; i++) {
-						if (!ranks[i].equals(current[i])) {
-							ranks = current;
-							CommandLine.this.notify("ranks refreshed", false,
-									true);
-							break;
+			try {
+				String[] current = getCurrentRanks();
+				if (current != null) {
+					if (ranks == null) {
+						ranks = current;
+					} else {
+						for (int i = 0; i < ranks.length; i++) {
+							if (!ranks[i].equals(current[i])) {
+								ranks = current;
+								CommandLine.this.notify("ranks refreshed",
+										false, true);
+								break;
+							}
 						}
 					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 

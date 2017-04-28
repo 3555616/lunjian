@@ -81,7 +81,7 @@ public class Power extends CommandLine {
 			String name = line.substring(6).trim();
 			if (name.length() > 0) {
 				System.out.println("starting auto kill...");
-				executeCmd("prepare_kill");
+				// executeCmd("prepare_kill");
 				executeTask(new KillTask(name), 200);
 			}
 		} else if (line.equals("#lc")) {
@@ -130,7 +130,11 @@ public class Power extends CommandLine {
 
 		@Override
 		public void run() {
-			js(load("hotkeys.js"), args);
+			try {
+				js(load("hotkeys.js"), args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -156,12 +160,17 @@ public class Power extends CommandLine {
 
 		@Override
 		public void run() {
-			long timestamp = System.currentTimeMillis();
-			for (Work work : works) {
-				if (timestamp - work.lasttime >= work.cooldown) {
-					sendCmd(work.command);
-					work.lasttime = timestamp;
+			try {
+				long timestamp = System.currentTimeMillis();
+				for (Work work : works) {
+					if (timestamp - work.lasttime >= work.cooldown) {
+						sendCmd(work.command);
+						work.lasttime = timestamp;
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
 			}
 		}
 	}
@@ -177,14 +186,19 @@ public class Power extends CommandLine {
 
 		@Override
 		public void run() {
-			if (processedCmd == null) {
-				ProcessedCommand pc = processCmd(originCmd);
-				if (pc.command != null) {
-					processedCmd = pc;
+			try {
+				if (processedCmd == null) {
+					ProcessedCommand pc = processCmd(originCmd);
+					if (pc.command != null) {
+						processedCmd = pc;
+					}
 				}
-			}
-			if (processedCmd != null) {
-				sendCmd(processedCmd.command);
+				if (processedCmd != null) {
+					sendCmd(processedCmd.command);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
 			}
 		}
 	}
@@ -200,31 +214,36 @@ public class Power extends CommandLine {
 
 		@Override
 		public void run() {
-			if (state == 0) {
-				ProcessedCommand pc = processCmd("kill " + name);
-				if (pc.command != null) {
-					sendCmd(pc.command);
-					state = 1;
-				}
-			} else if (state == 1) {
-				state = getCombatPosition() != null ? 2 : 0;
-			} else if (state == 2) {
-				if (isCombatOver()) {
-					state = 3;
-				}
-			} else if (state == 3) {
-				String[] corpses = findTargets("item", "corpse");
-				if (corpses.length > 0) {
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// ignore
+			try {
+				if (state == 0) {
+					ProcessedCommand pc = processCmd("kill " + name);
+					if (pc.command != null) {
+						sendCmd(pc.command);
+						state = 1;
 					}
-					sendCmd("get " + corpses[corpses.length - 1]);
-					state = 4;
-					System.out.println("ok!");
-					stopTask(this);
+				} else if (state == 1) {
+					state = getCombatPosition() != null ? 2 : 0;
+				} else if (state == 2) {
+					if (isCombatOver()) {
+						state = 3;
+					}
+				} else if (state == 3) {
+					String[] corpses = findTargets("item", "corpse");
+					if (corpses.length > 0) {
+						try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							// ignore
+						}
+						sendCmd("get " + corpses[corpses.length - 1]);
+						state = 4;
+						System.out.println("ok!");
+						stopTask(this);
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
 			}
 		}
 	}
@@ -235,30 +254,35 @@ public class Power extends CommandLine {
 
 		@Override
 		public void run() {
-			if (state == 0) {
-				if (isCombatOver()) {
-					state = 1;
-				}
-			} else if (state == 1) {
-				String[] corpses = findTargets("item", "corpse");
-				if (corpses.length > 0) {
-					StringBuilder sb = new StringBuilder();
-					for (String corpse : corpses) {
-						if (sb.length() > 0) {
-							sb.append(';');
+			try {
+				if (state == 0) {
+					if (isCombatOver()) {
+						state = 1;
+					}
+				} else if (state == 1) {
+					String[] corpses = findTargets("item", "corpse");
+					if (corpses.length > 0) {
+						StringBuilder sb = new StringBuilder();
+						for (String corpse : corpses) {
+							if (sb.length() > 0) {
+								sb.append(';');
+							}
+							sb.append("get " + corpse);
 						}
-						sb.append("get " + corpse);
+						try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							// ignore
+						}
+						sendCmd(sb.toString());
+						state = 2;
+						System.out.println("ok!");
+						stopTask(this);
 					}
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-					sendCmd(sb.toString());
-					state = 2;
-					System.out.println("ok!");
-					stopTask(this);
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
 			}
 		}
 	}

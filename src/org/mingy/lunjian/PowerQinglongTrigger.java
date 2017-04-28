@@ -113,6 +113,8 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 		private List<String[]> targets;
 		private int priority;
 		private int state;
+		private boolean autoCombat;
+		private boolean backHome;
 
 		public QinglongTask(CommandLine cmdline, List<String[]> targets,
 				int priority, int state, int tick) {
@@ -121,6 +123,10 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 			this.targets = targets;
 			this.priority = priority;
 			this.state = state;
+			this.autoCombat = Boolean.parseBoolean(cmdline
+					.getProperty("qinglong.auto.combat"));
+			this.backHome = Boolean.parseBoolean(cmdline
+					.getProperty("qinglong.auto.home"));
 		}
 
 		@SuppressWarnings("unchecked")
@@ -131,9 +137,9 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 					state = 10;
 				} else {
 					if (priority == 0) {
-						setTick(1000);
+						setTick(500);
 					} else if (priority < 0) {
-						setTick(2000);
+						setTick(1000);
 					}
 					state = 1;
 				}
@@ -159,10 +165,15 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				state = 2;
 			} else if (state == 2) {
 				if (cmdline.getCombatPosition() != null) {
-					if (Boolean.parseBoolean(cmdline
-							.getProperty("qinglong.auto.combat"))
+					if (autoCombat
 							&& Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 6) {
-						cmdline.fastCombat(false, true);
+						cmdline.fastCombat(false, true,
+								backHome ? new Runnable() {
+									@Override
+									public void run() {
+										cmdline.sendCmd("home");
+									}
+								} : null);
 					} else {
 						cmdline.stopTask(this);
 					}
@@ -177,6 +188,9 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 					setTick(500);
 					state = 11;
 				} else {
+					if (backHome) {
+						cmdline.sendCmd("home");
+					}
 					System.out.println("failed to find npc");
 					cmdline.stopTask(this);
 				}
@@ -194,9 +208,9 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 							+ pos.substring(1))));
 					if (hp > 750000) {
 						if (priority == 0) {
-							setTick(1000);
+							setTick(500);
 						} else if (priority < 0) {
-							setTick(2000);
+							setTick(1000);
 						}
 						state = 1;
 					} else {

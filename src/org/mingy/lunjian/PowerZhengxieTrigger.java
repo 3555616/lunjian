@@ -122,7 +122,7 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 									.get("vs" + pos.substring(0, 1)
 											+ "_max_kee" + pos.substring(1))));
 							System.out.println(target[1] + ": " + hp);
-							if (hp >= 430000 && hp < 450000) {
+							if (hp >= 429960 && hp < 450000) {
 								npc = target[0];
 								state = 2;
 							}
