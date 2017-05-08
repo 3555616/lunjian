@@ -408,7 +408,7 @@ public class CommandLine {
 							String cmd = "cancel_prompt;"
 									+ (String) map.get("cmd" + i);
 							System.out.println("starting clean out secret...");
-							executeTask(new SaodangTask(cmd, accept), 100);
+							executeTask(new SaodangTask(cmd, accept), 500);
 							break;
 						}
 					}

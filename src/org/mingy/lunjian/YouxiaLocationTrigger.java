@@ -110,6 +110,7 @@ public class YouxiaLocationTrigger extends YouxiaTrigger {
 				} catch (Exception e) {
 					System.out.println("map not found: " + mapId);
 					cmdline.stopTask(this);
+					cmdline.sendCmd("home");
 				}
 			} else if (state == 1) {
 				Map<String, Object> map = (Map<String, Object>) cmdline.js(

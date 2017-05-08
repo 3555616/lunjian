@@ -46,9 +46,24 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				System.out.println("path not found: " + place);
 			} else {
 				cmdline.closeTrigger("zhengxie");
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// ignore
+				}
 				final String good_npc = GOOD_NPCS.get(place);
 				System.out.println("goto " + path);
-				cmdline.executeCmd("halt;prepare_kill");
+				cmdline.executeCmd("halt");
+				cmdline.executeCmd("prepare_kill");
+				final int priority;
+				String str = cmdline.getProperty("qinglong.auto.priority");
+				if ("++".equals(str)) {
+					priority = 1;
+				} else if (Boolean.parseBoolean(str)) {
+					priority = 0;
+				} else {
+					priority = -1;
+				}
 				Runnable callback = null;
 				if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))) {
 					boolean pass = false;
@@ -82,14 +97,6 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 									}
 								}
 								if (!list.isEmpty()) {
-									int priority = -1;
-									String str = cmdline
-											.getProperty("qinglong.auto.priority");
-									if ("++".equals(str)) {
-										priority = 1;
-									} else if (Boolean.parseBoolean(str)) {
-										priority = 0;
-									}
 									System.out
 											.println("start auto qinglong...");
 									QinglongTask task = new QinglongTask(
@@ -102,7 +109,18 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 						};
 					}
 				}
-				cmdline.walk(new String[] { path }, place, null, callback, 100);
+				try {
+					if (priority == 0) {
+						Thread.sleep(Math.round(300) + 200);
+					} else if (priority < 0) {
+						Thread.sleep(Math.round(500) + 500);
+					} else {
+						Thread.sleep(Math.round(200));
+					}
+				} catch (InterruptedException e) {
+					// ignore
+				}
+				cmdline.walk(new String[] { path }, place, null, callback, 200);
 			}
 		}
 	}
@@ -133,16 +151,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 		@Override
 		protected void onTimer() throws Exception {
 			if (state == 0) {
-				if (targets.size() > 1) {
-					state = 10;
-				} else {
-					if (priority == 0) {
-						setTick(500);
-					} else if (priority < 0) {
-						setTick(1000);
-					}
-					state = 1;
-				}
+				state = 10;
 			} else if (state == 1) {
 				String[] target = targets.get(0);
 				if ("恶棍".equals(target[1]) || "流寇".equals(target[1])
@@ -206,12 +215,19 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 					long hp = Long.parseLong(String.valueOf(map.get("vs"
 							+ pos.substring(0, 1) + "_max_kee"
 							+ pos.substring(1))));
-					if (hp > 750000) {
-						if (priority == 0) {
-							setTick(500);
-						} else if (priority < 0) {
-							setTick(1000);
+					if (hp > 50000000) {
+						if (autoCombat
+								&& Calendar.getInstance().get(
+										Calendar.HOUR_OF_DAY) < 6) {
+							if (backHome) {
+								cmdline.sendCmd("home");
+							}
+							System.out.println("npc hp = " + hp);
+							cmdline.stopTask(this);
+						} else {
+							state = 1;
 						}
+					} else if (hp > 750000) {
 						state = 1;
 					} else {
 						targets.remove(0);
