@@ -50,6 +50,8 @@ public class CommandLine {
 	protected Properties properties;
 	private Properties defaultAliases;
 	private Properties userAliases;
+	private BlockingQueue<String> commandQueue;
+	private Thread commandThread;
 	protected Timer timer;
 	private SnoopTask snoopTask;
 	private WebqqTask webqqTask;
@@ -132,6 +134,10 @@ public class CommandLine {
 		MAP_IDS.put("dl", "33");
 		MAP_IDS.put("duanjian", "34");
 		MAP_IDS.put("dj", "34");
+		MAP_IDS.put("binghuodao", "35");
+		MAP_IDS.put("bhd", "35");
+		MAP_IDS.put("xiakedao", "36");
+		MAP_IDS.put("xkd", "36");
 		SECRET_ACCEPT_REWARDS.put("lvshuige", 1255);
 		SECRET_ACCEPT_REWARDS.put("daojiangu", 1535);
 		SECRET_ACCEPT_REWARDS.put("taohuadu", 1785);
@@ -208,6 +214,24 @@ public class CommandLine {
 		}
 		webdriver.manage().timeouts()
 				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
+		commandQueue = new LinkedBlockingDeque<String>();
+		commandThread = new Thread() {
+			@Override
+			public void run() {
+				while (!isInterrupted()) {
+					try {
+						js("clickButton(arguments[0]);", commandQueue.take());
+						Thread.sleep(100 + Math.round(Math.random() * 50));
+					} catch (WebDriverException e) {
+						e.printStackTrace();
+					} catch (InterruptedException e) {
+						// ignore
+					}
+				}
+			}
+		};
+		commandThread.setDaemon(true);
+		commandThread.start();
 		loadAliases(properties.getProperty("alias.properties"));
 		registerTriggers();
 		String triggers = properties.getProperty("snoop.triggers");
@@ -270,6 +294,7 @@ public class CommandLine {
 					}
 				}
 			};
+			webqqThread.setDaemon(true);
 			webqqThread.start();
 		}
 		if (Boolean.parseBoolean(properties.getProperty("monitor.ranks"))) {
@@ -288,6 +313,7 @@ public class CommandLine {
 
 	protected void finish() throws Exception {
 		timer.cancel();
+		commandThread.interrupt();
 		if (webqqThread != null) {
 			webqqThread.interrupt();
 		}
@@ -864,8 +890,12 @@ public class CommandLine {
 	}
 
 	protected void sendCmd(String command) {
-		command = command.replace(';', '\n');
-		js("clickButton(arguments[0]);", command);
+		for (String cmd : command.split(";")) {
+			cmd = cmd.trim();
+			if (cmd.length() > 0) {
+				commandQueue.offer(cmd);
+			}
+		}
 	}
 
 	protected void autoCombat(Runnable callback) {

@@ -31,6 +31,11 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 			if (path == null) {
 				System.out.println("path not found: " + good_npc);
 			} else {
+				try {
+					Thread.sleep(Math.round(Math.random() * 200) + 500);
+				} catch (InterruptedException e) {
+					// ignore
+				}
 				System.out.println("goto " + path);
 				cmdline.executeCmd("halt");
 				Runnable callback = null;

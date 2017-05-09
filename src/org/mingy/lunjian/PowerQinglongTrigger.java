@@ -53,8 +53,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				}
 				final String good_npc = GOOD_NPCS.get(place);
 				System.out.println("goto " + path);
-				cmdline.executeCmd("halt");
-				cmdline.executeCmd("prepare_kill");
+				cmdline.executeCmd("halt;prepare_kill");
 				final int priority;
 				String str = cmdline.getProperty("qinglong.auto.priority");
 				if ("++".equals(str)) {
@@ -111,11 +110,11 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				}
 				try {
 					if (priority == 0) {
-						Thread.sleep(Math.round(300) + 200);
+						Thread.sleep(Math.round(Math.random() * 300) + 200);
 					} else if (priority < 0) {
-						Thread.sleep(Math.round(500) + 500);
+						Thread.sleep(Math.round(Math.random() * 500) + 500);
 					} else {
-						Thread.sleep(Math.round(200));
+						Thread.sleep(Math.round(Math.random() * 200));
 					}
 				} catch (InterruptedException e) {
 					// ignore

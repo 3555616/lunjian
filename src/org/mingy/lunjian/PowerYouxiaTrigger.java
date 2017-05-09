@@ -61,6 +61,11 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
 					cmdline.closeTrigger("zhengxie");
+					try {
+						Thread.sleep(Math.round(Math.random() * 200) + 500);
+					} catch (InterruptedException e) {
+						// ignore
+					}
 					System.out.println("goto map " + (i + 1));
 					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;prepare_kill;fly "
 							+ (i + 1));
