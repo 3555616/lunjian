@@ -331,26 +331,23 @@ public class Power extends CommandLine {
 					}
 					List<String[]> targets = getTargets("npc");
 					if (!targets.isEmpty()) {
-						List<String> list = new ArrayList<String>(
-								targets.size());
+						String npc = null;
 						for (String[] target : targets) {
 							if ("天剑谷卫士".equals(target[1])) {
-								list.add(target[0]);
-							} else if (!"天剑谷接引".equals(target[1])
-									&& !"金甲符兵".equals(target[1])
-									&& !"玄阴符兵".equals(target[1])) {
-								list.add(0, target[0]);
+								if (npc == null) {
+									npc = target[0];
+								}
+							} else if ("天剑真身".equals(target[1])
+									|| "天剑".equals(target[1])
+									|| "虹风".equals(target[1])
+									|| "虹雨".equals(target[1])
+									|| "虹雷".equals(target[1])
+									|| "虹电".equals(target[1])) {
+								npc = target[0];
 							}
 						}
-						StringBuilder sb = new StringBuilder();
-						for (String npc : list) {
-							if (sb.length() > 0) {
-								sb.append(";");
-							}
-							sb.append("kill ").append(npc);
-						}
-						if (sb.length() > 0) {
-							sendCmd(sb.toString());
+						if (npc != null) {
+							sendCmd("kill " + npc);
 						}
 					}
 				}
