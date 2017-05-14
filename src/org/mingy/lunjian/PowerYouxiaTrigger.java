@@ -67,8 +67,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 						// ignore
 					}
 					System.out.println("goto map " + (i + 1));
-					cmdline.executeCmd("halt;heal;heal;heal;heal;heal;prepare_kill;fly "
-							+ (i + 1));
+					cmdline.executeCmd("halt;prepare_kill;fly " + (i + 1));
 					if (Boolean
 							.parseBoolean(cmdline.getProperty("youxia.auto"))) {
 						System.out.println("start auto youxia...");
