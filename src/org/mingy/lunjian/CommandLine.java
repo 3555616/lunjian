@@ -338,6 +338,7 @@ public class CommandLine {
 			}
 		} else if (line.equals("#stop")) {
 			stopTask();
+			commandQueue.clear();
 		} else if (line.startsWith("#alias ")) {
 			String alias = line.substring(7).trim();
 			String key;
@@ -388,6 +389,43 @@ public class CommandLine {
 					properties.remove(key);
 					// saveConfig();
 					System.out.println("property removed.");
+				}
+			}
+		} else if (line.equals("#log")) {
+			String logfile = getProperty("log.properties");
+			if (logfile != null && logfile.length() > 0) {
+				Properties properties = new Properties();
+				properties.load(new FileInputStream(logfile));
+				properties.list(System.out);
+			}
+		} else if (line.startsWith("#log ")) {
+			String logfile = getProperty("log.properties");
+			if (logfile != null && logfile.length() > 0) {
+				Properties properties = new Properties();
+				properties.load(new FileInputStream(logfile));
+				String alias = line.substring(5).trim();
+				String key;
+				String value;
+				int i = alias.indexOf(' ');
+				if (i >= 0) {
+					key = alias.substring(0, i).trim();
+					value = alias.substring(i + 1).trim();
+				} else {
+					key = alias;
+					value = null;
+				}
+				if (value != null) {
+					if (!value.equals(properties.getProperty(key))) {
+						properties.setProperty(key, value);
+						properties.store(new FileOutputStream(logfile), null);
+						System.out.println("set property ok.");
+					}
+				} else {
+					if (properties.containsKey(key)) {
+						properties.remove(key);
+						properties.store(new FileOutputStream(logfile), null);
+						System.out.println("property removed.");
+					}
 				}
 			}
 		} else if (line.startsWith("#snoop add ")) {
