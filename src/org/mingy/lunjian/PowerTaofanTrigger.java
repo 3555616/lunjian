@@ -2,7 +2,6 @@ package org.mingy.lunjian;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class PowerTaofanTrigger extends TaofanTrigger {
 
@@ -44,25 +43,11 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 		MAPS.add("大理");
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected void process(CommandLine cmdline, String npc, String map,
 			String place) {
 		super.process(cmdline, npc, map, place);
-		String taofan = cmdline.getProperty("taofan.target");
-		if (taofan == null) {
-			taofan = "岳老三";
-		} else if (taofan.equals("1")) {
-			taofan = "段老大";
-		} else if (taofan.equals("2")) {
-			taofan = "二娘";
-		} else if (taofan.equals("3")) {
-			taofan = "岳老三";
-		} else if (taofan.equals("4")) {
-			taofan = "云老四";
-		}
-		if (npc.equals(taofan)
-				&& !Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
+		if (!Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
 				&& !cmdline.isFighting()) {
 			int id = MAPS.indexOf(map) + 1;
 			if (id == 0) {
@@ -70,17 +55,24 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 				return;
 			}
 			System.out.println("goto map " + id);
-			String cmds = "halt;heal;heal;heal;heal;heal;prepare_kill;fly "
-					+ id;
-			Map<String, Object> msgs = (Map<String, Object>) cmdline.js(
-					cmdline.load("get_msgs.js"), "msg_room", false);
-			if (msgs != null && "武林广场10".equals(msgs.get("short"))) {
-				cmdline.executeCmd(cmds);
-			} else {
-				cmdline.walk(
-						new String[] { "fly 1;e;n;n;n;n;w;event_1_36344468;e;e;e;e;e;e;e;e;e" },
-						"武林广场10", null, cmds, 100);
+			try {
+				Thread.sleep(Math.round(Math.random() * 200) + 300);
+			} catch (InterruptedException e) {
+				// ignore
 			}
+			if (!Boolean.parseBoolean(cmdline.getProperty("taofan.target.bad"))) {
+				if ("段老大".equals(npc)) {
+					npc = "无一";
+				} else if ("二娘".equals(npc)) {
+					npc = "铁二";
+				} else if ("岳老三".equals(npc)) {
+					npc = "追二";
+				} else if ("云老四".equals(npc)) {
+					npc = "冷四";
+				}
+			}
+			cmdline.walk(new String[] { "fly " + id }, place, null,
+					"look [1-5区]" + npc, 100);
 		}
 	}
 }

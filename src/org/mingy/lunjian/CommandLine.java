@@ -242,7 +242,7 @@ public class CommandLine {
 		snoopTask = new SnoopTask(
 				keywords != null && keywords.length() > 0 ? keywords.split(",")
 						: new String[0]);
-		timer.schedule(snoopTask, 1000, 1000);
+		timer.schedule(snoopTask, 500, 500);
 		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
 			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
 				webdriver2 = new FirefoxDriver();
@@ -309,6 +309,7 @@ public class CommandLine {
 		TriggerManager.register("zhengxie", ZhengxieTrigger.class);
 		TriggerManager.register("taofan", TaofanTrigger.class);
 		TriggerManager.register("baozang", BaozangTrigger.class);
+		TriggerManager.register("autokill", AutoKillTrigger.class);
 	}
 
 	protected void finish() throws Exception {
@@ -1414,6 +1415,10 @@ public class CommandLine {
 						keywords);
 				for (String msg : msgs) {
 					msg = removeSGR(msg);
+					triggerManager.process(CommandLine.this, msg);
+				}
+				msgs = (List<String>) js(load("get_out_msgs.js"));
+				for (String msg : msgs) {
 					triggerManager.process(CommandLine.this, msg);
 				}
 			} catch (Exception e) {
