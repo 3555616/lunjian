@@ -5,9 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
 
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+
 public class Power extends CommandLine {
 
 	private List<Work> works;
+	private List<WebDriver> webdrivers;
 
 	public static void main(String[] args) throws Exception {
 		if (args.length > 1 && "--no_power".equalsIgnoreCase(args[1])) {
@@ -23,10 +27,9 @@ public class Power extends CommandLine {
 	protected void start(String[] args) throws Exception {
 		super.start(args);
 		String hotkeys = properties.getProperty("hotkey.performs");
-		if (hotkeys != null && hotkeys.trim().length() > 0) {
-			HotkeyTask hotkeyTask = new HotkeyTask(hotkeys.trim());
-			timer.schedule(hotkeyTask, 1000, 3000);
-		}
+		HotkeyTask hotkeyTask = new HotkeyTask(webdriver,
+				hotkeys != null ? hotkeys.trim() : null);
+		timer.schedule(hotkeyTask, 1000, 3000);
 		works = new ArrayList<Work>();
 		works.add(new Work("work click maikuli", 5500));
 		works.add(new Work("work click duancha", 10500));
@@ -42,6 +45,25 @@ public class Power extends CommandLine {
 		works.add(new Work("work click shenshanxiulian", 301000));
 		works.add(new Work("work click jianmenlipai", 301000));
 		works.add(new Work("public_op3", 301000));
+		webdrivers = new ArrayList<WebDriver>();
+		for (int i = 1;; i++) {
+			String dummy = properties.getProperty("dummy" + i);
+			if (dummy != null && dummy.trim().length() > 0) {
+				WebDriver webdriver = openUrl(dummy);
+				timer.schedule(new HotkeyTask(webdriver, null), 1000, 3000);
+				webdrivers.add(webdriver);
+			} else {
+				break;
+			}
+		}
+	}
+
+	@Override
+	protected void finish() throws Exception {
+		super.finish();
+		for (WebDriver webdriver : webdrivers) {
+			webdriver.quit();
+		}
 	}
 
 	@Override
@@ -117,21 +139,26 @@ public class Power extends CommandLine {
 
 	private class HotkeyTask extends TimerTask {
 
-		private Object[] args;
+		private WebDriver webdriver;
+		private Object[] args = new Object[0];
 
-		public HotkeyTask(String hotkeys) {
+		public HotkeyTask(WebDriver webdriver, String hotkeys) {
 			super();
-			String[] pfms = hotkeys.split(",");
-			args = new Object[pfms.length];
-			for (int i = 0; i < pfms.length; i++) {
-				args[i] = pfms[i].trim();
+			this.webdriver = webdriver;
+			if (hotkeys != null && hotkeys.length() > 0) {
+				String[] pfms = hotkeys.split(",");
+				args = new Object[pfms.length];
+				for (int i = 0; i < pfms.length; i++) {
+					args[i] = pfms[i].trim();
+				}
 			}
 		}
 
 		@Override
 		public void run() {
 			try {
-				js(load("hotkeys.js"), args);
+				((JavascriptExecutor) webdriver).executeScript(
+						load("hotkeys.js"), args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
