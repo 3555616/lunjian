@@ -2,8 +2,12 @@ package org.mingy.lunjian;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -132,6 +136,9 @@ public class Power extends CommandLine {
 				executeTask(new TianjianguCombatTask(pfms, wait, heal, safe),
 						500);
 			}
+		} else if (line.equals("#pk")) {
+			System.out.println("starting auto pvp ...");
+			executeTask(new PvpCombatTask(), 100);
 		} else {
 			super.execute(line);
 		}
@@ -383,5 +390,219 @@ public class Power extends CommandLine {
 				stopTask(this);
 			}
 		}
+	}
+	
+	private static Pattern[] PART_FINISH_PATTERNS = new Pattern[] {Pattern.compile("^（.*）$"),
+			Pattern.compile("^(.*)顿时被冲开老远，失去了攻击之势！$"),
+			Pattern.compile("^(.*)被(.*)的真气所迫，只好放弃攻击！$"),
+			Pattern.compile("^(.*)衣裳鼓起，真气直接将(.*)逼开了！$"),
+			Pattern.compile("^(.*)找到了闪躲的空间！$"),
+			Pattern.compile("^(.*)朝边上一步闪开！$"),
+			Pattern.compile("^面对(.*)的攻击，(.*)毫不为惧！$")
+			};
+
+	private static Pattern POZHAO_PATTERN1 = Pattern.compile("^(.*)的招式尽数被(.*)所破！$");
+	private static Pattern POZHAO_PATTERN2 = Pattern.compile("^(.*)这一招正好击向了(.*)的破绽！$");
+	private static Pattern POZHAO_PATTERN3 = Pattern.compile("^(.*)一不留神，招式被(.*)所破！$");
+	private static Pattern POZHAO_PATTERN4 = Pattern.compile("^(.*)的对攻无法击破(.*)的攻势，处于明显下风！$");
+	private static Pattern POZHAO_PATTERN5 = Pattern.compile("^(.*)的招式并未有明显破绽，(.*)只好放弃对攻！$");
+	private static Pattern POZHAO_PATTERN6 = Pattern.compile("^(.*)这一招并未奏效，仍被(.*)招式紧逼！$");
+
+	private class PvpCombatTask extends TimerTask {
+		// 你招式之间组合成了更为凌厉的攻势！
+		// 你这几招配合起来，威力更为惊人！
+		// 你将招式连成一片，令地府-摩诃王眼花缭乱！
+		// 你使出“天邪神功”，一股内劲涌向店小二左手！
+		// 你使出“天邪神功”，一股内劲涌向店小二后心！
+		// 你使出“天邪神功”，一股内劲涌向逄义右耳！
+		// 你使出“天邪神功”，一股内劲涌向店小二两肋！
+		// 你使出“天邪神功”，一股内劲涌向店小二左肩！
+		// 你使出“天邪神功”，一股内劲涌向店小二左腿！
+		// 你使出“天邪神功”，一股内劲涌向店小二右臂！
+		// 你使出“天邪神功”，一股内劲涌向店小二左脚！
+		// 你使出“天邪神功”，一股内劲涌向店小二腰间！
+		// 你使出“天邪神功”，一股内劲涌向店小二右脸！
+		// 店小二使出“内功心法”，一股内劲涌向你小腹！
+		// 店小二使出“内功心法”，一股内劲涌向你颈部！
+		// 店小二使出“内功心法”，一股内劲涌向你头顶！
+
+		private Part part;
+		
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				Map<String, Object> result = (Map<String, Object>) js(load("get_combat_msgs.js"));
+				if (result == null) {
+					part = null;
+					return;
+				}
+				List<String> msgs = (List<String>) result.get("msg");
+				Collections.reverse(msgs);
+				for (int i = 0; i < msgs.size(); i++) {
+					String msg = msgs.get(i);
+					boolean matched = false;
+					for (Pattern pattern : PART_FINISH_PATTERNS) {
+						if (pattern.matcher(msg).matches()) {
+							msgs = msgs.subList(0, i);
+							part = null;
+							matched = true;
+							break;
+						}
+					}
+					if (matched) {
+						break;
+					}
+				}
+				for (String msg : msgs) {
+					System.out.println(msg);
+				}
+				if (part == null) {
+					part = new Part();
+					part.msgs.addAll(msgs);
+					initPart(result);
+				} else {
+					part.msgs.addAll(msgs);
+				}
+				
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+		
+		private void initPart(Map<String, Object> result) {
+			for (String msg : part.msgs) {
+				PoZhao p = checkPoZhao(msg);
+				if (p != null) {
+					part.attacker = p.attacker;
+					part.defender = p.defender;
+					part.attack_success = !p.success;
+					break;
+				}
+			}
+			if (part.attacker == null) {
+				
+			}
+			part.attacker_is_friend = isFriend(part.attacker);
+			part.defender_is_friend = isFriend(part.defender);
+			part.attacker_in_my_side = inMySide(part.attacker, result);
+		}
+		
+		private boolean isFriend(String name) {
+			if ("你".equals(name)) {
+				return true;
+			}
+			boolean ok = false;
+			String include = getProperty("friends.include");
+			if (include != null && include.length() > 0) {
+				for (String s : include.split(",")) {
+					if (name.contains(s)) {
+						ok = true;
+						break;
+					}
+				}
+			}
+			if (ok) {
+				String exclude = getProperty("friends.exclude");
+				if (exclude != null && exclude.length() > 0) {
+					for (String s : exclude.split(",")) {
+						if (name.contains(s)) {
+							ok = false;
+							break;
+						}
+					}
+				}
+			}
+			return ok;
+		}
+		
+		@SuppressWarnings("unchecked")
+		private boolean inMySide(String name, Map<String, Object> result) {
+			if ("你".equals(name)) {
+				return true;
+			}
+			String me = (String) result.get("me");
+			List<String> vs = (List<String>) result.get("vs1");
+			if (vs.contains(me) && vs.contains(name)) {
+				return true;
+			}
+			vs = (List<String>) result.get("vs2");
+			if (vs.contains(me) && vs.contains(name)) {
+				return true;
+			}
+			return false;
+		}
+		
+		private PoZhao checkPoZhao(String msg) {
+			Matcher m = POZHAO_PATTERN1.matcher(msg);
+			if (m.find()) {
+				PoZhao p = new PoZhao();
+				p.success = true;
+				p.attacker = m.group(1);
+				p.defender = m.group(2);
+				return p;
+			}
+			m = POZHAO_PATTERN2.matcher(msg);
+			if (m.find()) {
+				PoZhao p = new PoZhao();
+				p.success = true;
+				p.attacker = m.group(2);
+				p.defender = m.group(1);
+				return p;
+			}
+			m = POZHAO_PATTERN3.matcher(msg);
+			if (m.find()) {
+				PoZhao p = new PoZhao();
+				p.success = true;
+				p.attacker = m.group(1);
+				p.defender = m.group(2);
+				return p;
+			}
+			m = POZHAO_PATTERN4.matcher(msg);
+			if (m.find()) {
+				PoZhao p = new PoZhao();
+				p.success = false;
+				p.attacker = m.group(2);
+				p.defender = m.group(1);
+				return p;
+			}
+			m = POZHAO_PATTERN5.matcher(msg);
+			if (m.find()) {
+				PoZhao p = new PoZhao();
+				p.success = false;
+				p.attacker = m.group(1);
+				p.defender = m.group(2);
+				return p;
+			}
+			m = POZHAO_PATTERN6.matcher(msg);
+			if (m.find()) {
+				PoZhao p = new PoZhao();
+				p.success = false;
+				p.attacker = m.group(2);
+				p.defender = m.group(1);
+				return p;
+			}
+			return null;
+		}
+	}
+	
+	private static class Part {
+		List<String> msgs = new ArrayList<String>();
+		String attacker;
+		String defender;
+		boolean attacker_is_friend;
+		boolean defender_is_friend;
+		boolean attacker_in_my_side;
+		boolean attack_success;
+		String perform;
+		int rank;
+	}
+	
+	private static class PoZhao {
+		boolean success;
+		String attacker;
+		String defender;
 	}
 }

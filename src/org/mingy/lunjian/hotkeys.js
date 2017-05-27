@@ -45,10 +45,12 @@ var kill = function() {
 		}
 	});
 	if (cmd) {
+		var attrs = window.g_obj_map.get('msg_attrs');
+		var is_dummy = parseInt(attrs.get('max_kee')) < 10000;
 		h_interval = setInterval(function() {
 			var is_fighting = false;
 			if (window.is_fighting) {
-				var name = window.g_obj_map.get('msg_attrs').get('name');
+				var name = attrs.get('name');
 				$('td#vs11,td#vs12,td#vs13,td#vs14,td#vs21,td#vs22,td#vs23,td#vs24').each(
 						function() {
 							if ($($(this).contents()[0]).text() == name) {
@@ -58,20 +60,33 @@ var kill = function() {
 						});
 			}
 			if (!is_fighting) {
+				if (is_dummy) {
+					var is_exercise = attrs.get('jh_exercise');
+					if (!is_exercise || parseInt(is_exercise) == 0) {
+						clickButton('exercise');
+					}
+					if (parseInt(attrs.get('kee')) < parseInt(attrs.get('max_kee'))) {
+						clickButton('recovery');
+					}
+				}
 				clickButton(cmd);
 			} else {
-				clearInterval(h_interval);
-				h_interval = undefined;
+				if (!is_dummy) {
+					clearInterval(h_interval);
+					h_interval = undefined;
+				}
 			}
-		}, 100);
+		}, is_dummy ? 50 : 100);
 	}
 };
 $(document).keydown(function(e) {
 	if (e.which == 120) {
 		kill();
 	} else if (e.which == 121) {
-		clearInterval(h_interval);
-		h_interval = undefined;
+		if (h_interval) {
+			clearInterval(h_interval);
+			h_interval = undefined;
+		}
 	} else {
 		for (var i = 0; i < args.length; i++) {
 			if (e.which == 112 + i) {

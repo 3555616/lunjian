@@ -500,6 +500,9 @@ public class CommandLine {
 			message.text = "1";
 			message.target = "ping";
 			webqqQueue.offer(message);
+		} else if (line.equals("#clear js")) {
+			jslibs.clear();
+			System.out.println("ok!");
 		} else if (line.length() > 0 && line.charAt(0) == '#') {
 			int i = line.indexOf(' ');
 			if (i >= 0) {
