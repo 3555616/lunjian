@@ -36,6 +36,7 @@ import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.io.IOUtils;
 
 public class CommandLine {
@@ -180,40 +181,7 @@ public class CommandLine {
 			properties.load(CommandLine.class
 					.getResourceAsStream("/lunjian.properties"));
 		}
-		String browser = properties.getProperty("webdriver.browser");
-		if (browser == null || "firefox".equalsIgnoreCase(browser)) {
-			System.setProperty("webdriver.firefox.bin",
-					properties.getProperty("webdriver.firefox.bin"));
-			webdriver = new FirefoxDriver();
-		} else if ("chrome".equalsIgnoreCase(browser)) {
-			System.setProperty("webdriver.chrome.driver",
-					properties.getProperty("webdriver.chrome.driver"));
-			webdriver = new ChromeDriver();
-		}
-		String size = properties.getProperty("browser.size");
-		int i = size.indexOf('*');
-		if (i > 0) {
-			webdriver
-					.manage()
-					.window()
-					.setSize(
-							new Dimension(Integer.parseInt(size.substring(0, i)
-									.trim()), Integer.parseInt(size.substring(
-									i + 1).trim())));
-		}
-		webdriver.navigate().to(properties.getProperty("lunjian.url"));
-		webdriver.switchTo().defaultContent();
-		try {
-			webdriver.switchTo().frame("frame2");
-			String url = (String) js("return window.location.href;");
-			webdriver.switchTo().defaultContent();
-			webdriver.navigate().to(url);
-			webdriver.switchTo().defaultContent();
-		} catch (NoSuchFrameException e) {
-			// ignore
-		}
-		webdriver.manage().timeouts()
-				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
+		webdriver = openUrl(properties.getProperty("lunjian.url"));
 		commandQueue = new LinkedBlockingDeque<String>();
 		commandThread = new Thread() {
 			@Override
@@ -244,6 +212,7 @@ public class CommandLine {
 						: new String[0]);
 		timer.schedule(snoopTask, 500, 500);
 		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
+			String browser = properties.getProperty("webdriver.browser");
 			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
 				webdriver2 = new FirefoxDriver();
 			} else if ("chrome".equalsIgnoreCase(browser)) {
@@ -301,6 +270,48 @@ public class CommandLine {
 			monitorTask = new MonitorTask();
 			timer.schedule(monitorTask, 30000, 180000);
 		}
+	}
+
+	protected WebDriver openUrl(String url) {
+		WebDriver webdriver;
+		String browser = properties.getProperty("webdriver.browser");
+		if (browser == null || "firefox".equalsIgnoreCase(browser)) {
+			System.setProperty("webdriver.firefox.bin",
+					properties.getProperty("webdriver.firefox.bin"));
+			webdriver = new FirefoxDriver();
+		} else if ("chrome".equalsIgnoreCase(browser)) {
+			System.setProperty("webdriver.chrome.driver",
+					properties.getProperty("webdriver.chrome.driver"));
+			webdriver = new ChromeDriver();
+		} else {
+			webdriver = new HtmlUnitDriver();
+		}
+		String size = properties.getProperty("browser.size");
+		int i = size.indexOf('*');
+		if (i > 0) {
+			webdriver
+					.manage()
+					.window()
+					.setSize(
+							new Dimension(Integer.parseInt(size.substring(0, i)
+									.trim()), Integer.parseInt(size.substring(
+									i + 1).trim())));
+		}
+		webdriver.navigate().to(url);
+		webdriver.switchTo().defaultContent();
+		try {
+			webdriver.switchTo().frame("frame2");
+			url = (String) ((JavascriptExecutor) webdriver)
+					.executeScript("return window.location.href;");
+			webdriver.switchTo().defaultContent();
+			webdriver.navigate().to(url);
+			webdriver.switchTo().defaultContent();
+		} catch (NoSuchFrameException e) {
+			// ignore
+		}
+		webdriver.manage().timeouts()
+				.setScriptTimeout(1000, TimeUnit.MILLISECONDS);
+		return webdriver;
 	}
 
 	protected void registerTriggers() {
@@ -489,6 +500,9 @@ public class CommandLine {
 			message.text = "1";
 			message.target = "ping";
 			webqqQueue.offer(message);
+		} else if (line.equals("#clear js")) {
+			jslibs.clear();
+			System.out.println("ok!");
 		} else if (line.length() > 0 && line.charAt(0) == '#') {
 			int i = line.indexOf(' ');
 			if (i >= 0) {

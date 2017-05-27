@@ -1,13 +1,44 @@
 package org.mingy.lunjian;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TimerTask;
 
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+
 public class Simple extends CommandLine {
+
+	private List<WebDriver> webdrivers;
 
 	public static void main(String[] args) throws Exception {
 		Simple cmdline = new Simple();
 		cmdline.run(args);
+	}
+
+	@Override
+	protected void start(String[] args) throws Exception {
+		super.start(args);
+		webdrivers = new ArrayList<WebDriver>();
+		for (int i = 1;; i++) {
+			String dummy = properties.getProperty("dummy" + i);
+			if (dummy != null && dummy.trim().length() > 0) {
+				WebDriver webdriver = openUrl(dummy);
+				timer.schedule(new HotkeyTask(webdriver), 1000, 3000);
+				webdrivers.add(webdriver);
+			} else {
+				break;
+			}
+		}
+	}
+
+	@Override
+	protected void finish() throws Exception {
+		super.finish();
+		for (WebDriver webdriver : webdrivers) {
+			webdriver.quit();
+		}
 	}
 
 	@Override
@@ -49,6 +80,26 @@ public class Simple extends CommandLine {
 				|| line.startsWith("#findway ")) {
 		} else {
 			super.execute(line);
+		}
+	}
+
+	private class HotkeyTask extends TimerTask {
+
+		private WebDriver webdriver;
+
+		public HotkeyTask(WebDriver webdriver) {
+			super();
+			this.webdriver = webdriver;
+		}
+
+		@Override
+		public void run() {
+			try {
+				((JavascriptExecutor) webdriver)
+						.executeScript(load("hotkeys.js"));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
