@@ -406,8 +406,10 @@ public class Power extends CommandLine {
 			Pattern.compile("^(.*)对著(.*)喝道：「.*」$"),
 			Pattern.compile("^(.*)对著(.*)说道：.*！$"),
 			Pattern.compile("^(.*)加入了战团！$"),
+			Pattern.compile("^(.*)在旁边开始观看这场战斗！$"),
 			Pattern.compile("^(.*)一看势头不对，溜了！$"),
 			Pattern.compile("^(.*)一看势头不对想要逃跑，结果(.*)一转身就挡在了前面！$"),
+			Pattern.compile("^(.*)深深吸了几口气，脸色看起来好多了。$"),
 			Pattern.compile("^(.*)双目赤红，四处寻找目标攻击！！$"),
 			Pattern.compile("^(.*)手脚速度加快，处于极度敏捷之中！$"),
 			Pattern.compile("^(.*)全身衣裳鼓起，防御力极度增高！$"),
@@ -430,6 +432,9 @@ public class Power extends CommandLine {
 			.compile("^(.*)的招式并未有明显破绽，(.*)只好放弃对攻！$");
 	private static Pattern POZHAO_PATTERN6 = Pattern
 			.compile("^(.*)这一招并未奏效，仍被(.*)招式紧逼！$");
+
+	private static Pattern SKILL_CHAIN_PATTERN = Pattern
+			.compile("^\\-\\-(.*)\\-\\-(.*)\\-\\-$");
 
 	private class PvpCombatTask extends TimerTask {
 		// 你招式之间组合成了更为凌厉的攻势！
@@ -464,6 +469,9 @@ public class Power extends CommandLine {
 					return;
 				}
 				List<String> msgs = (List<String>) result.get("msgs");
+				for (String msg : msgs) {
+					System.out.println(msg);
+				}
 				for (int i = msgs.size() - 1; i >= 0; i--) {
 					String msg = msgs.get(i);
 					for (Pattern pattern : IGNORE_PATTERNS) {
@@ -496,12 +504,35 @@ public class Power extends CommandLine {
 					} else {
 						part.msgs = msgs;
 					}
-				}
-				for (int i = msgs.size() - 1; i >= 0; i--) {
-					String msg = msgs.get(i);
-					PoZhao p = checkPoZhao(msg);
-					if (p != null) {
-						
+					if (part != null) {
+						for (String msg : msgs) {
+							Matcher m = SKILL_CHAIN_PATTERN.matcher(msg);
+							if (m.find()) {
+								part.skill1.add(m.group(1));
+								part.skill2.add(m.group(2));
+								System.out.println("[VS] " + m.group());
+							} else {
+								PoZhao p = checkPoZhao(msg);
+								if (p != null) {
+									if ("你".equals(p.attacker)) {
+										p.attacker = (String) result.get("me");
+									} else if ("你".equals(p.defender)) {
+										p.defender = (String) result.get("me");
+									}
+									System.out.println("[VS] " + p.attacker
+											+ " po " + p.defender + " "
+											+ (p.success ? "ok" : "fail"));
+									List<String> vs = (List<String>) result
+											.get("vs1");
+									if (vs.contains(part.defender)
+											&& vs.contains(p.attacker)) {
+										part.attack_success = !p.success;
+									} else {
+										part.attack_success = p.success;
+									}
+								}
+							}
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -555,6 +586,7 @@ public class Power extends CommandLine {
 				part.attacker_in_my_side = !inMySide(part.defender, result);
 			} else {
 				System.out.println("[VS] attacker and defender can not detect");
+				part = null;
 			}
 		}
 
@@ -608,48 +640,48 @@ public class Power extends CommandLine {
 			if (m.find()) {
 				PoZhao p = new PoZhao();
 				p.success = true;
-				p.attacker = m.group(1);
-				p.defender = m.group(2);
+				p.attacker = m.group(2);
+				p.defender = m.group(1);
 				return p;
 			}
 			m = POZHAO_PATTERN2.matcher(msg);
 			if (m.find()) {
 				PoZhao p = new PoZhao();
 				p.success = true;
-				p.attacker = m.group(2);
-				p.defender = m.group(1);
+				p.attacker = m.group(1);
+				p.defender = m.group(2);
 				return p;
 			}
 			m = POZHAO_PATTERN3.matcher(msg);
 			if (m.find()) {
 				PoZhao p = new PoZhao();
 				p.success = true;
-				p.attacker = m.group(1);
-				p.defender = m.group(2);
+				p.attacker = m.group(2);
+				p.defender = m.group(1);
 				return p;
 			}
 			m = POZHAO_PATTERN4.matcher(msg);
 			if (m.find()) {
 				PoZhao p = new PoZhao();
 				p.success = false;
-				p.attacker = m.group(2);
-				p.defender = m.group(1);
+				p.attacker = m.group(1);
+				p.defender = m.group(2);
 				return p;
 			}
 			m = POZHAO_PATTERN5.matcher(msg);
 			if (m.find()) {
 				PoZhao p = new PoZhao();
 				p.success = false;
-				p.attacker = m.group(1);
-				p.defender = m.group(2);
+				p.attacker = m.group(2);
+				p.defender = m.group(1);
 				return p;
 			}
 			m = POZHAO_PATTERN6.matcher(msg);
 			if (m.find()) {
 				PoZhao p = new PoZhao();
 				p.success = false;
-				p.attacker = m.group(2);
-				p.defender = m.group(1);
+				p.attacker = m.group(1);
+				p.defender = m.group(2);
 				return p;
 			}
 			return null;
@@ -664,6 +696,8 @@ public class Power extends CommandLine {
 		boolean defender_is_friend;
 		boolean attacker_in_my_side;
 		boolean attack_success;
+		List<String> skill1 = new ArrayList<String>();
+		List<String> skill2 = new ArrayList<String>();
 		String perform;
 		int rank;
 	}
