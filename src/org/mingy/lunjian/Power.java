@@ -2,7 +2,6 @@ package org.mingy.lunjian;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
@@ -391,22 +390,46 @@ public class Power extends CommandLine {
 			}
 		}
 	}
-	
-	private static Pattern[] PART_FINISH_PATTERNS = new Pattern[] {Pattern.compile("^（.*）$"),
+
+	private static Pattern[] PART_FINISH_PATTERNS = new Pattern[] {
+			Pattern.compile("^（.*）$"),
 			Pattern.compile("^(.*)顿时被冲开老远，失去了攻击之势！$"),
 			Pattern.compile("^(.*)被(.*)的真气所迫，只好放弃攻击！$"),
 			Pattern.compile("^(.*)衣裳鼓起，真气直接将(.*)逼开了！$"),
 			Pattern.compile("^(.*)找到了闪躲的空间！$"),
 			Pattern.compile("^(.*)朝边上一步闪开！$"),
-			Pattern.compile("^面对(.*)的攻击，(.*)毫不为惧！$")
-			};
+			Pattern.compile("^面对(.*)的攻击，(.*)毫不为惧！$"),
+			Pattern.compile("^但(.*)心有定力，并没有受到任何影响！$"),
+			Pattern.compile("^(.*)被(.*)的身影所惑，一时失去了方向！$") };
 
-	private static Pattern POZHAO_PATTERN1 = Pattern.compile("^(.*)的招式尽数被(.*)所破！$");
-	private static Pattern POZHAO_PATTERN2 = Pattern.compile("^(.*)这一招正好击向了(.*)的破绽！$");
-	private static Pattern POZHAO_PATTERN3 = Pattern.compile("^(.*)一不留神，招式被(.*)所破！$");
-	private static Pattern POZHAO_PATTERN4 = Pattern.compile("^(.*)的对攻无法击破(.*)的攻势，处于明显下风！$");
-	private static Pattern POZHAO_PATTERN5 = Pattern.compile("^(.*)的招式并未有明显破绽，(.*)只好放弃对攻！$");
-	private static Pattern POZHAO_PATTERN6 = Pattern.compile("^(.*)这一招并未奏效，仍被(.*)招式紧逼！$");
+	private static Pattern[] IGNORE_PATTERNS = new Pattern[] {
+			Pattern.compile("^(.*)对著(.*)喝道：「.*」$"),
+			Pattern.compile("^(.*)对著(.*)说道：.*！$"),
+			Pattern.compile("^(.*)加入了战团！$"),
+			Pattern.compile("^(.*)一看势头不对，溜了！$"),
+			Pattern.compile("^(.*)一看势头不对想要逃跑，结果(.*)一转身就挡在了前面！$"),
+			Pattern.compile("^(.*)双目赤红，四处寻找目标攻击！！$"),
+			Pattern.compile("^(.*)手脚速度加快，处于极度敏捷之中！$"),
+			Pattern.compile("^(.*)全身衣裳鼓起，防御力极度增高！$"),
+			Pattern.compile("^(.*)手脚无力，出手毫无力气……$"),
+			Pattern.compile("^(.*)手脚迟缓，处于极度迟钝之中！$"),
+			Pattern.compile("^(.*)头昏目眩，几乎无法动弹……$"),
+			Pattern.compile("^(.*)脸上泛起一阵绿光，身子不由自主地摇晃了一下……$"),
+			Pattern.compile("^(.*)打了个寒颤，眼前迷乎了一下。$"),
+			Pattern.compile("^(.*)的身子突然晃了两晃，牙关格格地响了起来。$") };
+
+	private static Pattern POZHAO_PATTERN1 = Pattern
+			.compile("^(.*)的招式尽数被(.*)所破！$");
+	private static Pattern POZHAO_PATTERN2 = Pattern
+			.compile("^(.*)这一招正好击向了(.*)的破绽！$");
+	private static Pattern POZHAO_PATTERN3 = Pattern
+			.compile("^(.*)一不留神，招式被(.*)所破！$");
+	private static Pattern POZHAO_PATTERN4 = Pattern
+			.compile("^(.*)的对攻无法击破(.*)的攻势，处于明显下风！$");
+	private static Pattern POZHAO_PATTERN5 = Pattern
+			.compile("^(.*)的招式并未有明显破绽，(.*)只好放弃对攻！$");
+	private static Pattern POZHAO_PATTERN6 = Pattern
+			.compile("^(.*)这一招并未奏效，仍被(.*)招式紧逼！$");
 
 	private class PvpCombatTask extends TimerTask {
 		// 你招式之间组合成了更为凌厉的攻势！
@@ -425,9 +448,12 @@ public class Power extends CommandLine {
 		// 店小二使出“内功心法”，一股内劲涌向你小腹！
 		// 店小二使出“内功心法”，一股内劲涌向你颈部！
 		// 店小二使出“内功心法”，一股内劲涌向你头顶！
+		// 但地府-无量王心有定力，并没有受到任何影响！
+		// 地府-无量王被你的身影所惑，一时失去了方向！
+		// 你使出“乾坤大挪移”，希望扰乱地府-无量王的视线！
 
 		private Part part;
-		
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
@@ -437,14 +463,22 @@ public class Power extends CommandLine {
 					part = null;
 					return;
 				}
-				List<String> msgs = (List<String>) result.get("msg");
-				Collections.reverse(msgs);
-				for (int i = 0; i < msgs.size(); i++) {
+				List<String> msgs = (List<String>) result.get("msgs");
+				for (int i = msgs.size() - 1; i >= 0; i--) {
+					String msg = msgs.get(i);
+					for (Pattern pattern : IGNORE_PATTERNS) {
+						if (pattern.matcher(msg).matches()) {
+							msgs.remove(i);
+							break;
+						}
+					}
+				}
+				for (int i = msgs.size() - 1; i >= 0; i--) {
 					String msg = msgs.get(i);
 					boolean matched = false;
 					for (Pattern pattern : PART_FINISH_PATTERNS) {
 						if (pattern.matcher(msg).matches()) {
-							msgs = msgs.subList(0, i);
+							msgs = msgs.subList(i + 1, msgs.size());
 							part = null;
 							matched = true;
 							break;
@@ -454,42 +488,76 @@ public class Power extends CommandLine {
 						break;
 					}
 				}
-				for (String msg : msgs) {
-					System.out.println(msg);
+				if (!msgs.isEmpty()) {
+					if (part == null) {
+						part = new Part();
+						part.msgs = msgs;
+						initPart(result);
+					} else {
+						part.msgs = msgs;
+					}
 				}
-				if (part == null) {
-					part = new Part();
-					part.msgs.addAll(msgs);
-					initPart(result);
-				} else {
-					part.msgs.addAll(msgs);
+				for (int i = msgs.size() - 1; i >= 0; i--) {
+					String msg = msgs.get(i);
+					PoZhao p = checkPoZhao(msg);
+					if (p != null) {
+						
+					}
 				}
-				
-				
 			} catch (Exception e) {
 				e.printStackTrace();
 				stopTask(this);
 			}
 		}
-		
+
+		@SuppressWarnings("unchecked")
 		private void initPart(Map<String, Object> result) {
+			List<String> vs = new ArrayList<String>();
+			vs.addAll((List<String>) result.get("vs1"));
+			vs.addAll((List<String>) result.get("vs2"));
+			vs.add("你");
+			int i = -1;
 			for (String msg : part.msgs) {
-				PoZhao p = checkPoZhao(msg);
-				if (p != null) {
-					part.attacker = p.attacker;
-					part.defender = p.defender;
-					part.attack_success = !p.success;
+				for (String name : vs) {
+					int k = msg.indexOf(name);
+					if (k >= 0) {
+						if (part.defender == null) {
+							part.defender = name;
+							i = k;
+						} else if (part.attacker == null) {
+							if (k < i) {
+								part.attacker = name;
+							} else {
+								part.attacker = part.defender;
+								part.defender = name;
+								i = k;
+							}
+							break;
+						}
+					}
+				}
+				if (part.attacker != null) {
 					break;
 				}
 			}
-			if (part.attacker == null) {
-				
+			if ("你".equals(part.attacker)) {
+				part.attacker = (String) result.get("me");
+			} else if ("你".equals(part.defender)) {
+				part.defender = (String) result.get("me");
 			}
-			part.attacker_is_friend = isFriend(part.attacker);
-			part.defender_is_friend = isFriend(part.defender);
-			part.attacker_in_my_side = inMySide(part.attacker, result);
+			if (part.defender != null) {
+				System.out.println("[VS] " + part.attacker + " attack "
+						+ part.defender);
+				part.attack_success = true;
+				part.attacker_is_friend = part.attacker != null ? isFriend(part.attacker)
+						: false;
+				part.defender_is_friend = isFriend(part.defender);
+				part.attacker_in_my_side = !inMySide(part.defender, result);
+			} else {
+				System.out.println("[VS] attacker and defender can not detect");
+			}
 		}
-		
+
 		private boolean isFriend(String name) {
 			if ("你".equals(name)) {
 				return true;
@@ -517,7 +585,7 @@ public class Power extends CommandLine {
 			}
 			return ok;
 		}
-		
+
 		@SuppressWarnings("unchecked")
 		private boolean inMySide(String name, Map<String, Object> result) {
 			if ("你".equals(name)) {
@@ -534,7 +602,7 @@ public class Power extends CommandLine {
 			}
 			return false;
 		}
-		
+
 		private PoZhao checkPoZhao(String msg) {
 			Matcher m = POZHAO_PATTERN1.matcher(msg);
 			if (m.find()) {
@@ -587,9 +655,9 @@ public class Power extends CommandLine {
 			return null;
 		}
 	}
-	
+
 	private static class Part {
-		List<String> msgs = new ArrayList<String>();
+		List<String> msgs;
 		String attacker;
 		String defender;
 		boolean attacker_is_friend;
@@ -599,7 +667,7 @@ public class Power extends CommandLine {
 		String perform;
 		int rank;
 	}
-	
+
 	private static class PoZhao {
 		boolean success;
 		String attacker;

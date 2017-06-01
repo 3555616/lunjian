@@ -18,7 +18,9 @@ var process = function(e) {
 		} else if (this.nodeType == 1) {
 			var $e = $(this);
 			if ($e.is('br')) {
-				msgs.push(line);
+				if (line.length > 0) {
+					msgs.push(line);
+				}
 				line = '';
 			} else if (!$e.is('.out3')) {
 				process(this);
