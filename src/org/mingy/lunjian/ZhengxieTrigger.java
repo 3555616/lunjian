@@ -23,4 +23,9 @@ public class ZhengxieTrigger implements Trigger {
 	protected void process(CommandLine cmdline, String good_npc, String bad_npc) {
 		cmdline.notify("[正邪] " + good_npc + " vs " + bad_npc, false, false);
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }

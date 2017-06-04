@@ -1,4 +1,4 @@
-var vs1 = [], vs2 = [], msgs = [];
+var vs1 = [], vs2 = [], msgs = [], pfms = [], pt = 0;
 if (!window.is_fighting) {
 	return null;
 }
@@ -36,4 +36,25 @@ $($('#out span.out[robot!="1"]:visible').toArray()).each(
 if (line.length > 0) {
 	msgs.push(line);
 }
-return {me: window.g_obj_map.get('msg_attrs').get('name'), vs1: vs1, vs2: vs2, msgs: msgs};
+$('button.cmd_skill_button').each(function() {
+	var $b = $(this);
+	var onclick = $b.attr('onclick');
+	if (onclick != 'clickButton(\'0\', 0)') {
+		pfms.push($b.text());
+	} else {
+		pfms.push('');
+	}
+});
+var style = $('#barxdz_bar').attr('style');
+if (style) {
+	var k = style.indexOf('width:')
+	if (k >= 0) {
+		style = style.substr(k + 6);
+		k = style.indexOf(';');
+		var width = k >= 0 ? $.trim(style.substring(0, k)) : $.trim(style);
+		if (width && width.charAt(width.length - 1) == '%') {
+			pt = parseFloat(width.substr(0, width.length - 1)) / 10;
+		}
+	}
+}
+return {me: window.g_obj_map.get('msg_attrs').get('name'), vs1: vs1, vs2: vs2, msgs: msgs, pfms: pfms, pt: pt};

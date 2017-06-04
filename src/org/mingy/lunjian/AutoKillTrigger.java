@@ -58,4 +58,9 @@ public class AutoKillTrigger implements Trigger {
 			}
 		}
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }

@@ -23,4 +23,9 @@ public class YouxiaTrigger implements Trigger {
 	protected void process(CommandLine cmdline, String npc, String place) {
 		cmdline.notify("[游侠] " + npc + " at " + place, true, true);
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }

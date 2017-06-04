@@ -324,6 +324,7 @@ public class CommandLine {
 	}
 
 	protected void finish() throws Exception {
+		triggerManager.shutdown();
 		timer.cancel();
 		commandThread.interrupt();
 		if (webqqThread != null) {

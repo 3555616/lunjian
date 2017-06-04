@@ -18,4 +18,9 @@ public class PowerHongbaoTrigger implements Trigger {
 		cmdline.executeCmd("qhb " + id);
 		return true;
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }

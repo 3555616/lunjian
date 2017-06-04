@@ -46,4 +46,9 @@ public class TaofanTrigger implements Trigger {
 		cmdline.notify("[逃犯] " + npc + " at " + map + " - " + place, false,
 				false);
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }

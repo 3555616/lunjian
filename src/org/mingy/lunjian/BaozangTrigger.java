@@ -24,4 +24,9 @@ public class BaozangTrigger implements Trigger {
 			cmdline.executeCmd("items get_store /obj/quest/cangbaotu;tu");
 		}
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }

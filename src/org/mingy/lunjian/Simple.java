@@ -76,6 +76,12 @@ public class Simple extends CommandLine {
 				executeCmd("prepare_kill");
 				executeTask(new KillTask(name), 200);
 			}
+		} else if (line.equals("#pk")) {
+			PvpCombatTask task = new PvpCombatTask(this);
+			if (task.init()) {
+				System.out.println("starting auto pvp ...");
+				executeTask(task, 100);
+			}
 		} else if (line.equals("#combat") || line.startsWith("#combat ")
 				|| line.startsWith("#findway ")) {
 		} else {

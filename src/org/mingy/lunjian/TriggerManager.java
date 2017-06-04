@@ -33,6 +33,7 @@ public class TriggerManager {
 
 	public void remove(String name) {
 		Trigger trigger = triggers.remove(name);
+		trigger.cleanup();
 		if (trigger != null) {
 			System.out.println("trigger " + name + " removed");
 		}
@@ -43,6 +44,16 @@ public class TriggerManager {
 			if (trigger.match(cmdline, message)) {
 				break;
 			}
+		}
+	}
+
+	public void shutdown() {
+		for (Trigger trigger : triggers.values()) {
+			trigger.cleanup();
+		}
+		if (!triggers.isEmpty()) {
+			triggers.clear();
+			System.out.println("all triggers removed");
 		}
 	}
 }

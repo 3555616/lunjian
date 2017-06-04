@@ -80,4 +80,9 @@ public class QinglongTrigger implements Trigger {
 		}
 		cmdline.notify(message, !ignore, true);
 	}
+
+	@Override
+	public void cleanup() {
+		
+	}
 }
