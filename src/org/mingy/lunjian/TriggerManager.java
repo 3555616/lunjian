@@ -33,8 +33,8 @@ public class TriggerManager {
 
 	public void remove(String name) {
 		Trigger trigger = triggers.remove(name);
-		trigger.cleanup();
 		if (trigger != null) {
+			trigger.cleanup();
 			System.out.println("trigger " + name + " removed");
 		}
 	}
