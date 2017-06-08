@@ -44,7 +44,7 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 	}
 
 	@Override
-	protected void process(CommandLine cmdline, String npc, String map,
+	protected void process(final CommandLine cmdline, String npc, String map,
 			String place) {
 		super.process(cmdline, npc, map, place);
 		if (!Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
@@ -71,8 +71,19 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 					npc = "冷四";
 				}
 			}
+			final String cmd = "look [1-5区]" + npc;
 			cmdline.walk(new String[] { "fly " + id }, place, null,
-					"look [1-5区]" + npc, 100);
+					new Runnable() {
+						@Override
+						public void run() {
+							cmdline.executeCmd(cmd);
+							PvpCombatTask task = new PvpCombatTask(cmdline);
+							if (task.init()) {
+								System.out.println("starting auto pvp ...");
+								cmdline.executeTask(task, 100);
+							}
+						}
+					}, 100);
 		}
 	}
 }
