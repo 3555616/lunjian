@@ -175,7 +175,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				if (cmdline.getCombatPosition() != null) {
 					if (autoCombat
 							&& Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 6) {
-						cmdline.fastCombat(false, true,
+						cmdline.fastCombat(false, false, true,
 								backHome ? new Runnable() {
 									@Override
 									public void run() {

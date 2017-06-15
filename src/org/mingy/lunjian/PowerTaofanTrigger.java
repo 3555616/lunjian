@@ -56,7 +56,7 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 			}
 			System.out.println("goto map " + id);
 			try {
-				Thread.sleep(Math.round(Math.random() * 200) + 300);
+				Thread.sleep(Math.round(Math.random() * 500) + 1000);
 			} catch (InterruptedException e) {
 				// ignore
 			}

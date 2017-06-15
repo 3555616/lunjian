@@ -1,4 +1,4 @@
-var pfms = arguments[0], wait = arguments[1], heal = arguments[2], safe = arguments[3], fast = arguments[4], fastpfm = arguments[5], ctx = arguments[6], point, hp;
+var pfms = arguments[0], wait = arguments[1], heal = arguments[2], safe = arguments[3], fast = arguments[4], fastpfm = arguments[5], halt = arguments[6], ctx = arguments[7], point, hp;
 if (!window.g_obj_map || !window.g_obj_map.get('msg_attrs')) {
 	return null;
 }
@@ -82,6 +82,9 @@ if (!ctx[1] && !ctx[2]) {
 				var onclick = $b.attr('onclick');
 				if (onclick != 'clickButton(\'0\', 0)') {
 					$b.click();
+					if (halt) {
+						clickButton('escape');
+					}
 					ctx[3] = 'perform ' + fastpfm;
 				}
 				return ctx;
@@ -107,6 +110,9 @@ for (var i = 0; i < cycle.length; i++) {
 		var onclick = $b.attr('onclick');
 		if (onclick != 'clickButton(\'0\', 0)') {
 			$b.click();
+			if (halt) {
+				clickButton('escape');
+			}
 			ctx[0] = ++index < pfms.length ? index : 0;
 			ctx[1] = true;
 			ctx[3] = 'perform ' + pfm;

@@ -76,7 +76,7 @@ var kill = function() {
 					h_interval = undefined;
 				}
 			}
-		}, is_dummy ? 50 : 100);
+		}, is_dummy ? 50 : 50);
 	}
 };
 $(document).keydown(function(e) {

@@ -342,7 +342,7 @@ public class CommandLine {
 			autoCombat(null);
 		} else if (line.equals("#combat continue")
 				|| line.equals("#combat continue no_loot")) {
-			fastCombat(!line.endsWith("no_loot"), false, null);
+			fastCombat(false, !line.endsWith("no_loot"), false, null);
 		} else if (line.startsWith("#findway ")) {
 			line = line.substring(9).trim();
 			if (line.length() > 0) {
@@ -547,6 +547,12 @@ public class CommandLine {
 		stopTask();
 		this.task = task;
 		timer.schedule(task, 0, interval);
+	}
+
+	protected void executeTask(TimerTask task, int delay, int interval) {
+		stopTask();
+		this.task = task;
+		timer.schedule(task, delay, interval);
 	}
 
 	protected ProcessedCommand processCmd(String line) {
@@ -978,7 +984,7 @@ public class CommandLine {
 		}
 	}
 
-	protected void fastCombat(boolean loot, boolean once, Runnable callback) {
+	protected void fastCombat(boolean halt, boolean loot, boolean once, Runnable callback) {
 		String[] settings = properties.getProperty("continue.fight", "").split(
 				",");
 		if (settings.length < 1) {
@@ -1002,7 +1008,7 @@ public class CommandLine {
 			}
 			System.out.println("starting continue combat...");
 			executeTask(new ContinueCombatTask(pfms, wait, heal, safe, fast,
-					fastpfm, loot, once, callback), 500);
+					fastpfm, halt, loot, once, callback), 500);
 		}
 	}
 
@@ -1149,13 +1155,14 @@ public class CommandLine {
 		private int safeHp;
 		private int fastKillHp;
 		private String fastPerform;
+		private boolean halt;
 		private boolean loot;
 		private boolean once;
 		private Runnable callback;
 		private List<Object> context = new ArrayList<Object>(5);
 
 		public ContinueCombatTask(String[] performs, int waitPoint,
-				String heal, int safeHp, int fastKillHp, String fastPerform,
+				String heal, int safeHp, int fastKillHp, String fastPerform, boolean halt,
 				boolean loot, boolean once, Runnable callback) {
 			super();
 			this.performs = performs;
@@ -1164,6 +1171,7 @@ public class CommandLine {
 			this.safeHp = safeHp;
 			this.fastKillHp = fastKillHp;
 			this.fastPerform = fastPerform;
+			this.halt = halt;
 			this.loot = loot;
 			this.once = once;
 			this.callback = callback;
@@ -1180,7 +1188,7 @@ public class CommandLine {
 			try {
 				List<Object> ctx = (List<Object>) js(load("continue_fight.js"),
 						performs, waitPoint, heal, safeHp, fastKillHp,
-						fastPerform, context);
+						fastPerform, halt, context);
 				if (ctx != null) {
 					context = ctx;
 					if (context.get(3) != null) {

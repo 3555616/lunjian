@@ -1,5 +1,6 @@
 package org.mingy.lunjian;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -99,6 +100,10 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 		timer.cancel();
 		super.cleanup();
 	}
+	
+	private static final List<String> CHECK_USERS = Arrays.asList(new String[] {"u3019083", 
+			"u3004398", "u2612595", "太子", "u3085319", "u2760326", "u2622663", "u2963213",
+			"u2734326", "绘羽", "u3087099"});
 
 	private class ZhengxieTask extends TimerTaskDelegate {
 
@@ -129,6 +134,17 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 				while (index < targets.size() - 1) {
 					if (targets.get(index)[0].startsWith("bad_target_")
 							&& targets.get(index + 1)[0].startsWith("eren")) {
+						boolean check = false;
+						List<String[]> users = cmdline.getTargets("user");
+						for (String[] user : users) {
+							if (CHECK_USERS.contains(user[0])) {
+								check = true;
+								break;
+							}
+						}
+						if (check) {
+							break;
+						}
 						good_npc = targets.get(index);
 						index += 2;
 						state = 2;
@@ -207,10 +223,10 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 						@Override
 						public void run() {
 							ZhengxieTask task = new ZhengxieTask(500);
-							cmdline.executeTask(task, 100);
+							cmdline.executeTask(task, 6000, 100);
 						}
 					};
-					cmdline.fastCombat(false, true, callback);
+					cmdline.fastCombat(true, false, true, callback);
 				} else {
 					System.out.println("failed to kill");
 					cmdline.sendCmd("escape");
