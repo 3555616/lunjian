@@ -12,7 +12,7 @@ import java.util.TimerTask;
 public class CleanZhengxieTrigger extends ZhengxieTrigger {
 
 	private static final Map<String, String> PATHS = new HashMap<String, String>();
-	
+
 	private Timer timer;
 	private LinkedList<CleanJob> jobs = new LinkedList<CleanJob>();
 	private CommandLine cmdline;
@@ -29,12 +29,12 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 		PATHS.put("朱老伯", "fly 3;s;s;w");
 		PATHS.put("方寡妇", "fly 3;s;s;w;n");
 	}
-	
+
 	public CleanZhengxieTrigger() {
 		timer = new Timer();
 		timer.schedule(new CleanTask(), 10000, 10000);
 	}
-	
+
 	@Override
 	public boolean match(CommandLine cmdline, String message) {
 		if ("好在有保险卡，没有降低技能等级！".equals(message)) {
@@ -76,7 +76,7 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 			cmdline.walk(new String[] { path }, null, null, callback, 500);
 		}
 	}
-	
+
 	private static class CleanJob {
 		String npc;
 		long time;
@@ -100,10 +100,11 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 		timer.cancel();
 		super.cleanup();
 	}
-	
-	private static final List<String> CHECK_USERS = Arrays.asList(new String[] {"u3019083", 
-			"u3004398", "u2612595", "太子", "u3085319", "u2760326", "u2622663", "u2963213",
-			"u2734326", "绘羽", "u3087099"});
+
+	private static final List<String> CHECK_USERS = Arrays.asList(new String[] {
+			"u3019083", "u3004398", "u2612595", "u2627095", "u3085319",
+			"u2760326", "u2622663", "u2963213", "u2734326", "u2631696",
+			"u3087099" });
 
 	private class ZhengxieTask extends TimerTaskDelegate {
 

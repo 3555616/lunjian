@@ -491,6 +491,17 @@ public class CommandLine {
 					}
 				}
 			}
+		} else if (line.equals("#rumor")) {
+			String[] keywords = properties.getProperty("snoop.rumor.keywords",
+					"").split(",");
+			if (keywords.length < 1) {
+				System.out.println("property snoop.rumor.keywords not set");
+			} else {
+				String[] ignores = properties.getProperty(
+						"snoop.rumor.ignores", "").split(",");
+				System.out.println("starting snoop rumor...");
+				executeTask(new SnoopRumorTask(keywords, ignores), 3000);
+			}
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
 			Message message = new Message();
 			message.text = line.substring(6).trim();
@@ -984,7 +995,8 @@ public class CommandLine {
 		}
 	}
 
-	protected void fastCombat(boolean halt, boolean loot, boolean once, Runnable callback) {
+	protected void fastCombat(boolean halt, boolean loot, boolean once,
+			Runnable callback) {
 		String[] settings = properties.getProperty("continue.fight", "").split(
 				",");
 		if (settings.length < 1) {
@@ -1162,8 +1174,8 @@ public class CommandLine {
 		private List<Object> context = new ArrayList<Object>(5);
 
 		public ContinueCombatTask(String[] performs, int waitPoint,
-				String heal, int safeHp, int fastKillHp, String fastPerform, boolean halt,
-				boolean loot, boolean once, Runnable callback) {
+				String heal, int safeHp, int fastKillHp, String fastPerform,
+				boolean halt, boolean loot, boolean once, Runnable callback) {
 			super();
 			this.performs = performs;
 			this.waitPoint = waitPoint;
@@ -1460,6 +1472,36 @@ public class CommandLine {
 			if (keywords.contains(keyword)) {
 				keywords.remove(keyword);
 				System.out.println("ok!");
+			}
+		}
+	}
+
+	private class SnoopRumorTask extends TimerTask {
+
+		private List<String> keywords;
+		private List<String> ignores;
+
+		private SnoopRumorTask(String[] keywords, String[] ignores) {
+			this.keywords = new ArrayList<String>(Arrays.asList(keywords));
+			this.ignores = new ArrayList<String>(Arrays.asList(ignores));
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			if (keywords.isEmpty()) {
+				return;
+			}
+			try {
+				List<String> msgs = (List<String>) js(
+						load("get_chat_rumors.js"), keywords, ignores);
+				for (String msg : msgs) {
+					msg = removeSGR(msg.replace("\n", ""));
+					System.out.println(msg + " ("
+							+ FORMAT_TIME.format(new Date()) + ")");
+				}
+			} catch (Exception e) {
+				e.fillInStackTrace();
 			}
 		}
 	}
