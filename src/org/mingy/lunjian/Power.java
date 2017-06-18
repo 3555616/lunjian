@@ -2,7 +2,9 @@ package org.mingy.lunjian;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimerTask;
 
 import org.openqa.selenium.JavascriptExecutor;
@@ -132,6 +134,9 @@ public class Power extends CommandLine {
 				executeTask(new TianjianguCombatTask(pfms, wait, heal, safe),
 						500);
 			}
+		} else if (line.equals("#find tianjian")) {
+			System.out.println("starting find tianjian...");
+			executeTask(new FindTianjianTask(), 100);
 		} else if (line.equals("#pk")) {
 			PvpCombatTask task = new PvpCombatTask(this);
 			if (task.init()) {
@@ -347,7 +352,8 @@ public class Power extends CommandLine {
 		public void run() {
 			try {
 				List<Object> ctx = (List<Object>) js(load("continue_fight.js"),
-						performs, waitPoint, heal, safeHp, 0, null, context);
+						performs, waitPoint, heal, safeHp, 0, null, false,
+						context);
 				if (ctx != null) {
 					context = ctx;
 					if (context.get(3) != null) {
@@ -382,6 +388,48 @@ public class Power extends CommandLine {
 						if (npc != null) {
 							sendCmd("kill " + npc);
 						}
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+	}
+
+	private class FindTianjianTask extends TimerTask {
+
+		private Map<String, Long> memo = new HashMap<String, Long>(2048);
+		private long step;
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				List<List<String>> rooms = (List<List<String>>) js(
+						load("get_rooms.js"), null, true);
+				if (rooms != null && !rooms.isEmpty()) {
+					String room = removeSGR(rooms.get(0).get(1));
+					memo.put(room, ++step);
+					String random = rooms.get(1).get(1);
+					long min = Long.MAX_VALUE;
+					String cmd = null;
+					for (int i = 2; i < rooms.size(); i++) {
+						room = removeSGR(rooms.get(i).get(1));
+						Long n = memo.get(room);
+						if (n == null) {
+							cmd = "go " + rooms.get(i).get(0);
+							break;
+						} else if (n < min) {
+							cmd = "go " + rooms.get(i).get(0);
+							min = n;
+						}
+					}
+					if (cmd != null) {
+						if (random != null && random.length() > 0) {
+							cmd += "." + random;
+						}
+						sendCmd(cmd);
 					}
 				}
 			} catch (Exception e) {
