@@ -45,6 +45,10 @@ var kill = function() {
 		}
 	});
 	if (cmd) {
+		if (h_interval) {
+			clearInterval(h_interval);
+			h_interval = undefined;
+		}
 		var attrs = window.g_obj_map.get('msg_attrs');
 		var is_dummy = parseInt(attrs.get('max_kee')) < 10000;
 		h_interval = setInterval(function() {
