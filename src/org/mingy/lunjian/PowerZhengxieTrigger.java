@@ -32,7 +32,7 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 				System.out.println("path not found: " + good_npc);
 			} else {
 				try {
-					Thread.sleep(Math.round(Math.random() * 200) + 500);
+					Thread.sleep(Math.round(Math.random() * 500) + 800);
 				} catch (InterruptedException e) {
 					// ignore
 				}

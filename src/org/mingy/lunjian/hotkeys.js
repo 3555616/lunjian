@@ -3,8 +3,17 @@ if (!window.g_obj_map || window.robot_hotkeys) {
 	return;
 }
 if (!window.g_obj_map.get('msg_attrs')) {
+	clickButton('attrs');
 	return;
 }
+var _show_html_page = window.gSocketMsg.show_html_page;
+window.gSocketMsg.show_html_page = function() {
+	if (window.gSocketMsg._msg_line.indexOf('论剑玩家守则') < 0) {
+		return _show_html_page.apply(this, arguments);
+	} else {
+		return window.gSocketMsg.go_home();
+	}
+};
 var perform = function(pfm_str) {
 	var skills = [];
 	$('button.cmd_skill_button').each(function() {
