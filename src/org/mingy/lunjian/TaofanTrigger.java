@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 public class TaofanTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
-			.compile("^【系统】官府：\\[1\\-5区\\](.*)慌不择路，逃往了(.*)\\-(.*)$");
+			.compile("^【系统】\\[1\\-5区\\](.*)慌不择路，逃往了(.*)\\-(.*)$");
 
 	@SuppressWarnings("unchecked")
 	@Override
