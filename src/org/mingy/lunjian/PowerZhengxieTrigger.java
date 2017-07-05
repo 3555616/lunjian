@@ -36,10 +36,12 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 				} catch (InterruptedException e) {
 					// ignore
 				}
-				System.out.println("goto " + path);
-				cmdline.executeCmd("halt");
 				Runnable callback = null;
 				if (Boolean.parseBoolean(cmdline.getProperty("zhengxie.auto"))) {
+					if ("+".equals(cmdline.getProperty("zhengxie.priority"))
+							&& !"二娘".equals(bad_npc) && !"段老大".equals(bad_npc)) {
+						return;
+					}
 					callback = new Runnable() {
 						@Override
 						public void run() {
@@ -72,8 +74,21 @@ public class PowerZhengxieTrigger extends ZhengxieTrigger {
 						}
 					};
 				}
+				System.out.println("goto " + path);
+				cmdline.executeCmd("halt");
 				cmdline.walk(new String[] { path }, null, null, callback, 400);
 			}
+		}
+	}
+
+	@Override
+	protected void timesChanged(CommandLine cmdline, int times) {
+		super.timesChanged(cmdline, times);
+		String s = cmdline.getProperty("zhengxie.times");
+		int limit = s != null && s.trim().length() > 0 ? Integer.parseInt(s
+				.trim()) : 10;
+		if (times >= limit) {
+			cmdline.closeTrigger("zhengxie");
 		}
 	}
 
