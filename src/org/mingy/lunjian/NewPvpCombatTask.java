@@ -82,7 +82,7 @@ public class NewPvpCombatTask extends TimerTask {
 	private Map<String, List<Posture>> all_skills = new HashMap<String, List<Posture>>();
 	private String[] performs;
 	private String[] dodges;
-	private Part part;
+	private List<Part> parts = new ArrayList<Part>();
 
 	public NewPvpCombatTask(CommandLine cmdline) {
 		this.cmdline = cmdline;
@@ -164,7 +164,7 @@ public class NewPvpCombatTask extends TimerTask {
 			Map<String, Object> result = (Map<String, Object>) cmdline
 					.js(cmdline.load("get_combat_info.js"));
 			if (result == null) {
-				part = null;
+				parts.clear();
 				return;
 			}
 			Map<String, Object> me = (Map<String, Object>) result.get("me");
@@ -178,7 +178,214 @@ public class NewPvpCombatTask extends TimerTask {
 				info.put("name", CommandLine.removeSGR((String) info.get("name")));
 			}
 			List<String> msgs = (List<String>) result.get("msgs");
-			
+			Stack<String> skills = new Stack<String>();
+			for (int i = 0; i < msgs.size(); i++) {
+				String msg = msgs.get(i);
+				Matcher m = SKILL_CHAIN_PATTERN.matcher(msg);
+				if (m.find()) {
+					skills.push(m.group(2));
+					skills.push(m.group(1));
+					System.out.println("[VS] " + m.group());
+				} else {
+					PoZhao p = checkPoZhao(msg);
+					if (p != null) {
+						if ("你".equals(p.attacker)) {
+							p.attacker = (String) me.get("name");
+						} else if ("你".equals(p.defender)) {
+							p.defender = (String) me.get("name");
+						}
+						if (p.success) {
+							if (p.attacker.equals(me.get("name"))) {
+								Part part = null;
+								for (Part part1 : parts) {
+									if (p.defender.equals(part1.attacker)) {
+										part = part1;
+										break;
+									}
+								}
+								if (part == null) {
+									part = new Part();
+									parts.add(part);
+								}
+								part.attacker = p.attacker;
+								part.defender = p.defender;
+								part.combo_attack = false;
+								part.skills.clear();
+								part.skills.addAll(skills);
+								part.performed = false;
+							} else if (p.defender.equals(me.get("name"))) {
+								Part part = null;
+								for (Part part1 : parts) {
+									if (p.attacker.equals(part1.defender)) {
+										part = part1;
+										break;
+									}
+								}
+								if (part == null) {
+									part = new Part();
+									parts.add(part);
+								}
+								part.attacker = p.attacker;
+								part.defender = p.defender;
+								part.combo_attack = false;
+								part.skills.clear();
+								part.skills.addAll(skills);
+								part.performed = false;
+							}
+						} else {
+							if (p.attacker.equals(me.get("name"))) {
+								Part part = null;
+								for (Part part1 : parts) {
+									if (p.defender.equals(part1.attacker)) {
+										part = part1;
+										break;
+									}
+								}
+								if (part == null) {
+									part = new Part();
+									parts.add(part);
+								}
+								part.attacker = p.defender;
+								part.defender = p.attacker;
+								part.performed = false;
+							} else if (p.defender.equals(me.get("name"))) {
+								Part part = null;
+								for (Part part1 : parts) {
+									if (p.attacker.equals(part1.defender)) {
+										part = part1;
+										break;
+									}
+								}
+								if (part == null) {
+									part = new Part();
+									parts.add(part);
+								}
+								part.attacker = p.defender;
+								part.defender = p.attacker;
+								part.performed = false;
+							}
+						}
+						System.out.println("[VS] " + p.attacker + " po "
+								+ p.defender + " "
+								+ (p.success ? "ok" : "fail"));
+						skills.clear();
+					} else {
+						boolean matched = false;
+						if (part.attacker == null && part.defender == null) {
+							for (Pattern pattern : SINGLE_ATTACK_PATTERNS) {
+								m = pattern.matcher(msg);
+								if (m.find()) {
+									part.attacker = m.group(1);
+									part.defender = m.group(2);
+									if ("你".equals(part.attacker)) {
+										part.attacker = (String) result
+												.get("me");
+									} else if ("你".equals(part.defender)) {
+										part.defender = (String) result
+												.get("me");
+									}
+									part.combo_attack = false;
+									System.out.println("[VS] "
+											+ part.attacker + " attack"
+											+ " (" + part.attacker + " -> "
+											+ part.defender + ")");
+									part.performed = false;
+									matched = true;
+									break;
+								}
+							}
+						}
+						if (!matched) {
+							String msg1 = msg.replace('\u00a0', ' ');
+							if (msg1.startsWith("紧接着，")) {
+								msg1 = msg1.substring(4);
+							} else if (msg1.startsWith("迅疾无比，")) {
+								msg1 = msg1.substring(5);
+							} else if (msg1.startsWith("身形再转，")) {
+								msg1 = msg1.substring(5);
+							}
+							for (String name : all_skills.keySet()) {
+								List<Posture> postures = all_skills.get(name);
+								if (postures != null) {
+									for (Posture posture : postures) {
+										String text = msg1;
+										if (posture.lines > 1) {
+											if (msgs.size() - i < posture.lines) {
+												continue;
+											}
+											StringBuilder sb = new StringBuilder(msg);
+											for (int j = 1; j < posture.lines; j++) {
+												sb.append("\n").append(msgs.get(i + j));
+											}
+											text = sb.toString();
+										}
+										m = posture.pattern.matcher(text);
+										if (m.find()) {
+											System.out.println("[VS] " + name);
+											if (posture.source > 0) {
+												part.attacker = m.group(posture.source);
+											}
+											if (posture.target > 0) {
+												part.defender = m.group(posture.target);
+											}
+											if ("你".equals(part.attacker)) {
+												part.attacker = (String) result
+														.get("me");
+											} else if ("你".equals(part.defender)) {
+												part.defender = (String) result
+														.get("me");
+											}
+											part.combo_attack = false;
+											System.out.println("[VS] "
+													+ part.attacker + " attack"
+													+ " (" + part.attacker + " -> "
+													+ part.defender + ")");
+											part.performed = false;
+											matched = true;
+											break;
+										}
+									}
+								}
+								if (matched) {
+									break;
+								}
+							}
+						}
+						if (!matched) {
+							for (Pattern pattern : COMBO_ATTACK_PATTERNS) {
+								m = pattern.matcher(msg);
+								if (m.find()) {
+									String attacker = m.group(1);
+									String defender = m.groupCount() > 1 ? m
+											.group(2) : null;
+									if ("你".equals(attacker)) {
+										attacker = (String) result
+												.get("me");
+									} else if ("你".equals(defender)) {
+										defender = (String) result
+												.get("me");
+									}
+									if (part.attacker == null) {
+										part.attacker = attacker;
+									}
+									if (part.defender == null) {
+										part.defender = defender;
+									}
+									part.combo_attack = true;
+									part.skills.addAll(skills);
+									System.out.println("[VS] " + attacker
+											+ " attack combo" + " ("
+											+ part.attacker + " -> "
+											+ part.defender + ")");
+									part.performed = false;
+									skills.clear();
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
 			
 			
 			
