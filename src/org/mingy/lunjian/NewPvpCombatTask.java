@@ -50,6 +50,7 @@ public class NewPvpCombatTask extends TimerTask {
 	private static Pattern SKILL_CHAIN_PATTERN = Pattern
 			.compile("^\\-\\-(.*)\\-\\-(.*)\\-\\-$");
 
+	private static String[] PREFIX_COMBO = new String[] {"紧接着，", "迅疾无比，", "身形再转，"};
 	private static String[] AUTO_ATTACK_NPCS = new String[] { "段老大", "二娘",
 			"岳老三", "云老四", "剧盗", "流寇", "恶棍", "王铁匠", "杨掌柜", "柳绘心", "客商", "柳小花",
 			"卖花姑娘", "刘守财", "方老板", "朱老伯", "方寡妇", "[1-5区]段老大", "[1-5区]二娘",
@@ -179,16 +180,20 @@ public class NewPvpCombatTask extends TimerTask {
 			}
 			List<String> msgs = (List<String>) result.get("msgs");
 			Stack<String> skills = new Stack<String>();
+			Part current = null;
 			for (int i = 0; i < msgs.size(); i++) {
 				String msg = msgs.get(i);
 				Matcher m = SKILL_CHAIN_PATTERN.matcher(msg);
 				if (m.find()) {
+					// 技能链记录技能
 					skills.push(m.group(2));
 					skills.push(m.group(1));
 					System.out.println("[VS] " + m.group());
 				} else {
 					PoZhao p = checkPoZhao(msg);
 					if (p != null) {
+						// 破招
+						current = null;
 						if ("你".equals(p.attacker)) {
 							p.attacker = (String) me.get("name");
 						} else if ("你".equals(p.defender)) {
@@ -197,9 +202,10 @@ public class NewPvpCombatTask extends TimerTask {
 						if (p.success) {
 							if (p.attacker.equals(me.get("name"))) {
 								Part part = null;
-								for (Part part1 : parts) {
-									if (p.defender.equals(part1.attacker)) {
-										part = part1;
+								for (int k = parts.size() - 1; k >= 0; k--) {
+									if (p.defender.equals(parts.get(k).attacker)) {
+										part = parts.remove(k);
+										parts.add(part);
 										break;
 									}
 								}
@@ -215,9 +221,10 @@ public class NewPvpCombatTask extends TimerTask {
 								part.performed = false;
 							} else if (p.defender.equals(me.get("name"))) {
 								Part part = null;
-								for (Part part1 : parts) {
-									if (p.attacker.equals(part1.defender)) {
-										part = part1;
+								for (int k = parts.size() - 1; k >= 0; k--) {
+									if (p.attacker.equals(parts.get(k).defender)) {
+										part = parts.remove(k);
+										parts.add(part);
 										break;
 									}
 								}
@@ -235,9 +242,10 @@ public class NewPvpCombatTask extends TimerTask {
 						} else {
 							if (p.attacker.equals(me.get("name"))) {
 								Part part = null;
-								for (Part part1 : parts) {
-									if (p.defender.equals(part1.attacker)) {
-										part = part1;
+								for (int k = parts.size() - 1; k >= 0; k--) {
+									if (p.defender.equals(parts.get(k).attacker)) {
+										part = parts.remove(k);
+										parts.add(part);
 										break;
 									}
 								}
@@ -250,9 +258,10 @@ public class NewPvpCombatTask extends TimerTask {
 								part.performed = false;
 							} else if (p.defender.equals(me.get("name"))) {
 								Part part = null;
-								for (Part part1 : parts) {
-									if (p.attacker.equals(part1.defender)) {
-										part = part1;
+								for (int k = parts.size() - 1; k >= 0; k--) {
+									if (p.attacker.equals(parts.get(k).defender)) {
+										part = parts.remove(k);
+										parts.add(part);
 										break;
 									}
 								}
@@ -270,40 +279,62 @@ public class NewPvpCombatTask extends TimerTask {
 								+ (p.success ? "ok" : "fail"));
 						skills.clear();
 					} else {
-						boolean matched = false;
-						if (part.attacker == null && part.defender == null) {
-							for (Pattern pattern : SINGLE_ATTACK_PATTERNS) {
-								m = pattern.matcher(msg);
-								if (m.find()) {
-									part.attacker = m.group(1);
-									part.defender = m.group(2);
-									if ("你".equals(part.attacker)) {
-										part.attacker = (String) result
-												.get("me");
-									} else if ("你".equals(part.defender)) {
-										part.defender = (String) result
-												.get("me");
+						// 连续攻击检测
+						boolean combo = false;
+						for (Pattern pattern : COMBO_ATTACK_PATTERNS) {
+							m = pattern.matcher(msg);
+							if (m.find()) {
+								String attacker = m.group(1);
+								String defender = m.groupCount() > 1 ? m
+										.group(2) : null;
+								if ("你".equals(attacker)) {
+									attacker = (String) me.get("name");
+								} else if ("你".equals(defender)) {
+									defender = (String) me.get("name");
+								}
+								Part part = null;
+								for (int k = parts.size() - 1; k >= 0; k--) {
+									if (attacker.equals(parts.get(k).attacker) && (defender == null || parts.get(k).defender == null || defender.equals(parts.get(k).defender))) {
+										part = parts.remove(k);
+										if (defender != null) {
+											part.defender = defender;
+										}
+										parts.add(part);
+										break;
 									}
-									part.combo_attack = false;
-									System.out.println("[VS] "
-											+ part.attacker + " attack"
-											+ " (" + part.attacker + " -> "
-											+ part.defender + ")");
-									part.performed = false;
-									matched = true;
+								}
+								if (part == null) {
+									part = new Part();
+									part.attacker = attacker;
+									part.defender = defender;
+									parts.add(part);
+								}
+								part.combo_attack = true;
+								part.skills.addAll(skills);
+								System.out.println("[VS] " + attacker
+										+ " attack combo" + " ("
+										+ part.attacker + " -> "
+										+ part.defender + ")");
+								part.performed = false;
+								skills.clear();
+								combo = true;
+								break;
+							}
+						}
+						if (!combo) {
+							// 攻击技能检测
+							String msg1 = msg.replace('\u00a0', ' ');
+							for (String prefix : PREFIX_COMBO) {
+								if (msg1.startsWith(prefix)) {
+									msg1 = msg1.substring(prefix.length());
+									if (current != null) {
+										parts.clear();
+										parts.add(current);
+									}
 									break;
 								}
 							}
-						}
-						if (!matched) {
-							String msg1 = msg.replace('\u00a0', ' ');
-							if (msg1.startsWith("紧接着，")) {
-								msg1 = msg1.substring(4);
-							} else if (msg1.startsWith("迅疾无比，")) {
-								msg1 = msg1.substring(5);
-							} else if (msg1.startsWith("身形再转，")) {
-								msg1 = msg1.substring(5);
-							}
+							current = null;
 							for (String name : all_skills.keySet()) {
 								List<Posture> postures = all_skills.get(name);
 								if (postures != null) {
@@ -321,64 +352,32 @@ public class NewPvpCombatTask extends TimerTask {
 										}
 										m = posture.pattern.matcher(text);
 										if (m.find()) {
+											skills.add(name);
 											System.out.println("[VS] " + name);
+											current = new Part();
 											if (posture.source > 0) {
-												part.attacker = m.group(posture.source);
+												current.attacker = m.group(posture.source);
 											}
 											if (posture.target > 0) {
-												part.defender = m.group(posture.target);
+												current.defender = m.group(posture.target);
 											}
-											if ("你".equals(part.attacker)) {
-												part.attacker = (String) result
+											if ("你".equals(current.attacker)) {
+												current.attacker = (String) result
 														.get("me");
-											} else if ("你".equals(part.defender)) {
-												part.defender = (String) result
+											} else if ("你".equals(current.defender)) {
+												current.defender = (String) result
 														.get("me");
 											}
-											part.combo_attack = false;
+											current.combo_attack = false;
 											System.out.println("[VS] "
-													+ part.attacker + " attack"
-													+ " (" + part.attacker + " -> "
-													+ part.defender + ")");
-											part.performed = false;
-											matched = true;
+													+ current.attacker + " attack"
+													+ " (" + current.attacker + " -> "
+													+ current.defender + ")");
 											break;
 										}
 									}
 								}
-								if (matched) {
-									break;
-								}
-							}
-						}
-						if (!matched) {
-							for (Pattern pattern : COMBO_ATTACK_PATTERNS) {
-								m = pattern.matcher(msg);
-								if (m.find()) {
-									String attacker = m.group(1);
-									String defender = m.groupCount() > 1 ? m
-											.group(2) : null;
-									if ("你".equals(attacker)) {
-										attacker = (String) result
-												.get("me");
-									} else if ("你".equals(defender)) {
-										defender = (String) result
-												.get("me");
-									}
-									if (part.attacker == null) {
-										part.attacker = attacker;
-									}
-									if (part.defender == null) {
-										part.defender = defender;
-									}
-									part.combo_attack = true;
-									part.skills.addAll(skills);
-									System.out.println("[VS] " + attacker
-											+ " attack combo" + " ("
-											+ part.attacker + " -> "
-											+ part.defender + ")");
-									part.performed = false;
-									skills.clear();
+								if (current != null) {
 									break;
 								}
 							}
