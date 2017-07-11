@@ -138,7 +138,7 @@ public class Power extends CommandLine {
 			System.out.println("starting find tianjian...");
 			executeTask(new FindTianjianTask(), 100);
 		} else if (line.equals("#pk")) {
-			PvpCombatTask task = new PvpCombatTask(this);
+			NewPvpCombatTask task = new NewPvpCombatTask(this);
 			if (task.init()) {
 				System.out.println("starting auto pvp ...");
 				executeTask(task, 100);

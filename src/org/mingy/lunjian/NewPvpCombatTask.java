@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,17 +16,6 @@ import java.util.regex.Pattern;
 import org.mingy.lunjian.skills.Skills;
 
 public class NewPvpCombatTask extends TimerTask {
-
-	private static Pattern[] PART_FINISH_PATTERNS = new Pattern[] {
-			Pattern.compile("^（.*）$"),
-			Pattern.compile("^(.*)顿时被冲开老远，失去了攻击之势！$"),
-			Pattern.compile("^(.*)被(.*)的真气所迫，只好放弃攻击！$"),
-			Pattern.compile("^(.*)衣裳鼓起，真气直接将(.*)逼开了！$"),
-			Pattern.compile("^(.*)找到了闪躲的空间！$"),
-			Pattern.compile("^(.*)朝边上一步闪开！$"),
-			Pattern.compile("^面对(.*)的攻击，(.*)毫不为惧！$"),
-			Pattern.compile("^但(.*)心有定力，并没有受到任何影响！$"),
-			Pattern.compile("^(.*)被(.*)的身影所惑，一时失去了方向！$") };
 
 	private static Pattern[] COMBO_ATTACK_PATTERNS = new Pattern[] {
 			Pattern.compile("^(.*)招式之间组合成了更为凌厉的攻势！$"),
@@ -50,12 +38,18 @@ public class NewPvpCombatTask extends TimerTask {
 	private static Pattern SKILL_CHAIN_PATTERN = Pattern
 			.compile("^\\-\\-(.*)\\-\\-(.*)\\-\\-$");
 
-	private static String[] PREFIX_COMBO = new String[] {"紧接着，", "迅疾无比，", "身形再转，"};
+	private static Pattern USER_ID_PATTERN = Pattern.compile("^u(\\d+)");
+
+	private static String[] PREFIX_COMBO = new String[] { "紧接着，", "迅疾无比，",
+			"身形再转，" };
 	private static String[] AUTO_ATTACK_NPCS = new String[] { "段老大", "二娘",
 			"岳老三", "云老四", "剧盗", "流寇", "恶棍", "王铁匠", "杨掌柜", "柳绘心", "客商", "柳小花",
 			"卖花姑娘", "刘守财", "方老板", "朱老伯", "方寡妇", "[1-5区]段老大", "[1-5区]二娘",
 			"[1-5区]岳老三", "[1-5区]云老四", "[1-5区]无一", "[1-5区]铁二", "[1-5区]追三",
 			"[1-5区]冷四" };
+	private static String[] SKILL_CHAINS = new String[] { "九天龙吟剑法", "覆雨剑法",
+			"织冰剑法", "排云掌法", "如来神掌", "雪饮狂刀", "翻云刀法", "飞刀绝技", "孔雀翎", "道种心魔经",
+			"生生造化功", "幽影幻虚步", "万流归一" };
 
 	private static Map<String, String[]> SKILL_MAP1 = new HashMap<String, String[]>();
 	private static Map<String, String[]> SKILL_MAP2 = new HashMap<String, String[]>();
@@ -112,13 +106,14 @@ public class NewPvpCombatTask extends TimerTask {
 		}
 		return true;
 	}
-	
+
 	private void loadSkills() throws IOException {
 		all_skills.clear();
 		for (String name : Skills.SKILL_FILES.keySet()) {
-			InputStream in = CommandLine.class.getResourceAsStream("skills/" + Skills.SKILL_FILES.get(name) + ".desc");
-			BufferedReader reader = new BufferedReader(
-					new InputStreamReader(in, "utf-8"));
+			InputStream in = CommandLine.class.getResourceAsStream("skills/"
+					+ Skills.SKILL_FILES.get(name) + ".desc");
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					in, "utf-8"));
 			List<Posture> postures = new ArrayList<Posture>();
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -148,7 +143,8 @@ public class NewPvpCombatTask extends TimerTask {
 						}
 					}
 					sb.append(line.substring(j)).append("$");
-					posture.pattern = Pattern.compile(sb.toString(), Pattern.CANON_EQ | Pattern.UNICODE_CASE);
+					posture.pattern = Pattern.compile(sb.toString(),
+							Pattern.CANON_EQ | Pattern.UNICODE_CASE);
 					posture.lines = line.split("\\\\n").length;
 					postures.add(posture);
 				}
@@ -168,20 +164,18 @@ public class NewPvpCombatTask extends TimerTask {
 				parts.clear();
 				return;
 			}
-			Map<String, Object> me = (Map<String, Object>) result.get("me");
-			me.put("name", CommandLine.removeSGR((String) me.get("name")));
-			List<Map<String, Object>> vs1 = (List<Map<String, Object>>) result
-					.get("vs1");
-			for (Map<String, Object> info : vs1) {
-				info.put("name",
-						CommandLine.removeSGR((String) info.get("name")));
+			VsInfo me = createVsInfo((Map<String, Object>) result.get("me"));
+			List<VsInfo> vs1 = new ArrayList<VsInfo>(4);
+			for (Map<String, Object> map : (List<Map<String, Object>>) result
+					.get("vs1")) {
+				vs1.add(createVsInfo(map));
 			}
-			List<Map<String, Object>> vs2 = (List<Map<String, Object>>) result
-					.get("vs2");
-			for (Map<String, Object> info : vs2) {
-				info.put("name",
-						CommandLine.removeSGR((String) info.get("name")));
+			List<VsInfo> vs2 = new ArrayList<VsInfo>(4);
+			for (Map<String, Object> map : (List<Map<String, Object>>) result
+					.get("vs2")) {
+				vs2.add(createVsInfo(map));
 			}
+			List<String> pfms = (List<String>) result.get("pfms");
 			long time = System.currentTimeMillis();
 			for (int i = parts.size() - 1; i >= 0; i--) {
 				if (time - parts.get(i).alive > 2500) {
@@ -224,7 +218,7 @@ public class NewPvpCombatTask extends TimerTask {
 								}
 								part.attacker = p.attacker;
 								part.defender = p.defender;
-								part.combo_attack = false;
+								part.combo_attack = 0;
 								part.skills.clear();
 								part.skills.addAll(skills);
 								part.alive = time;
@@ -244,7 +238,7 @@ public class NewPvpCombatTask extends TimerTask {
 								}
 								part.attacker = p.attacker;
 								part.defender = p.defender;
-								part.combo_attack = false;
+								part.combo_attack = 0;
 								part.skills.clear();
 								part.skills.addAll(skills);
 								part.alive = time;
@@ -294,13 +288,19 @@ public class NewPvpCombatTask extends TimerTask {
 							m = pattern.matcher(msg);
 							if (m.find()) {
 								String attacker = m.group(1);
-								String defender = m.groupCount() > 1 ? m
-										.group(2) : null;
+								String defender = null;
+								if (m.groupCount() > 1) {
+									defender = m.group(2);
+								} else if (current != null
+										&& attacker.equals(current.attacker)) {
+									defender = current.defender;
+								}
 								System.out.println("[VS] "
 										+ attacker
 										+ " attack "
 										+ (defender != null ? defender + " "
 												: "") + "combo");
+								current = null;
 								Part part = null;
 								if ("你".equals(attacker)) {
 									for (int k = parts.size() - 1; k >= 0; k--) {
@@ -317,32 +317,29 @@ public class NewPvpCombatTask extends TimerTask {
 										}
 									}
 								} else if ("你".equals(defender)) {
-									defender = (String) me.get("name");
-								}
-								for (int k = parts.size() - 1; k >= 0; k--) {
-									if (attacker.equals(parts.get(k).attacker)
-											&& (defender == null
-													|| parts.get(k).defender == null || defender
-													.equals(parts.get(k).defender))) {
-										part = parts.remove(k);
-										if (defender != null) {
-											part.defender = defender;
+									for (int k = parts.size() - 1; k >= 0; k--) {
+										if (attacker
+												.equals(parts.get(k).attacker)
+												&& "你".equals(parts.get(k).defender)) {
+											part = parts.remove(k);
+											parts.add(part);
+											break;
 										}
-										parts.add(part);
-										break;
 									}
 								}
-								if (part == null) {
-									part = new Part();
-									part.attacker = attacker;
-									part.defender = defender;
-									parts.add(part);
+								if ("你".equals(attacker)
+										|| "你".equals(defender)) {
+									if (part == null) {
+										part = new Part();
+										part.attacker = attacker;
+										part.defender = defender;
+										parts.add(part);
+									}
+									part.combo_attack++;
+									part.alive = time;
+									part.skills.addAll(skills);
+									skills.clear();
 								}
-								part.combo_attack = true;
-								part.alive = time;
-								part.skills.addAll(skills);
-								part.performed = false;
-								skills.clear();
 								combo = true;
 								break;
 							}
@@ -354,10 +351,20 @@ public class NewPvpCombatTask extends TimerTask {
 								if (msg1.startsWith(prefix)) {
 									msg1 = msg1.substring(prefix.length());
 									if (current != null) {
-										if (!current.combo_attack) {
-											parts.clear();
+										System.out
+												.println("[VS] "
+														+ current.attacker
+														+ " attack"
+														+ (current.defender != null ? " "
+																+ current.defender
+																: ""));
+										if ("你".equals(current.attacker)
+												|| "你".equals(current.defender)) {
+											if (current.combo_attack == 0) {
+												parts.clear();
+											}
+											parts.add(current);
 										}
-										parts.add(current);
 										current = null;
 									}
 									break;
@@ -384,7 +391,8 @@ public class NewPvpCombatTask extends TimerTask {
 										m = posture.pattern.matcher(text);
 										if (m.find()) {
 											skills.add(name);
-											System.out.println("[VS] " + name);
+											// System.out.println("[VS] " +
+											// name);
 											part = new Part();
 											if (posture.source > 0) {
 												part.attacker = m
@@ -394,21 +402,8 @@ public class NewPvpCombatTask extends TimerTask {
 												part.defender = m
 														.group(posture.target);
 											}
-											if ("你".equals(part.attacker)) {
-												part.attacker = (String) result
-														.get("me");
-											} else if ("你"
-													.equals(part.defender)) {
-												part.defender = (String) result
-														.get("me");
-											}
-											part.combo_attack = false;
+											part.combo_attack = 0;
 											part.alive = time;
-											System.out.println("[VS] "
-													+ part.attacker + " attack"
-													+ " (" + part.attacker
-													+ " -> " + part.defender
-													+ ")");
 											break;
 										}
 									}
@@ -419,10 +414,18 @@ public class NewPvpCombatTask extends TimerTask {
 							}
 							if (part != null) {
 								if (current != null) {
-									if (!current.combo_attack) {
-										parts.clear();
+									System.out.println("[VS] "
+											+ current.attacker
+											+ " attack"
+											+ (current.defender != null ? " "
+													+ current.defender : ""));
+									if ("你".equals(current.attacker)
+											|| "你".equals(current.defender)) {
+										if (current.combo_attack == 0) {
+											parts.clear();
+										}
+										parts.add(current);
 									}
-									parts.add(current);
 								}
 								current = part;
 							}
@@ -431,106 +434,87 @@ public class NewPvpCombatTask extends TimerTask {
 				}
 			}
 			if (current != null) {
-				if (!current.combo_attack) {
-					parts.clear();
+				System.out.println("[VS] "
+						+ current.attacker
+						+ " attack"
+						+ (current.defender != null ? " " + current.defender
+								: ""));
+				if ("你".equals(current.attacker)
+						|| "你".equals(current.defender)) {
+					if (current.combo_attack == 0) {
+						parts.clear();
+					}
+					parts.add(current);
 				}
-				parts.add(current);
 			}
-			for (Part part : parts) {
-
-			}
-
-			if (part != null && part.attacker != null && !part.performed) {
-				boolean attacker_in_my_side = inMySide(part.attacker, result);
-				boolean attacker_is_friend = isFriend(part.attacker);
-				boolean defender_is_friend = part.defender != null ? isFriend(part.defender)
-						: !attacker_in_my_side;
-				long pt = Math.round(Double.parseDouble(String.valueOf(result
-						.get("pt"))));
-				boolean do_attack = false;
-				boolean do_combo = false;
-				List<String> ignoreNPCs = Arrays.asList(AUTO_ATTACK_NPCS);
-				if (result.get("me").equals(part.defender)) { // defender is me
-					if (!ignoreNPCs.contains(part.attacker)) {
-						do_attack = true;
-					}
-				} else if (!attacker_in_my_side) { // defender in my side
-					if (defender_is_friend && !attacker_is_friend && pt >= 5
-							&& !ignoreNPCs.contains(part.attacker)) {
-						if (part.combo_attack
-								|| (!part.combo_attack && pt >= 5)) {
-							do_attack = true;
-						}
-					}
-				} else { // attacker in my side
-					if (!defender_is_friend && !part.combo_attack && pt >= 6
-							&& !ignoreNPCs.contains(part.defender)) {
-						do_attack = true;
-						do_combo = true;
-					}
-				}
-				if (do_attack) {
-					List<String> pfms = (List<String>) result.get("pfms");
-					while (!part.performed && !part.skills.isEmpty()) {
-						String[] choose = !do_combo ? SKILL_MAP1
-								.get(part.skills.pop()) : SKILL_MAP2
-								.get(part.skills.pop());
-						if (choose != null) {
-							for (String pfm : choose) {
-								int i = pfms.indexOf(pfm);
-								if (i >= 0) {
-									System.out.println("[VS] perform " + pfm);
-									cmdline.sendCmd("playskill " + (i + 1));
-									part.performed = true;
-									done = true;
+			int point = me.point;
+			for (int i = 0; i < parts.size(); i++) {
+				Part part = parts.get(i);
+				if ("你".equals(part.defender)) {
+					String pfm = perform(part.skills, pfms);
+					if (pfm != null) {
+						point = calcPoint(point, pfm);
+						if (point >= 3) {
+							boolean hasNext = false;
+							for (int j = i + 1; j < parts.size(); j++) {
+								if ("你".equals(parts.get(j).defender)) {
+									hasNext = true;
 									break;
 								}
 							}
+							if (!hasNext
+									&& !isFriend(part.attacker)
+									&& (part.combo_attack > 1 || getHp(
+											part.attacker, vs2) >= 100000)) {
+								pfm = combo(pfm, pfms);
+								point = calcPoint(point, pfm);
+								break;
+							}
 						}
+					} else {
+						break;
 					}
-					if (!part.performed) {
-						for (String pfm : performs) {
-							int i = pfms.indexOf(pfm);
-							if (i >= 0) {
-								System.out.println("[VS] perform " + pfm);
-								cmdline.sendCmd("playskill " + (i + 1));
-								part.performed = true;
-								done = true;
+				}
+			}
+			if (point >= 3) {
+				for (int i = 0; i < parts.size(); i++) {
+					Part part = parts.get(i);
+					if ("你".equals(part.attacker) && part.defender != null
+							&& !isFriend(part.defender)
+							&& isPlayer(part.defender, vs2)) {
+						long hp = getHp(part.defender, vs2);
+						if ((hp >= 100000 && part.combo_attack < 2)
+								|| (hp >= 40000 && part.combo_attack == 0)) {
+							String pfm = combo(part.skills, pfms);
+							point = calcPoint(point, pfm);
+						}
+						break;
+					}
+				}
+			}
+			if (point >= 9) {
+				boolean b = false;
+				for (String npc : AUTO_ATTACK_NPCS) {
+					for (VsInfo info : vs2) {
+						if (npc.equals(info.name)) {
+							Matcher m = USER_ID_PATTERN.matcher(info.id);
+							if (!m.find()) {
+								b = true;
 								break;
 							}
 						}
 					}
-				}
-			}
-			if (!done
-					&& Math.round(Double.parseDouble(String.valueOf(result
-							.get("pt")))) >= 9) {
-				boolean b = false;
-				List<String> vs1 = (List<String>) result.get("vs1");
-				List<String> vs2 = (List<String>) result.get("vs2");
-				for (String npc : AUTO_ATTACK_NPCS) {
-					if (vs1.contains(npc) || vs2.contains(npc)) {
-						b = true;
+					if (b) {
 						break;
 					}
 				}
 				if (b) {
-					int t1, t2;
-					if (vs1.contains(result.get("me"))) {
-						t1 = vs1.size();
-						t2 = vs2.size();
-					} else {
-						t1 = vs2.size();
-						t2 = vs1.size();
-					}
-					if (t1 - t2 > 1) {
-						List<String> pfms = (List<String>) result.get("pfms");
+					if (vs1.size() - vs2.size() < 2) {
 						for (String pfm : dodges) {
 							int i = pfms.indexOf(pfm);
 							if (i >= 0) {
 								System.out.println("[VS] perform " + pfm);
 								cmdline.sendCmd("playskill " + (i + 1));
-								done = true;
 								break;
 							}
 						}
@@ -541,6 +525,120 @@ public class NewPvpCombatTask extends TimerTask {
 			e.printStackTrace();
 			cmdline.stopTask(this);
 		}
+	}
+	
+	private VsInfo createVsInfo(Map<String, Object> map) {
+		VsInfo info = new VsInfo();
+		info.id = (String) map.get("id");
+		info.name = CommandLine.removeSGR((String) map.get("name"));
+		info.qi = (Long) map.get("qi");
+		info.max_qi = (Long) map.get("max_qi");
+		info.point = ((Long) map.get("pt")).intValue();
+		return info;
+	}
+
+	private String perform(Stack<String> skills, List<String> pfms) {
+		while (!skills.isEmpty()) {
+			String[] choose = SKILL_MAP1.get(skills.pop());
+			if (choose != null) {
+				for (String pfm : choose) {
+					int i = pfms.indexOf(pfm);
+					if (i >= 0) {
+						System.out.println("[VS] perform " + pfm);
+						cmdline.sendCmd("playskill " + (i + 1));
+						return pfm;
+					}
+				}
+			}
+		}
+		for (String pfm : performs) {
+			int i = pfms.indexOf(pfm);
+			if (i >= 0) {
+				System.out.println("[VS] perform " + pfm);
+				cmdline.sendCmd("playskill " + (i + 1));
+				return pfm;
+			}
+		}
+		return null;
+	}
+
+	private String combo(Stack<String> skills, List<String> pfms) {
+		while (!skills.isEmpty()) {
+			String[] choose = SKILL_MAP2.get(skills.pop());
+			if (choose != null) {
+				for (String pfm : choose) {
+					int i = pfms.indexOf(pfm);
+					if (i >= 0) {
+						System.out.println("[VS] perform " + pfm);
+						cmdline.sendCmd("playskill " + (i + 1));
+						return pfm;
+					}
+				}
+			}
+		}
+		for (String pfm : performs) {
+			int i = pfms.indexOf(pfm);
+			if (i >= 0) {
+				System.out.println("[VS] perform " + pfm);
+				cmdline.sendCmd("playskill " + (i + 1));
+				return pfm;
+			}
+		}
+		return null;
+	}
+
+	private String combo(String skill, List<String> pfms) {
+		String[] choose = SKILL_MAP2.get(skill);
+		if (choose != null) {
+			for (String pfm : choose) {
+				int i = pfms.indexOf(pfm);
+				if (i >= 0) {
+					System.out.println("[VS] perform " + pfm);
+					cmdline.sendCmd("playskill " + (i + 1));
+					return pfm;
+				}
+			}
+		}
+		for (String pfm : performs) {
+			int i = pfms.indexOf(pfm);
+			if (i >= 0) {
+				System.out.println("[VS] perform " + pfm);
+				cmdline.sendCmd("playskill " + (i + 1));
+				return pfm;
+			}
+		}
+		return null;
+	}
+
+	private int calcPoint(int point, String pfm) {
+		if (pfm == null || pfm.length() == 0) {
+			return point;
+		}
+		for (String skill : SKILL_CHAINS) {
+			if (skill.equals(pfm)) {
+				return point - 3;
+			}
+		}
+		return point - 2;
+	}
+
+	private boolean isPlayer(String name, List<VsInfo> vs) {
+		for (VsInfo info : vs) {
+			if (name.equals(info.name)) {
+				Matcher m = USER_ID_PATTERN.matcher(info.id);
+				return m.find();
+			}
+		}
+		return false;
+	}
+
+	private long getHp(String name, List<VsInfo> vs) {
+		for (VsInfo info : vs) {
+			if (name.equals(info.name)) {
+				return info.qi;
+			}
+		}
+		return 0;
 	}
 
 	private boolean isFriend(String name) {
@@ -569,23 +667,6 @@ public class NewPvpCombatTask extends TimerTask {
 			}
 		}
 		return ok;
-	}
-
-	@SuppressWarnings("unchecked")
-	private boolean inMySide(String name, Map<String, Object> result) {
-		if ("你".equals(name)) {
-			return true;
-		}
-		String me = (String) result.get("me");
-		List<String> vs = (List<String>) result.get("vs1");
-		if (vs.contains(me) && vs.contains(name)) {
-			return true;
-		}
-		vs = (List<String>) result.get("vs2");
-		if (vs.contains(me) && vs.contains(name)) {
-			return true;
-		}
-		return false;
 	}
 
 	private PoZhao checkPoZhao(String msg) {
@@ -643,7 +724,7 @@ public class NewPvpCombatTask extends TimerTask {
 	private static class Part {
 		String attacker;
 		String defender;
-		boolean combo_attack;
+		int combo_attack;
 		Stack<String> skills = new Stack<String>();
 		long alive;
 	}
@@ -653,11 +734,20 @@ public class NewPvpCombatTask extends TimerTask {
 		String attacker;
 		String defender;
 	}
-	
+
 	private static class Posture {
 		Pattern pattern;
 		int lines;
 		int source;
 		int target;
+	}
+	
+	private static class VsInfo {
+		String id;
+		String name;
+		long qi;
+		long max_qi;
+		long neili;
+		int point;
 	}
 }
