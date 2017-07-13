@@ -22,7 +22,7 @@ public class AutoKillTrigger implements Trigger {
 
 	protected void process(CommandLine cmdline, String killer, String target) {
 		if ("你".equals(killer) || "你".equals(target)) {
-			PvpCombatTask task = new PvpCombatTask(cmdline);
+			NewPvpCombatTask task = new NewPvpCombatTask(cmdline);
 			if (task.init()) {
 				System.out.println("starting auto pvp ...");
 				cmdline.executeTask(task, 100);
@@ -57,7 +57,7 @@ public class AutoKillTrigger implements Trigger {
 						.findTarget(new String[] { "user" }, name);
 				if (tar != null) {
 					cmdline.sendCmd("fight " + tar[0]);
-					PvpCombatTask task = new PvpCombatTask(cmdline);
+					NewPvpCombatTask task = new NewPvpCombatTask(cmdline);
 					if (task.init()) {
 						System.out.println("starting auto pvp ...");
 						cmdline.executeTask(task, 100);
