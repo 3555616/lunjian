@@ -47,6 +47,9 @@ public class YouxiaLocationTrigger extends YouxiaTrigger {
 		MAPS.add("铁雪山庄");
 		MAPS.add("慕容山庄");
 		MAPS.add("大理");
+		MAPS.add("断剑山庄");
+		MAPS.add("冰火岛");
+		MAPS.add("侠客岛");
 	}
 
 	@Override

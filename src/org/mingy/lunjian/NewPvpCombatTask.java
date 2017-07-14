@@ -15,6 +15,37 @@ import java.util.regex.Pattern;
 
 import org.mingy.lunjian.skills.Skills;
 
+/*
+店小二道：我有个事情想找雪亭镇-醉汉，壮士可否替我走一趟？
+苦力道：上次我不小心，竟然吃了雪亭镇-王铁匠的亏，壮士去杀了他！
+王铁匠脚一蹬，死了。现在可以回去找苦力交差了。
+刘安禄道：我将铁锤藏在了雪亭镇-城隍庙内室，壮士可前去寻找。
+你一番搜索，果然找到了，回去告诉刘安禄吧。
+庙祝道：雪亭镇-老农夫好大胆，竟敢拿走了我的铁手镯，去替我要回来可好？
+老农夫老老实实将东西交了出来，现在可以回去找庙祝交差了。
+庙祝道：我想找雪亭镇-庙祝商量一点事情，壮士替我找一下？
+庙祝说道：好，我知道了。你回去转告庙祝吧。
+疯狗道：雪亭镇-武馆弟子看上去好生奇怪，壮士可前去打探一番。
+武馆弟子道：我十分讨厌那雪亭镇-醉汉，壮士替我去教训教训他罢！
+醉汉说道：好，好，好，我知错了……你回去转告武馆弟子吧。
+农夫道：我有个铁手镯被洛阳-疯狗抢走了，去替我要回来吧！
+疯狗道：雪亭镇-农夫竟敢得罪我，壮士去让他尝尝厉害吧！
+魏无极道：突然想要一顶皮帽，壮士可否帮忙找来？
+刘安禄道：华山村-野兔竟对我横眉瞪眼的，真想杀掉他！
+李火狮道：雪亭镇-庙祝昨天捡到了我几十辆银子，拒不归还。钱是小事，但人品可不好。壮士去杀了他！
+李火狮道：唉，好想要一顶白缨冠啊。
+王铁匠道：雪亭镇-疯狗十分嚣张，去让他见识见识厉害！
+黑衣女子道：雪亭镇-老农夫鬼鬼祟祟的叫人生疑，婆婆去打探打探情况。
+
+
+（地府-摩诃王似乎受了点轻伤，不过光从外表看不大出来。）
+（明月几时有受了相当重的伤，只怕会有生命危险。）
+（明月几时有伤重之下已经难以支撑，眼看就要倒在地上。）
+（明月几时有受伤过重，已经有如风中残烛，随时都可能断气。）
+（你看起来可能受了点轻伤。）
+（地府-无量王受了几处伤，不过似乎并不碍事。）
+ */
+
 public class NewPvpCombatTask extends TimerTask {
 
 	private static Pattern[] PART_FINISH_PATTERNS = new Pattern[] {
@@ -89,6 +120,9 @@ public class NewPvpCombatTask extends TimerTask {
 	private String[] performs;
 	private String[] dodges;
 	private List<Part> parts = new ArrayList<Part>();
+	private boolean is_vs_npc1;
+	private boolean is_vs_npc2;
+	private boolean npc_attack;
 
 	public NewPvpCombatTask(CommandLine cmdline) {
 		this.cmdline = cmdline;
@@ -203,14 +237,21 @@ public class NewPvpCombatTask extends TimerTask {
 				String msg = msgs.get(i);
 				String[] r = checkPartFinish(msg);
 				if (r != null) {
+					System.out
+							.println("[VS] " + r[1] + " vs " + r[0] + " over");
+					if (is_vs_npc1 && (isNpc(r[0], vs1) || isNpc(r[1], vs1))) {
+						is_vs_npc1 = false;
+					}
+					if (is_vs_npc2 && (isNpc(r[0], vs2) || isNpc(r[1], vs2))) {
+						is_vs_npc2 = false;
+						npc_attack = false;
+					}
 					if ("你".equals(r[0])) {
 						for (int j = 0; j < parts.size(); j++) {
 							Part part = parts.get(j);
 							if ("你".equals(part.defender)
 									&& (r[1] == null || r[1]
 											.equals(part.attacker))) {
-								System.out.println("[VS] " + part.attacker
-										+ " vs " + part.defender + " over");
 								parts.remove(j);
 								break;
 							}
@@ -221,8 +262,6 @@ public class NewPvpCombatTask extends TimerTask {
 							if ("你".equals(part.attacker)
 									&& (r[0] == null || r[0]
 											.equals(part.defender))) {
-								System.out.println("[VS] " + part.attacker
-										+ " vs " + part.defender + " over");
 								parts.remove(j);
 								break;
 							}
@@ -243,6 +282,22 @@ public class NewPvpCombatTask extends TimerTask {
 					// 破招
 					System.out.println("[VS] " + p.attacker + " po "
 							+ p.defender + " " + (p.success ? "ok" : "fail"));
+					if (!is_vs_npc1
+							&& ((isNpc(p.attacker, vs1) && p.success) || isNpc(
+									p.defender, vs1))) {
+						is_vs_npc1 = true;
+					}
+					if (!is_vs_npc2) {
+						if (isNpc(p.attacker, vs2) && p.success) {
+							is_vs_npc2 = true;
+							npc_attack = true;
+						} else if (isNpc(p.defender, vs2)) {
+							is_vs_npc2 = true;
+							if (!p.success) {
+								npc_attack = true;
+							}
+						}
+					}
 					current = null;
 					if (p.success) {
 						if ("你".equals(p.attacker)) {
@@ -338,6 +393,12 @@ public class NewPvpCombatTask extends TimerTask {
 						System.out.println("[VS] " + attacker + " attack "
 								+ (defender != null ? defender + " " : "")
 								+ "combo");
+						if (!is_vs_npc1 && isNpc(defender, vs1)) {
+							is_vs_npc1 = true;
+						}
+						if (!is_vs_npc2 && isNpc(defender, vs2)) {
+							is_vs_npc2 = true;
+						}
 						current = null;
 						Part part = null;
 						if ("你".equals(attacker)) {
@@ -432,6 +493,35 @@ public class NewPvpCombatTask extends TimerTask {
 									}
 									part.combo_attack = 0;
 									part.alive = time;
+									if (i + posture.lines < msgs.size()) {
+										String next = msgs.get(i
+												+ posture.lines);
+										boolean is_combo = false;
+										for (Pattern pattern : COMBO_ATTACK_PATTERNS) {
+											m = pattern.matcher(next);
+											if (m.find()) {
+												is_combo = true;
+												break;
+											}
+										}
+										if (!is_combo) {
+											if (!is_vs_npc1
+													&& (isNpc(part.attacker,
+															vs1) || isNpc(
+															part.defender, vs1))) {
+												is_vs_npc1 = true;
+											}
+											if (!is_vs_npc2) {
+												if (isNpc(part.attacker, vs2)) {
+													is_vs_npc2 = true;
+													npc_attack = true;
+												} else if (isNpc(part.defender,
+														vs2)) {
+													is_vs_npc2 = true;
+												}
+											}
+										}
+									}
 									break;
 								}
 							}
@@ -473,95 +563,147 @@ public class NewPvpCombatTask extends TimerTask {
 					parts.add(current);
 				}
 			}
+			// do perform
 			int point = me.point;
-			for (int i = 0; i < parts.size(); i++) {
-				Part part = parts.get(i);
-				if ("你".equals(part.defender)) {
-					String pfm = perform(part.skills, pfms);
-					if (pfm != null) {
-						System.out.println("[VS] perform " + pfm + " to "
-								+ part.attacker);
-						point = calcPoint(point, pfm);
-						if (point >= 3) {
-							boolean hasNext = false;
-							for (int j = i + 1; j < parts.size(); j++) {
-								if ("你".equals(parts.get(j).defender)) {
-									hasNext = true;
-									break;
-								}
-							}
-							if (!hasNext
-									&& !isFriend(part.attacker)
-									&& isPlayer(part.attacker, vs2)
-									&& (part.combo_attack > 1 || getHp(
-											part.attacker, vs2) >= 100000)) {
-								pfm = combo(pfm, pfms);
-								if (pfm != null) {
-									System.out.println("[VS] perform " + pfm
-											+ " to " + part.attacker);
-									point = calcPoint(point, pfm);
-								}
-								break;
-							}
-						}
-					} else {
-						break;
-					}
-				}
-			}
-			if (point >= 3) {
-				for (int i = 0; i < parts.size(); i++) {
-					Part part = parts.get(i);
-					if ("你".equals(part.attacker) && part.defender != null
-							&& !isFriend(part.defender)
-							&& isPlayer(part.defender, vs2)) {
-						long hp = getHp(part.defender, vs2);
-						if ((hp >= 100000 && part.combo_attack < 2)
-								|| (hp >= 40000 && part.combo_attack == 0)) {
-							String pfm = combo(part.skills, pfms);
-							if (pfm != null) {
-								System.out.println("[VS] perform " + pfm
-										+ " to " + part.defender);
-								point = calcPoint(point, pfm);
-							}
-						}
-						break;
-					}
-				}
-			}
-			if (point >= 9) {
-				boolean b = false;
-				for (String npc : AUTO_ATTACK_NPCS) {
-					for (VsInfo info : vs2) {
-						if (npc.equals(info.name)) {
-							Matcher m = USER_ID_PATTERN.matcher(info.id);
-							if (!m.find()) {
-								b = true;
-								break;
-							}
-						}
-					}
-					if (b) {
-						break;
-					}
-				}
-				if (b) {
-					if (vs1.size() - vs2.size() < 2) {
+			if (hasNpc(vs2)) {
+				if (is_vs_npc2) {
+					if (npc_attack) {
 						for (String pfm : dodges) {
 							int i = pfms.indexOf(pfm);
 							if (i >= 0) {
 								System.out.println("[VS] perform " + pfm);
 								cmdline.sendCmd("playskill " + (i + 1));
+								point = calcPoint(point, pfm);
 								break;
 							}
 						}
 					}
+					return;
 				}
+			}
+			if (is_vs_npc1) {
+				if (point >= 3) {
+					String pfm = comboAttack(vs2, pfms);
+					if (pfm != null) {
+						point = calcPoint(point, pfm);
+					} else {
+						pfm = perform(pfms);
+						if (pfm != null) {
+							System.out.println("[VS] perform " + pfm);
+							point = calcPoint(point, pfm);
+						}
+					}
+				}
+			} else if (hasNpc(vs1)) {
+				if (point >= 3) {
+					String pfm = perform(pfms);
+					if (pfm != null) {
+						System.out.println("[VS] perform " + pfm);
+						point = calcPoint(point, pfm);
+					}
+				}
+			} else {
+				normalCombat(vs1, vs2, pfms, point);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			cmdline.stopTask(this);
 		}
+	}
+
+	private void normalCombat(List<VsInfo> vs1, List<VsInfo> vs2,
+			List<String> pfms, int point) {
+		for (int i = 0; i < parts.size(); i++) {
+			Part part = parts.get(i);
+			if ("你".equals(part.defender)) {
+				String pfm = perform(part.skills, pfms);
+				if (pfm != null) {
+					System.out.println("[VS] perform " + pfm + " to "
+							+ part.attacker);
+					point = calcPoint(point, pfm);
+					if (point >= 3) {
+						boolean hasNext = false;
+						for (int j = i + 1; j < parts.size(); j++) {
+							if ("你".equals(parts.get(j).defender)) {
+								hasNext = true;
+								break;
+							}
+						}
+						if (!hasNext
+								&& !isFriend(part.attacker)
+								&& isPlayer(part.attacker, vs2)
+								&& (part.combo_attack > 1 || getHp(
+										part.attacker, vs2) >= 100000)) {
+							pfm = combo(pfm, pfms);
+							if (pfm != null) {
+								System.out.println("[VS] perform " + pfm
+										+ " to " + part.attacker);
+								point = calcPoint(point, pfm);
+							}
+							break;
+						}
+					}
+				} else {
+					break;
+				}
+			}
+		}
+		if (point >= 3) {
+			String pfm = comboAttack(vs2, pfms);
+			if (pfm != null) {
+				point = calcPoint(point, pfm);
+			}
+		}
+		if (point >= 9) {
+			boolean b = false;
+			for (String npc : AUTO_ATTACK_NPCS) {
+				for (VsInfo info : vs2) {
+					if (npc.equals(info.name)) {
+						Matcher m = USER_ID_PATTERN.matcher(info.id);
+						if (!m.find()) {
+							b = true;
+							break;
+						}
+					}
+				}
+				if (b) {
+					break;
+				}
+			}
+			if (b) {
+				if (vs1.size() - vs2.size() < 2) {
+					for (String pfm : dodges) {
+						int i = pfms.indexOf(pfm);
+						if (i >= 0) {
+							System.out.println("[VS] perform " + pfm);
+							cmdline.sendCmd("playskill " + (i + 1));
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private String comboAttack(List<VsInfo> vs2, List<String> pfms) {
+		for (int i = 0; i < parts.size(); i++) {
+			Part part = parts.get(i);
+			if ("你".equals(part.attacker) && part.defender != null
+					&& !isFriend(part.defender) && isPlayer(part.defender, vs2)) {
+				long hp = getHp(part.defender, vs2);
+				if ((hp >= 100000 && part.combo_attack < 2)
+						|| (hp >= 40000 && part.combo_attack == 0)) {
+					String pfm = combo(part.skills, pfms);
+					if (pfm != null) {
+						System.out.println("[VS] perform " + pfm + " to "
+								+ part.defender);
+						return pfm;
+					}
+				}
+				return "";
+			}
+		}
+		return null;
 	}
 
 	private VsInfo createVsInfo(Map<String, Object> map) {
@@ -586,6 +728,10 @@ public class NewPvpCombatTask extends TimerTask {
 				}
 			}
 		}
+		return perform(pfms);
+	}
+
+	private String perform(List<String> pfms) {
 		for (String pfm : performs) {
 			int i = pfms.indexOf(pfm);
 			if (i >= 0) {
@@ -660,6 +806,29 @@ public class NewPvpCombatTask extends TimerTask {
 			if (name.equals(info.name)) {
 				Matcher m = USER_ID_PATTERN.matcher(info.id);
 				return m.find();
+			}
+		}
+		return false;
+	}
+
+	private boolean isNpc(String name, List<VsInfo> vs) {
+		if (name == null || name.length() == 0) {
+			return false;
+		}
+		for (VsInfo info : vs) {
+			if (name.equals(info.name)) {
+				Matcher m = USER_ID_PATTERN.matcher(info.id);
+				return !m.find();
+			}
+		}
+		return false;
+	}
+
+	private boolean hasNpc(List<VsInfo> vs) {
+		for (VsInfo info : vs) {
+			Matcher m = USER_ID_PATTERN.matcher(info.id);
+			if (!m.find()) {
+				return true;
 			}
 		}
 		return false;
