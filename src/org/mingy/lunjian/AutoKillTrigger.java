@@ -9,7 +9,10 @@ public class AutoKillTrigger implements Trigger {
 			.compile("^(.*)对著(.*)喝道：「(.*)！今日不是你死就是我活！」$");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message) {
+	public boolean match(CommandLine cmdline, String message, String type) {
+		if (!"local".equals(type)) {
+			return false;
+		}
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;

@@ -10,6 +10,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/*
+店小二道：我有个事情想找雪亭镇-醉汉，壮士可否替我走一趟？
+苦力道：上次我不小心，竟然吃了雪亭镇-王铁匠的亏，壮士去杀了他！
+王铁匠脚一蹬，死了。现在可以回去找苦力交差了。
+刘安禄道：我将铁锤藏在了雪亭镇-城隍庙内室，壮士可前去寻找。
+你一番搜索，果然找到了，回去告诉刘安禄吧。
+庙祝道：雪亭镇-老农夫好大胆，竟敢拿走了我的铁手镯，去替我要回来可好？
+老农夫老老实实将东西交了出来，现在可以回去找庙祝交差了。
+庙祝道：我想找雪亭镇-庙祝商量一点事情，壮士替我找一下？
+庙祝说道：好，我知道了。你回去转告庙祝吧。
+疯狗道：雪亭镇-武馆弟子看上去好生奇怪，壮士可前去打探一番。
+武馆弟子道：我十分讨厌那雪亭镇-醉汉，壮士替我去教训教训他罢！
+醉汉说道：好，好，好，我知错了……你回去转告武馆弟子吧。
+农夫道：我有个铁手镯被洛阳-疯狗抢走了，去替我要回来吧！
+疯狗道：雪亭镇-农夫竟敢得罪我，壮士去让他尝尝厉害吧！
+魏无极道：突然想要一顶皮帽，壮士可否帮忙找来？
+刘安禄道：华山村-野兔竟对我横眉瞪眼的，真想杀掉他！
+李火狮道：雪亭镇-庙祝昨天捡到了我几十辆银子，拒不归还。钱是小事，但人品可不好。壮士去杀了他！
+李火狮道：唉，好想要一顶白缨冠啊。
+王铁匠道：雪亭镇-疯狗十分嚣张，去让他见识见识厉害！
+黑衣女子道：雪亭镇-老农夫鬼鬼祟祟的叫人生疑，婆婆去打探打探情况。
+ */
+
 public class AutoQuest {
 
 	private static final List<String> MAP_NAMES = new ArrayList<String>();
@@ -98,10 +121,18 @@ public class AutoQuest {
 		}
 		return true;
 	}
+	
+	public Area getArea(String name) {
+		return maps.get(name);
+	}
 
-	private static class Area {
+	public static class Area {
 
 		private List<Room> rooms = new ArrayList<Room>();
+		
+		private Area() {
+			
+		}
 
 		public boolean addRoom(String line) {
 			String[] arr = line.split(",");
@@ -155,7 +186,7 @@ public class AutoQuest {
 		}
 	}
 
-	private static class Room {
+	public static class Room {
 
 		private Area area;
 		private String name;
@@ -164,7 +195,7 @@ public class AutoQuest {
 		private String backward;
 		private String[] npc;
 
-		public Room(Area area, String name, int prev, String forward,
+		private Room(Area area, String name, int prev, String forward,
 				String backward, String[] npc) {
 			this.area = area;
 			this.name = name;
@@ -212,6 +243,15 @@ public class AutoQuest {
 				i = area.getRoom(i).prev;
 			}
 			return list;
+		}
+		
+		public boolean hasNpc(String name) {
+			for (String n : npc) {
+				if (n.equals(name)) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		public String getName() {

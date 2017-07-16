@@ -9,7 +9,10 @@ public class PowerHongbaoTrigger implements Trigger {
 			.compile("跨服：发财树发了一个红包，赶紧.*qhb\\s(\\d+_\\d+)");
 	
 	@Override
-	public boolean match(CommandLine cmdline, String message) {
+	public boolean match(CommandLine cmdline, String message, String type) {
+		if (!"system".equals(type)) {
+			return false;
+		}
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;

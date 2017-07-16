@@ -458,9 +458,9 @@ public class CommandLine {
 		} else if (line.startsWith("#t- ")) {
 			closeTrigger(line.substring(4).trim());
 		} else if (line.startsWith("#show ")) {
-			triggerManager.process(this, line.substring(6).trim());
+			triggerManager.process(this, line.substring(6).trim(), "system");
 		} else if (line.startsWith("#sh ")) {
-			triggerManager.process(this, line.substring(4).trim());
+			triggerManager.process(this, line.substring(4).trim(), "system");
 		} else if (line.equals("#secret") || line.startsWith("#secret ")) {
 			Map<String, Object> map = (Map<String, Object>) js(
 					load("get_msgs.js"), "msg_room", false);
@@ -1450,11 +1450,11 @@ public class CommandLine {
 						keywords);
 				for (String msg : msgs) {
 					msg = removeSGR(msg);
-					triggerManager.process(CommandLine.this, msg);
+					triggerManager.process(CommandLine.this, msg, "system");
 				}
 				msgs = (List<String>) js(load("get_out_msgs.js"));
 				for (String msg : msgs) {
-					triggerManager.process(CommandLine.this, msg);
+					triggerManager.process(CommandLine.this, msg, "local");
 				}
 			} catch (Exception e) {
 				e.fillInStackTrace();

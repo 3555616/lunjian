@@ -11,7 +11,10 @@ public class TaofanTrigger implements Trigger {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public boolean match(CommandLine cmdline, String message) {
+	public boolean match(CommandLine cmdline, String message, String type) {
+		if (!"system".equals(type)) {
+			return false;
+		}
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;

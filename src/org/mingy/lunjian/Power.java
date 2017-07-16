@@ -79,6 +79,7 @@ public class Power extends CommandLine {
 		TriggerManager.register("taofan", PowerTaofanTrigger.class);
 		TriggerManager.register("hongbao", PowerHongbaoTrigger.class);
 		TriggerManager.register("clean", CleanZhengxieTrigger.class);
+		TriggerManager.register("party", AutoPartyTrigger.class);
 	}
 
 	@Override

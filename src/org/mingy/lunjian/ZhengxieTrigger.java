@@ -11,11 +11,11 @@ public class ZhengxieTrigger implements Trigger {
 			.compile("^这是你今天完成的第(.*)/10场正邪之战！$");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message) {
+	public boolean match(CommandLine cmdline, String message, String type) {
 		Matcher m = PATTERN.matcher(message);
-		if (!m.find()) {
+		if (!"system".equals(type) || !m.find()) {
 			m = TIMES_PATTERN.matcher(message);
-			if (!m.find()) {
+			if (!"local".equals(type) || !m.find()) {
 				return false;
 			}
 			timesChanged(cmdline, Integer.parseInt(m.group(1)));

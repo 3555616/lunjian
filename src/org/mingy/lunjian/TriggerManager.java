@@ -39,9 +39,9 @@ public class TriggerManager {
 		}
 	}
 
-	public void process(CommandLine cmdline, String message) {
+	public void process(CommandLine cmdline, String message, String type) {
 		for (Trigger trigger : triggers.values()) {
-			if (trigger.match(cmdline, message)) {
+			if (trigger.match(cmdline, message, type)) {
 				break;
 			}
 		}
