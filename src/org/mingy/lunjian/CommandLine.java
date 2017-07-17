@@ -146,6 +146,7 @@ public class CommandLine {
 		SECRET_ACCEPT_REWARDS.put("luanshishan", 2350);
 		SECRET_ACCEPT_REWARDS.put("dilongling", 2385);
 		SECRET_ACCEPT_REWARDS.put("fomenshiku", 2425);
+		SECRET_ACCEPT_REWARDS.put("tianlongshan", 3095);
 	}
 
 	public static void main(String[] args) throws Exception {
