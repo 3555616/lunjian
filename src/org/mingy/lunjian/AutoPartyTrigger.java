@@ -168,51 +168,46 @@ public class AutoPartyTrigger implements Trigger {
 				}
 			} else if (state == 1) {
 				if ("战胜".equals(action)) {
-					String[] target = cmdline.findTarget(
-							new String[] { "npc" }, npc);
+					String target = getTarget("npc", npc);
 					if (target != null) {
-						cmdline.sendCmd("fight " + target[0]);
+						cmdline.sendCmd("fight " + target);
 						state = 2;
 					} else {
 						state = 0;
 					}
 				} else if ("杀".equals(action)) {
-					String[] target = cmdline.findTarget(
-							new String[] { "npc" }, npc);
+					String target = getTarget("npc", npc);
 					if (target != null) {
-						cmdline.sendCmd("kill " + target[0]);
+						cmdline.sendCmd("kill " + target);
 						state = 3;
 					} else {
 						state = 0;
 					}
 				} else if (npc == null) {
-					String[] target = cmdline.findTarget(
-							new String[] { "item" }, item);
+					String target = getTarget("item", item);
 					if (target != null) {
-						cmdline.sendCmd("get " + target[0]);
+						cmdline.sendCmd("get " + target);
 						cmdline.sendCmd("home;give " + getMasterId());
 						cmdline.stopTask(this);
 					} else {
 						state = 0;
 					}
 				} else {
-					String[] target = cmdline.findTarget(
-							new String[] { "npc" }, npc);
+					String target = getTarget("npc", npc);
 					if (target != null) {
-						Seller seller = quest.getSeller(target[0]);
+						Seller seller = quest.getSeller(target);
 						if (seller != null) {
 							String id = seller.getItemId(item);
 							if (id != null) {
-								cmdline.sendCmd("buy " + id + " from "
-										+ target[0]);
+								cmdline.sendCmd("buy " + id + " from " + target);
 								cmdline.sendCmd("home;give " + getMasterId());
 								cmdline.stopTask(this);
 							} else {
-								cmdline.sendCmd("kill " + target[0]);
+								cmdline.sendCmd("kill " + target);
 								state = 4;
 							}
 						} else {
-							cmdline.sendCmd("kill " + target[0]);
+							cmdline.sendCmd("kill " + target);
 							state = 4;
 						}
 					} else {
@@ -254,6 +249,18 @@ public class AutoPartyTrigger implements Trigger {
 			Map<String, Object> map = (Map<String, Object>) cmdline.js(
 					cmdline.load("get_msgs.js"), "msg_attrs", false);
 			return (String) map.get("master_id");
+		}
+
+		private String getTarget(String type, String name) {
+			List<String[]> targets = cmdline.getTargets(type);
+			for (String[] target : targets) {
+				if (name.equals(target[1])
+						&& (!"npc".equals(type) || !target[0]
+								.startsWith("bad_target_"))) {
+					return target[0];
+				}
+			}
+			return null;
 		}
 	}
 }

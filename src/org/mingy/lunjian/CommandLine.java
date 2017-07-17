@@ -1292,7 +1292,7 @@ public class CommandLine {
 		public void run() {
 			try {
 				Map<String, Object> map = (Map<String, Object>) js(
-						load("get_msgs.js"), "msg_room", true);
+						load("get_msgs.js"), "msg_room", index > 0);
 				if (map != null) {
 					if (index < steps.size()
 							&& (dest == null || !dest
