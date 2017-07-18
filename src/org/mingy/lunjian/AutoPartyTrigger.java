@@ -25,6 +25,10 @@ public class AutoPartyTrigger implements Trigger {
 		if (!"local".equals(type)) {
 			return false;
 		}
+		if ("今天做的师门任务已过量，明天再来。".equals(message)) {
+			cmdline.closeTrigger("party");
+			return true;
+		}
 		Matcher m = PATTERN1.matcher(message);
 		if (!m.find()) {
 			m = PATTERN2.matcher(message);
