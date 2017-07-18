@@ -778,6 +778,14 @@ public class CommandLine {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	protected boolean isKuafu() {
+		Map<String, Object> map = (Map<String, Object>) js(load("get_msgs.js"),
+				"msg_attrs", false);
+		String id = (String) map.get("id");
+		return id.indexOf('-') > 0;
+	}
+
 	protected void notify(String message, boolean important, boolean send) {
 		if (important) {
 			new Thread() {

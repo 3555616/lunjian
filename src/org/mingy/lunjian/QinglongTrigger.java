@@ -13,7 +13,7 @@ public class QinglongTrigger implements Trigger {
 	private static final Pattern PATTERN1 = Pattern
 			.compile("^【系统】青龙会组织：(.*)正在(.*)施展力量，本会愿出(.*)的战利品奖励给本场战斗的最终获胜者。$");
 	private static final Pattern PATTERN2 = Pattern
-	.compile("^【系统】跨服：(.*)逃到了跨服时空(.*)之中，青龙会组织悬赏(.*)惩治恶人，众位英雄快来诛杀。$");
+			.compile("^【系统】跨服：\\[(.*)\\](.*)逃到了跨服时空(.*)之中，青龙会组织悬赏(.*)惩治恶人，众位英雄快来诛杀。$");
 
 	@Override
 	public boolean match(CommandLine cmdline, String message, String type) {
@@ -40,11 +40,10 @@ public class QinglongTrigger implements Trigger {
 		}
 		m = PATTERN2.matcher(message);
 		if (m.find()) {
-			String npc = m.group(1);
-			String place = m.group(2);
-			String reward = m.group(3);
-			String msg = "[青龙] " + npc + " at " + place + " rewards " + reward;
-			cmdline.notify(msg, true, true);
+			String npc = "[" + m.group(1) + "]" + m.group(2);
+			String place = m.group(3);
+			String reward = m.group(4);
+			process(cmdline, npc, place, reward, false);
 			return true;
 		}
 		return false;
@@ -56,13 +55,17 @@ public class QinglongTrigger implements Trigger {
 		String logfile = cmdline.getProperty("log.properties");
 		if (logfile != null && logfile.length() > 0) {
 			try {
+				boolean kuafu = npc.startsWith("[");
 				Properties properties = new Properties();
 				properties.load(new FileInputStream(logfile));
-				String s_count = properties.getProperty("qinglong.count");
+				String s_count = properties
+						.getProperty(kuafu ? "qinglong.kuafu.count"
+								: "qinglong.count");
 				count = s_count != null && s_count.length() > 0 ? Integer
 						.parseInt(s_count) : 0;
 				String s_timestamp = properties
-						.getProperty("qinglong.timestamp");
+						.getProperty(kuafu ? "qinglong.kuafu.timestamp"
+								: "qinglong.timestamp");
 				long timestamp = s_timestamp != null
 						&& s_timestamp.length() > 0 ? Long
 						.parseLong(s_timestamp) : 0;
@@ -80,9 +83,11 @@ public class QinglongTrigger implements Trigger {
 					count = 0;
 				}
 				count++;
-				properties.setProperty("qinglong.timestamp",
-						String.valueOf(System.currentTimeMillis()));
-				properties.setProperty("qinglong.count", String.valueOf(count));
+				properties.setProperty(kuafu ? "qinglong.kuafu.timestamp"
+						: "qinglong.timestamp", String.valueOf(System
+						.currentTimeMillis()));
+				properties.setProperty(kuafu ? "qinglong.kuafu.count"
+						: "qinglong.count", String.valueOf(count));
 				properties.store(new FileOutputStream(logfile), null);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -97,6 +102,6 @@ public class QinglongTrigger implements Trigger {
 
 	@Override
 	public void cleanup() {
-		
+
 	}
 }
