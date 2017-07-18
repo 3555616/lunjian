@@ -25,6 +25,10 @@ public class AutoPartyTrigger implements Trigger {
 		if (!"local".equals(type)) {
 			return false;
 		}
+		if ("今天做的师门任务已过量，明天再来。".equals(message)) {
+			cmdline.closeTrigger("party");
+			return true;
+		}
 		Matcher m = PATTERN1.matcher(message);
 		if (!m.find()) {
 			m = PATTERN2.matcher(message);
@@ -67,16 +71,8 @@ public class AutoPartyTrigger implements Trigger {
 			System.arraycopy(arr, 2, tmp, 1, arr.length - 2);
 			arr = tmp;
 		}
-		Area area = quest.getArea(arr[0]);
-		if (area == null) {
-			System.out.println("map not found: " + arr[0]);
-			return;
-		}
-		List<Room> rooms = area.findRoom(arr[1]);
-		if (rooms.isEmpty()) {
-			System.out.println("room not found: " + arr[1]);
-			return;
-		}
+		String map = arr[0];
+		String room = arr[1];
 		String npc, item;
 		if ("寻找".equals(action)) {
 			npc = arr.length > 2 ? arr[2] : null;
@@ -85,26 +81,37 @@ public class AutoPartyTrigger implements Trigger {
 			npc = target;
 			item = null;
 		}
+		boolean spec = false;
+		if ("华山村".equals(map) && "黑狗".equals(npc)) {
+			spec = true;
+		} else if ("全真教".equals(map) && "小道童".equals(npc)) {
+			spec = true;
+		} else if ("古墓".equals(map) && "玉峰".equals(npc)) {
+			spec = true;
+		} else if ("桃花岛".equals(map) && "桃花岛弟子".equals(npc)) {
+			spec = true;
+		}
+		Area area = quest.getArea(map);
+		if (area == null) {
+			System.out.println("map not found: " + map);
+			return;
+		}
+		List<Room> rooms;
 		if (npc != null) {
-			for (int i = rooms.size() - 1; i >= 0; i--) {
-				if (!rooms.get(i).hasNpc(npc)) {
-					rooms.remove(i);
-				}
-			}
-			if (rooms.isEmpty()) {
-				System.out.println("npc not found: " + npc);
-				return;
-			}
+			rooms = area.findNpc(npc);
 		} else {
+			rooms = area.findItem(item);
+		}
+		if (spec) {
 			for (int i = rooms.size() - 1; i >= 0; i--) {
-				if (!rooms.get(i).hasItem(item)) {
+				if (!rooms.get(i).getName().equals(room)) {
 					rooms.remove(i);
 				}
 			}
-			if (rooms.isEmpty()) {
-				System.out.println("item not found: " + item);
-				return;
-			}
+		}
+		if (rooms.isEmpty()) {
+			System.out.println("room not found: " + room);
+			return;
 		}
 		AutoPartyTask task = new AutoPartyTask(cmdline, action, rooms, npc,
 				item, 0, 500, null);
