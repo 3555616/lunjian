@@ -1294,9 +1294,7 @@ public class CommandLine {
 				Map<String, Object> map = (Map<String, Object>) js(
 						load("get_msgs.js"), "msg_room", index > 0);
 				if (map != null) {
-					if (index < steps.size()
-							&& (dest == null || !dest
-									.equals(removeSGR((String) map.get("short"))))) {
+					if (index < steps.size()) {
 						Step step = steps.get(index);
 						String cmd = step.path;
 						Object random = map.get("go_random");
@@ -1318,7 +1316,8 @@ public class CommandLine {
 							stepCallback.run();
 						}
 						index++;
-					} else {
+					} else if (dest == null
+							|| dest.equals(removeSGR((String) map.get("short")))) {
 						System.out.println("ok!");
 						stopTask(this);
 						if (finishCmds != null && finishCmds.length() > 0) {
@@ -1327,6 +1326,9 @@ public class CommandLine {
 						if (finishCallback != null) {
 							finishCallback.run();
 						}
+					} else {
+						System.out.println("failed!");
+						stopTask(this);
 					}
 				}
 			} catch (Exception e) {
@@ -1410,7 +1412,7 @@ public class CommandLine {
 						String msg = (String) map.get("msg");
 						Matcher m = Pattern
 								.compile(
-										"您已经通关过此副本，可以扫荡完成，扫荡完成的奖励为：玄铁令x(\\d+)、朱果x(\\d+)。")
+										"^您已经通关过此副本，可以扫荡完成，\n扫荡完成的奖励为：玄铁令x(\\d+)、朱果x(\\d+)。")
 								.matcher(msg);
 						if (m.find()) {
 							System.out.println(m.group(2));
