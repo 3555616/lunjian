@@ -72,7 +72,7 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 				}
 			}
 			final String cmd = "look [" + kuafu + "]" + npc;
-			cmdline.walk(new String[] { "fly " + id }, place, null,
+			cmdline.walk(new String[] { "fly " + id }, null, null,
 					new Runnable() {
 						@Override
 						public void run() {
