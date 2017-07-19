@@ -72,13 +72,13 @@ public class AutoPartyTrigger implements Trigger {
 			arr = tmp;
 		}
 		String map = arr[0];
-		String room = arr[1];
+		String room = arr[1].trim();
 		String npc, item;
 		if ("寻找".equals(action)) {
-			npc = arr.length > 2 ? arr[2] : null;
-			item = target;
+			npc = arr.length > 2 ? arr[2].trim() : null;
+			item = target.trim();
 		} else {
-			npc = target;
+			npc = target.trim();
 			item = null;
 		}
 		boolean spec = false;
@@ -86,7 +86,7 @@ public class AutoPartyTrigger implements Trigger {
 			spec = true;
 		} else if ("全真教".equals(map) && "小道童".equals(npc)) {
 			spec = true;
-		} else if ("古墓".equals(map) && "玉峰".equals(npc)) {
+		} else if ("古墓".equals(map) && "玉蜂".equals(npc)) {
 			spec = true;
 		} else if ("桃花岛".equals(map) && "桃花岛弟子".equals(npc)) {
 			spec = true;
@@ -261,7 +261,7 @@ public class AutoPartyTrigger implements Trigger {
 		private String getTarget(String type, String name) {
 			List<String[]> targets = cmdline.getTargets(type);
 			for (String[] target : targets) {
-				if (name.equals(target[1])
+				if (name.equals(target[1].trim())
 						&& (!"npc".equals(type) || !target[0]
 								.startsWith("bad_target_"))) {
 					return target[0];

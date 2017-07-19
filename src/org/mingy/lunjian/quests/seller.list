@@ -41,7 +41,7 @@
 [choyin_dumpling_seller]
 包子,/obj/example/dumpling
 [choyin_crone]
-红龟□,/map/choyin/npc/obj/red_guay
+红龟,/map/choyin/npc/obj/red_guay
 平安符,/map/choyin/npc/obj/amulet
 新鲜狗血,/obj/magic/dog_blood
 [qingcheng_waiter]

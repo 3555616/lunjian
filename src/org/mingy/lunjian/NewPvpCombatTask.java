@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 import org.mingy.lunjian.skills.Skills;
 
 public class NewPvpCombatTask extends TimerTask {
-	
+
 	private static Pattern[] PART_FINISH_PATTERNS = new Pattern[] {
 			Pattern.compile("^(.*)顿时被冲开老远，失去了攻击之势！$"),
 			Pattern.compile("^(.*)被(.*)的真气所迫，只好放弃攻击！$"),
@@ -33,9 +33,10 @@ public class NewPvpCombatTask extends TimerTask {
 			Pattern.compile("^（(.*)受了相当重的伤，只怕会有生命危险。）$"),
 			Pattern.compile("^（(.*)伤重之下已经难以支撑，眼看就要倒在地上。）$"),
 			Pattern.compile("^（(.*)受伤过重，已经奄奄一息，命在旦夕了。）$"),
-			Pattern.compile("^（(.*)受伤过重，已经有如风中残烛，随时都可能断气。）$")};
+			Pattern.compile("^（(.*)受伤过重，已经有如风中残烛，随时都可能断气。）$") };
 
-	private static Pattern TAIJI_PATTERN = Pattern.compile("^(.*)运起太极神功的“卸力诀”，将(.*)的力道卸去大半……$");
+	private static Pattern TAIJI_PATTERN = Pattern
+			.compile("^(.*)运起太极神功的“卸力诀”，将(.*)的力道卸去大半……$");
 	private static Pattern DAMAGE_PATTERN = Pattern.compile("^（.*）$");
 
 	private static Pattern[] COMBO_ATTACK_PATTERNS = new Pattern[] {
@@ -608,7 +609,8 @@ public class NewPvpCombatTask extends TimerTask {
 						for (VsInfo info : vs2) {
 							Matcher m = USER_ID_PATTERN.matcher(info.id);
 							if (m.find()) {
-								if (info.max_qi >= 30000 && !isFriend(info.name)) {
+								if (info.max_qi >= 30000
+										&& !isFriend(info.name)) {
 									a++;
 								} else {
 									b++;
@@ -618,24 +620,20 @@ public class NewPvpCombatTask extends TimerTask {
 						if (a < b) {
 							String pfm = perform(pfms);
 							if (pfm != null) {
-								System.out.println("[VS] perform " + pfm + " to " + vs_npc2);
+								System.out.println("[VS] perform " + pfm
+										+ " to " + vs_npc2);
 								point = calcPoint(point, pfm);
 							}
 						}
 					}
 					/*
-					if (point >= 5 && npc_attack
-							&& "你".equals(npc_attack_target) && vs2.size() > 1) {
-						for (String pfm : dodges) {
-							int i = pfms.indexOf(pfm);
-							if (i >= 0) {
-								System.out.println("[VS] perform " + pfm);
-								cmdline.sendCmd("playskill " + (i + 1));
-								point = calcPoint(point, pfm);
-								break;
-							}
-						}
-					} */
+					 * if (point >= 5 && npc_attack &&
+					 * "你".equals(npc_attack_target) && vs2.size() > 1) { for
+					 * (String pfm : dodges) { int i = pfms.indexOf(pfm); if (i
+					 * >= 0) { System.out.println("[VS] perform " + pfm);
+					 * cmdline.sendCmd("playskill " + (i + 1)); point =
+					 * calcPoint(point, pfm); break; } } }
+					 */
 					return;
 				}
 			}
@@ -871,7 +869,7 @@ public class NewPvpCombatTask extends TimerTask {
 	}
 
 	private boolean isPlayer(String name, List<VsInfo> vs) {
-		if (name == null || name.length() == 0) {
+		if (name == null || name.length() == 0 || "你".equals(name)) {
 			return true;
 		}
 		for (VsInfo info : vs) {
@@ -884,7 +882,7 @@ public class NewPvpCombatTask extends TimerTask {
 	}
 
 	private boolean isNpc(String name, List<VsInfo> vs) {
-		if (name == null || name.length() == 0) {
+		if (name == null || name.length() == 0 || "你".equals(name)) {
 			return false;
 		}
 		for (VsInfo info : vs) {
@@ -949,15 +947,18 @@ public class NewPvpCombatTask extends TimerTask {
 	private String[] checkPartFinish(String msg) {
 		Matcher m = PART_FINISH_PATTERNS[0].matcher(msg);
 		if (m.find()) {
-			return new String[] { null, m.group(1), m.group(1) + " attack failed" };
+			return new String[] { null, m.group(1),
+					m.group(1) + " attack failed" };
 		}
 		m = PART_FINISH_PATTERNS[1].matcher(msg);
 		if (m.find()) {
-			return new String[] { m.group(2), m.group(1), m.group(1) + " attack " + m.group(2) + " failed" };
+			return new String[] { m.group(2), m.group(1),
+					m.group(1) + " attack " + m.group(2) + " failed" };
 		}
 		m = PART_FINISH_PATTERNS[2].matcher(msg);
 		if (m.find()) {
-			return new String[] { m.group(1), m.group(2), m.group(1) + " attack " + m.group(2) + " failed" };
+			return new String[] { m.group(1), m.group(2),
+					m.group(1) + " attack " + m.group(2) + " failed" };
 		}
 		m = PART_FINISH_PATTERNS[3].matcher(msg);
 		if (m.find()) {
@@ -969,7 +970,8 @@ public class NewPvpCombatTask extends TimerTask {
 		}
 		m = PART_FINISH_PATTERNS[5].matcher(msg);
 		if (m.find()) {
-			return new String[] { m.group(2), m.group(1), m.group(1) + " attack " + m.group(2) + " failed" };
+			return new String[] { m.group(2), m.group(1),
+					m.group(1) + " attack " + m.group(2) + " failed" };
 		}
 		for (int i = 0; i < 10; i++) {
 			m = PART_FINISH_PATTERNS[i + 6].matcher(msg);
