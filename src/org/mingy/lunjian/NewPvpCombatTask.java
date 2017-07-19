@@ -13,6 +13,8 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.mingy.lunjian.AutoQuest.Area;
+import org.mingy.lunjian.AutoQuest.Room;
 import org.mingy.lunjian.skills.Skills;
 
 public class NewPvpCombatTask extends TimerTask {
@@ -105,6 +107,9 @@ public class NewPvpCombatTask extends TimerTask {
 	private boolean npc_attack;
 	private String npc_attack_target;
 	private boolean is_first;
+	private boolean in_fighting;
+	private MapId mapId;
+	private String room;
 
 	public NewPvpCombatTask(CommandLine cmdline) {
 		this.cmdline = cmdline;
@@ -194,7 +199,59 @@ public class NewPvpCombatTask extends TimerTask {
 				npc_attack = false;
 				npc_attack_target = null;
 				is_first = true;
+				if (in_fighting) {
+					in_fighting = false;
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// ignore
+					}
+					cmdline.sendCmd("golook_room");
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// ignore
+					}
+					if (cmdline.isKuafu() && mapId != null
+							&& mapId.ordinal() > 0
+							&& cmdline.getMapId() == MapId.kuafu) {
+						System.out.println("try to back " + mapId.name() + "-"
+								+ room);
+						AutoQuest quest = new AutoQuest(cmdline);
+						if (quest.init()) {
+							Area area = quest.getArea(mapId.ordinal() - 1);
+							if (area != null) {
+								final List<Room> rooms = area.findRoom(room);
+								if (!rooms.isEmpty()) {
+									Runnable callback = new Runnable() {
+										@Override
+										public void run() {
+											RecoveryTask task = new RecoveryTask(
+													cmdline, rooms.get(0));
+											cmdline.executeTask(task, 1000);
+										}
+									};
+									cmdline.walk(
+											new String[] { "jh 1;e;n;n;n;w" },
+											"桑邻药铺", null, callback, 200);
+								}
+							}
+						}
+					}
+					mapId = null;
+					room = null;
+				}
 				return;
+			}
+			if (!in_fighting) {
+				in_fighting = true;
+				Map<String, Object> map = (Map<String, Object>) cmdline.js(
+						cmdline.load("get_msgs.js"), "msg_room", false);
+				String id = (String) map.get("map_id");
+				if (id != null) {
+					mapId = MapId.valueOf(id);
+					room = CommandLine.removeSGR((String) map.get("short"));
+				}
 			}
 			VsInfo me = createVsInfo((Map<String, Object>) result.get("me"));
 			List<VsInfo> vs1 = new ArrayList<VsInfo>(4);
@@ -1061,5 +1118,68 @@ public class NewPvpCombatTask extends TimerTask {
 		long qi;
 		long max_qi;
 		int point;
+	}
+
+	private static class RecoveryTask extends TimerTask {
+
+		private CommandLine cmdline;
+		private Room room;
+
+		public RecoveryTask(CommandLine cmdline, Room room) {
+			this.cmdline = cmdline;
+			this.room = room;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				Map<String, Object> attrs = (Map<String, Object>) cmdline.js(
+						cmdline.load("get_msgs.js"), "msg_attrs", false);
+				if (attrs != null) {
+					long force = Long.parseLong((String) attrs.get("force"));
+					long max_force = Long.parseLong((String) attrs
+							.get("max_force"));
+					long kee = Long.parseLong((String) attrs.get("kee"));
+					long max_kee = Long
+							.parseLong((String) attrs.get("max_kee"));
+					if (force < max_force) {
+						StringBuilder sb = new StringBuilder();
+						int n = (int) (max_force - force) / 5000 + 1;
+						for (int i = 0; i < Math.min(n, 5); i++) {
+							sb.append("buy /map/snow/obj/qiannianlingzhi from snow_herbalist\nitems use snow_qiannianlingzhi\n");
+						}
+						sb.append("attrs");
+						cmdline.js("clickButton(arguments[0]);", sb.toString());
+					} else if (kee < max_kee) {
+						StringBuilder sb = new StringBuilder();
+						for (int i = 0; i < 5; i++) {
+							sb.append("recovery\n");
+						}
+						sb.append("attrs");
+						cmdline.js("clickButton(arguments[0]);", sb.toString());
+					} else {
+						Runnable callback = new Runnable() {
+							@Override
+							public void run() {
+								try {
+									cmdline.execute("#pk");
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						};
+						cmdline.walk(new String[] { room.getPath() },
+								room.getName(), null, callback, 200);
+					}
+				} else {
+					System.out.println("failed to get attrs");
+					cmdline.stopTask(this);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				cmdline.stopTask(this);
+			}
+		}
 	}
 }

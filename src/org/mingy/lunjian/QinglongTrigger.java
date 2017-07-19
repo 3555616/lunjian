@@ -40,11 +40,17 @@ public class QinglongTrigger implements Trigger {
 		}
 		m = PATTERN2.matcher(message);
 		if (m.find()) {
-			String npc = "[" + m.group(1) + "]" + m.group(2);
-			String place = m.group(3);
-			String reward = m.group(4);
-			process(cmdline, npc, place, reward, false);
-			return true;
+			String kuafu = cmdline.getProperty("kuafu.area");
+			if (kuafu == null || kuafu.length() == 0) {
+				kuafu = "1-5区";
+			}
+			if (kuafu.equals(m.group(1))) {
+				String npc = "[" + m.group(1) + "]" + m.group(2);
+				String place = m.group(3);
+				String reward = m.group(4);
+				process(cmdline, npc, place, reward, false);
+				return true;
+			}
 		}
 		return false;
 	}

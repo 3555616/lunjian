@@ -170,6 +170,10 @@ public class AutoQuest {
 		return maps.get(name);
 	}
 
+	public Area getArea(int index) {
+		return maps.get(MAP_NAMES.get(index));
+	}
+
 	public Seller getSeller(String id) {
 		return sellers.get(id);
 	}

@@ -786,6 +786,14 @@ public class CommandLine {
 		return id.indexOf('-') > 0;
 	}
 
+	@SuppressWarnings("unchecked")
+	protected MapId getMapId() {
+		Map<String, Object> map = (Map<String, Object>) js(load("get_msgs.js"),
+				"msg_room", false);
+		String id = (String) map.get("map_id");
+		return id != null ? MapId.valueOf(id) : null;
+	}
+
 	protected void notify(String message, boolean important, boolean send) {
 		if (important) {
 			new Thread() {
