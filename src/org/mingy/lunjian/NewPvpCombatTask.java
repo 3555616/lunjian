@@ -249,8 +249,12 @@ public class NewPvpCombatTask extends TimerTask {
 						cmdline.load("get_msgs.js"), "msg_room", false);
 				String id = (String) map.get("map_id");
 				if (id != null) {
-					mapId = MapId.valueOf(id);
-					room = CommandLine.removeSGR((String) map.get("short"));
+					try {
+						mapId = MapId.valueOf(id);
+						room = CommandLine.removeSGR((String) map.get("short"));
+					} catch (Exception e) {
+						mapId = null;
+					}
 				}
 			}
 			VsInfo me = createVsInfo((Map<String, Object>) result.get("me"));
@@ -683,14 +687,6 @@ public class NewPvpCombatTask extends TimerTask {
 							}
 						}
 					}
-					/*
-					 * if (point >= 5 && npc_attack &&
-					 * "你".equals(npc_attack_target) && vs2.size() > 1) { for
-					 * (String pfm : dodges) { int i = pfms.indexOf(pfm); if (i
-					 * >= 0) { System.out.println("[VS] perform " + pfm);
-					 * cmdline.sendCmd("playskill " + (i + 1)); point =
-					 * calcPoint(point, pfm); break; } } }
-					 */
 					return;
 				}
 			}
@@ -700,10 +696,24 @@ public class NewPvpCombatTask extends TimerTask {
 					if (pfm != null) {
 						point = calcPoint(point, pfm);
 					} else {
-						pfm = perform(pfms);
-						if (pfm != null) {
-							System.out.println("[VS] perform " + pfm);
-							point = calcPoint(point, pfm);
+						int a = 0, b = 0;
+						for (VsInfo info : vs2) {
+							Matcher m = USER_ID_PATTERN.matcher(info.id);
+							if (m.find()) {
+								if (info.max_qi >= 30000
+										&& !isFriend(info.name)) {
+									a++;
+								} else {
+									b++;
+								}
+							}
+						}
+						if (a >= b && a > 0) {
+							pfm = perform(pfms);
+							if (pfm != null) {
+								System.out.println("[VS] perform " + pfm);
+								point = calcPoint(point, pfm);
+							}
 						}
 					}
 				}
