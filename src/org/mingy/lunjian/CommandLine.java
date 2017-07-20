@@ -792,7 +792,18 @@ public class CommandLine {
 		Map<String, Object> map = (Map<String, Object>) js(load("get_msgs.js"),
 				"msg_room", false);
 		String id = (String) map.get("map_id");
-		return id != null ? MapId.valueOf(id) : null;
+		try {
+			return id != null ? MapId.valueOf(id) : null;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	protected String getRoom() {
+		Map<String, Object> map = (Map<String, Object>) js(load("get_msgs.js"),
+				"msg_room", false);
+		return removeSGR((String) map.get("short"));
 	}
 
 	protected void notify(String message, boolean important, boolean send) {
