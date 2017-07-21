@@ -277,11 +277,12 @@ public class AutoQuest {
 				return dest.getPath();
 			}
 			List<Integer> list = getPrevAll();
-			String path = forward;
+			list.add(0, area.rooms.indexOf(this) + 1);
+			String path = dest.forward;
 			for (int i = dest.prev; i > 0;) {
 				if (list.contains(i)) {
-					for (int j = list.indexOf(i) - 1; j >= 0; j--) {
-						Room room = area.getRoom(j - 1);
+					for (int j = 0; j < list.indexOf(i); j++) {
+						Room room = area.getRoom(list.get(j) - 1);
 						path = room.backward + ";" + path;
 					}
 					break;

@@ -735,7 +735,7 @@ public class NewPvpCombatTask extends TimerTask {
 						for (VsInfo info : vs2) {
 							Matcher m = USER_ID_PATTERN.matcher(info.id);
 							if (m.find()) {
-								if (info.max_qi >= 30000
+								if (info.max_qi >= 35000
 										&& !isFriend(info.name)) {
 									a++;
 								} else {
@@ -765,7 +765,7 @@ public class NewPvpCombatTask extends TimerTask {
 						for (VsInfo info : vs2) {
 							Matcher m = USER_ID_PATTERN.matcher(info.id);
 							if (m.find()) {
-								if (info.max_qi >= 30000
+								if (info.max_qi >= 35000
 										&& !isFriend(info.name)) {
 									a++;
 								} else {
