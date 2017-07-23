@@ -33,5 +33,6 @@ public class Skills {
 		SKILL_FILES.put("春风快意刀法", "chunfengkuaiyi");
 		SKILL_FILES.put("暴雨梨花针", "baoyulihua");
 		SKILL_FILES.put("正邪NPC招式", "zhengxie");
+		SKILL_FILES.put("紫薇NPC招式", "ziwei");
 	}
 }

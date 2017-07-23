@@ -171,7 +171,7 @@ public class NewPvpCombatTask extends TimerTask {
 						String s = line.substring(k, l + 1);
 						sb.append(line.substring(j, k));
 						if ("{$p}".equals(s)) {
-							sb.append("(左手|右手|后心|左耳|右耳|两肋|左肩|右肩|左腿|右腿|左臂|右臂|腰间|左脸|右脸|小腹|颈部|头顶|左脚|右脚)");
+							sb.append("(左手|右手|后心|左耳|右耳|两肋|左肩|右肩|左腿|右腿|左臂|右臂|腰间|左脸|右脸|小腹|颈部|头顶|左脚|右脚|胸口)");
 						} else {
 							sb.append("(.*)");
 						}
