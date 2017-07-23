@@ -21,7 +21,8 @@ public class AutoPartyTrigger implements Trigger {
 	private AutoQuest quest;
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if (!"local".equals(type)) {
 			return false;
 		}

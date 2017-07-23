@@ -11,7 +11,8 @@ public class ZhengxieTrigger implements Trigger {
 			.compile("^这是你今天完成的第(.*)/10场正邪之战！$");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		Matcher m = PATTERN.matcher(message);
 		if (!"system".equals(type) || !m.find()) {
 			m = TIMES_PATTERN.matcher(message);

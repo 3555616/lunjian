@@ -36,13 +36,14 @@ public class CleanZhengxieTrigger extends ZhengxieTrigger {
 	}
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if ("local".equals(type) && "好在有保险卡，没有降低技能等级！".equals(message)) {
 			cmdline.closeTrigger("clean");
 			cmdline.sendCmd("home");
 			return false;
 		}
-		return super.match(cmdline, message, type);
+		return super.match(cmdline, message, type, seq);
 	}
 
 	private class CleanTask extends TimerTask {

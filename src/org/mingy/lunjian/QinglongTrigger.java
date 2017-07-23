@@ -16,7 +16,8 @@ public class QinglongTrigger implements Trigger {
 			.compile("^【系统】跨服：\\[(.*)\\](.*)逃到了跨服时空(.*)之中，青龙会组织悬赏(.*)惩治恶人，众位英雄快来诛杀。$");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if (!"system".equals(type)) {
 			return false;
 		}

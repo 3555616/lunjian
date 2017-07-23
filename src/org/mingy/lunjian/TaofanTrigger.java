@@ -9,7 +9,8 @@ public class TaofanTrigger implements Trigger {
 			.compile("^【系统】\\[(.*)\\](.*)慌不择路，逃往了(.*)\\-(.*)$");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if (!"system".equals(type)) {
 			return false;
 		}

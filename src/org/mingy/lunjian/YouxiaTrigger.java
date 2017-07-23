@@ -9,7 +9,8 @@ public class YouxiaTrigger implements Trigger {
 			.compile("^【系统】游侠会：听说(.*)出来闯荡江湖了，目前正在前往(.*)的路上。$");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if (!"system".equals(type)) {
 			return false;
 		}
@@ -29,6 +30,6 @@ public class YouxiaTrigger implements Trigger {
 
 	@Override
 	public void cleanup() {
-		
+
 	}
 }

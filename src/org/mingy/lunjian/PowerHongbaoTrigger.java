@@ -7,9 +7,10 @@ public class PowerHongbaoTrigger implements Trigger {
 
 	private static final Pattern PATTERN = Pattern
 			.compile("跨服：发财树发了一个红包，赶紧.*qhb\\s(\\d+_\\d+)");
-	
+
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if (!"system".equals(type)) {
 			return false;
 		}
@@ -24,6 +25,6 @@ public class PowerHongbaoTrigger implements Trigger {
 
 	@Override
 	public void cleanup() {
-		
+
 	}
 }

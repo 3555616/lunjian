@@ -9,7 +9,8 @@ public class BaozangTrigger implements Trigger {
 			.compile("^【系统】山河藏宝图：听说绝世高手遗落了许多宝物在秘密之所");
 
 	@Override
-	public boolean match(CommandLine cmdline, String message, String type) {
+	public boolean match(CommandLine cmdline, String message, String type,
+			long seq) {
 		if (!"system".equals(type)) {
 			return false;
 		}
@@ -30,6 +31,6 @@ public class BaozangTrigger implements Trigger {
 
 	@Override
 	public void cleanup() {
-		
+
 	}
 }
