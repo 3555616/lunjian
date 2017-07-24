@@ -69,7 +69,7 @@ public class AutoQuest {
 				try {
 					reader = new BufferedReader(new InputStreamReader(in,
 							"utf-8"));
-					Area area = new Area();
+					Area area = new Area(i);
 					String line;
 					while ((line = reader.readLine()) != null) {
 						if (!area.addRoom(line.trim())) {
@@ -142,7 +142,11 @@ public class AutoQuest {
 	}
 
 	public Area getArea(int index) {
-		return maps.get(MAP_NAMES.get(index));
+		if (index >= 0 && index < MAP_NAMES.size()) {
+			return maps.get(MAP_NAMES.get(index));
+		} else {
+			return null;
+		}
 	}
 
 	public Area getArea(MapId mapId) {
@@ -156,10 +160,11 @@ public class AutoQuest {
 
 	public static class Area {
 
+		private int index;
 		private List<Room> rooms = new ArrayList<Room>();
 
-		private Area() {
-
+		private Area(int index) {
+			this.index = index;
 		}
 
 		public boolean addRoom(String line) {
@@ -197,6 +202,10 @@ public class AutoQuest {
 				System.out.println("error: " + line);
 				return false;
 			}
+		}
+
+		public int getIndex() {
+			return index;
 		}
 
 		public Room getRoom(int index) {
@@ -323,15 +332,15 @@ public class AutoQuest {
 					if (item.equals(name)) {
 						return true;
 					}
-					if (checkNpc && npc != null) {
-						for (Npc n : npc) {
-							String[] items = n.getItems();
-							if (items != null) {
-								for (String s : items) {
-									if (s.equals(name)) {
-										return true;
-									}
-								}
+				}
+			}
+			if (checkNpc && npc != null) {
+				for (Npc n : npc) {
+					String[] items = n.getItems();
+					if (items != null) {
+						for (String s : items) {
+							if (s.equals(name)) {
+								return true;
 							}
 						}
 					}

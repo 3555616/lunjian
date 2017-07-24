@@ -30,8 +30,8 @@ public class AutoTaskTrigger implements Trigger {
 			.compile("^(.+)道：我将.+藏在了(.+)\\-(.+)，.+可前去寻找。$") };
 
 	private static final Pattern[] FIND_ITEM_PATTERNS = new Pattern[] {
-			Pattern.compile("^(.+)道：突然想要一?(.+)，.+可否帮忙找来？$"),
-			Pattern.compile("^(.+)道：唉，好想要一?(.+)啊。$") };
+			Pattern.compile("^(.+)道：突然想要一.?(.+)，.+可否帮忙找来？$"),
+			Pattern.compile("^(.+)道：唉，好想要一.?(.+)啊。$") };
 
 	private static final Pattern[] BACK_NPC_PATTERNS = new Pattern[] {
 			Pattern.compile("^.+脚一蹬，死了。现在可以回去找(.+)交差了。$"),
@@ -148,9 +148,9 @@ public class AutoTaskTrigger implements Trigger {
 				List<Object> args = new ArrayList<Object>();
 				args.add(seq);
 				String source = m.group(1).trim();
+				Area area = quest.getArea(cmdline.getMapId());
 				if (!"一个声音说".equals(source)) {
 					String path = null;
-					Area area = quest.getArea(cmdline.getMapId());
 					if (area != null) {
 						Room room = area.getRoom(cmdline.getRoom(), source);
 						if (room != null) {
@@ -160,6 +160,36 @@ public class AutoTaskTrigger implements Trigger {
 					}
 					args.add(path);
 				}
+				String path = null;
+				if (area != null) {
+					List<Area> list = new ArrayList<Area>();
+					list.add(area);
+					int j = area.getIndex();
+					area = quest.getArea(j - 1);
+					if (area != null) {
+						list.add(area);
+					}
+					area = quest.getArea(j + 1);
+					if (area != null) {
+						list.add(area);
+					}
+					area = quest.getArea(j - 2);
+					if (area != null) {
+						list.add(area);
+					}
+					area = quest.getArea(j + 2);
+					if (area != null) {
+						list.add(area);
+					}
+					for (Area a : list) {
+						List<Room> rooms = a.findItem(m.group(2).trim(), true);
+						if (!rooms.isEmpty()) {
+							path = rooms.get(0).getPath();
+							break;
+						}
+					}
+				}
+				args.add(path);
 				cmdline.js(cmdline.load("add_task_link.js"), args.toArray());
 				return true;
 			}
