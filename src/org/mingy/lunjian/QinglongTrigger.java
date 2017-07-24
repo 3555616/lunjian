@@ -26,17 +26,23 @@ public class QinglongTrigger implements Trigger {
 			String npc = m.group(1);
 			String place = m.group(2);
 			String reward = m.group(3);
-			String ignores = cmdline.getProperty("qinglong.ignore");
-			boolean pass = true;
-			if (ignores != null) {
-				for (String ignore : ignores.split(",")) {
-					if (reward.contains(ignore)) {
-						pass = false;
-						break;
+			String kuafu = cmdline.getProperty("kuafu.area");
+			if (kuafu == null || kuafu.length() == 0) {
+				kuafu = "1-5区";
+			}
+			if (!npc.startsWith("[") || npc.startsWith("[" + kuafu + "]")) {
+				String ignores = cmdline.getProperty("qinglong.ignore");
+				boolean pass = true;
+				if (ignores != null) {
+					for (String ignore : ignores.split(",")) {
+						if (reward.contains(ignore)) {
+							pass = false;
+							break;
+						}
 					}
 				}
+				process(cmdline, npc, place, reward, !pass);
 			}
-			process(cmdline, npc, place, reward, !pass);
 			return true;
 		}
 		m = PATTERN2.matcher(message);

@@ -105,7 +105,7 @@ public class AutoPartyTrigger implements Trigger {
 		if (npc != null) {
 			rooms = area.findNpc(npc);
 		} else {
-			rooms = area.findItem(item);
+			rooms = area.findItem(item, false);
 		}
 		if (spec) {
 			for (int i = rooms.size() - 1; i >= 0; i--) {

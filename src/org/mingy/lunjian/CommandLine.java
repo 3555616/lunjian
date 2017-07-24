@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -44,6 +45,7 @@ public class CommandLine {
 	private static final DateFormat FORMAT_TIME = new SimpleDateFormat("HH:mm");
 	private static final Map<String, String> MAP_IDS = new HashMap<String, String>();
 	private static final Map<String, Integer> SECRET_ACCEPT_REWARDS = new HashMap<String, Integer>();
+	private static final Map<String, String> SUB_MAPS = new HashMap<String, String>();
 
 	protected WebDriver webdriver;
 	private WebDriver webdriver2;
@@ -148,6 +150,41 @@ public class CommandLine {
 		SECRET_ACCEPT_REWARDS.put("fomenshiku", 2425);
 		SECRET_ACCEPT_REWARDS.put("tianlongshan", 3100);
 		SECRET_ACCEPT_REWARDS.put("dafuchuan", 3090);
+		InputStream in = CommandLine.class
+				.getResourceAsStream("maps/submap.list");
+		if (in != null) {
+			BufferedReader reader = null;
+			try {
+				reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
+				String map = null;
+				String line;
+				while ((line = reader.readLine()) != null) {
+					line = line.trim();
+					if (line.length() > 0) {
+						if (line.startsWith("[") && line.endsWith("]")) {
+							map = line.substring(1, line.length() - 1).trim();
+						} else if (map != null) {
+							if (line.length() > 0) {
+								SUB_MAPS.put(line, map);
+							}
+						} else {
+							System.out.println("error: " + line);
+							break;
+						}
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				if (reader != null) {
+					try {
+						reader.close();
+					} catch (IOException e) {
+						// ignore
+					}
+				}
+			}
+		}
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -792,6 +829,9 @@ public class CommandLine {
 		Map<String, Object> map = (Map<String, Object>) js(load("get_msgs.js"),
 				"msg_room", false);
 		String id = (String) map.get("map_id");
+		if (SUB_MAPS.containsKey(id)) {
+			id = SUB_MAPS.get(id);
+		}
 		try {
 			return id != null ? MapId.valueOf(id) : null;
 		} catch (Exception e) {

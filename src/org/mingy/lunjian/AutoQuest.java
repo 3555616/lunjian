@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class AutoQuest {
 
@@ -52,11 +51,6 @@ public class AutoQuest {
 		MAP_NAMES.add("冰火岛");
 		MAP_NAMES.add("侠客岛");
 	}
-
-	private static final Pattern[] KILL_GO_PATTERNS = new Pattern[] {
-			Pattern.compile("^上次我不小心，竟然吃了(.+)-(.+)的亏，壮士去杀了他！$"),
-			Pattern.compile("^(.+)-(.+)竟对我横眉瞪眼的，真想杀掉他！$"),
-			Pattern.compile("^(.+)-(.+)昨天捡到了我几十辆银子，拒不归还。钱是小事，但人品可不好。壮士去杀了他！$") };
 
 	private CommandLine cmdline;
 	private Map<String, Area> maps = new HashMap<String, Area>();
@@ -175,10 +169,27 @@ public class AutoQuest {
 				return false;
 			}
 			try {
+				Npc[] npc = null;
+				if (arr.length > 4) {
+					String[] ss = arr[4].trim().split("\\|");
+					npc = new Npc[ss.length];
+					for (int i = 0; i < ss.length; i++) {
+						String s = ss[i].trim();
+						int j = s.indexOf('[');
+						Npc n;
+						if (j < 0) {
+							n = new Npc(s, null);
+						} else {
+							n = new Npc(s.substring(0, j).trim(), s
+									.substring(j + 1, s.lastIndexOf(']'))
+									.trim().split("/"));
+						}
+						npc[i] = n;
+					}
+				}
 				Room room = new Room(this, arr[0].trim(),
 						Integer.parseInt(arr[1].trim()), arr[2].trim(),
-						arr[3].trim(), arr.length > 4 ? arr[4].trim().split(
-								"\\|") : null, arr.length > 5 ? arr[5].trim()
+						arr[3].trim(), npc, arr.length > 5 ? arr[5].trim()
 								.split("\\|") : null);
 				rooms.add(room);
 				return true;
@@ -222,10 +233,10 @@ public class AutoQuest {
 			return list;
 		}
 
-		public List<Room> findItem(String name) {
+		public List<Room> findItem(String name, boolean checkNpc) {
 			List<Room> list = new ArrayList<Room>();
 			for (Room room : rooms) {
-				if (room.hasItem(name)) {
+				if (room.hasItem(name, checkNpc)) {
 					list.add(room);
 				}
 			}
@@ -240,11 +251,11 @@ public class AutoQuest {
 		private int prev;
 		private String forward;
 		private String backward;
-		private String[] npc;
+		private Npc[] npc;
 		private String[] items;
 
 		private Room(Area area, String name, int prev, String forward,
-				String backward, String[] npc, String[] items) {
+				String backward, Npc[] npc, String[] items) {
 			this.area = area;
 			this.name = name;
 			this.prev = prev;
@@ -297,8 +308,8 @@ public class AutoQuest {
 
 		public boolean hasNpc(String name) {
 			if (npc != null) {
-				for (String n : npc) {
-					if (n.equals(name)) {
+				for (Npc n : npc) {
+					if (n.getName().equals(name)) {
 						return true;
 					}
 				}
@@ -306,11 +317,23 @@ public class AutoQuest {
 			return false;
 		}
 
-		public boolean hasItem(String name) {
+		public boolean hasItem(String name, boolean checkNpc) {
 			if (items != null) {
 				for (String item : items) {
 					if (item.equals(name)) {
 						return true;
+					}
+					if (checkNpc && npc != null) {
+						for (Npc n : npc) {
+							String[] items = n.getItems();
+							if (items != null) {
+								for (String s : items) {
+									if (s.equals(name)) {
+										return true;
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -321,8 +344,27 @@ public class AutoQuest {
 			return name;
 		}
 
-		public String[] getNpc() {
+		public Npc[] getNpc() {
 			return npc;
+		}
+
+		public String[] getItems() {
+			return items;
+		}
+	}
+
+	public static class Npc {
+
+		private String name;
+		private String[] items;
+
+		private Npc(String name, String[] items) {
+			this.name = name;
+			this.items = items;
+		}
+
+		public String getName() {
+			return name;
 		}
 
 		public String[] getItems() {
