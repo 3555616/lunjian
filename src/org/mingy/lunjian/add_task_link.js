@@ -1,14 +1,25 @@
 var seq = arguments[0], args = arguments;
 var $e = $('#out2 span.out2[local_seq="' + seq + '"]');
-$('a', $e).each(
+var $a = $('a', $e);
+$a.each(
 	function(i) {
 		if (args.length <= i + 1) {
 			return false;
 		}
 		var path = args[i + 1];
 		if (path) {
-			$a = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:clickButton(\''
+			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:clickButton(\''
 					+ path.replace(/;/g, '\\n') + '\', 0);">GO</a>]</span>');
-			$a.insertAfter(this);
+			$n.insertAfter(this);
 		}
 	});
+if ($a.length < args.length - 1) {
+	for (var i = $a.length; i < args.length - 1; i++) {
+		var path = args[i + 1];
+		if (path) {
+			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:clickButton(\''
+					+ path.replace(/;/g, '\\n') + '\', 0);">GO</a>]</span>');
+			$e.append($n);
+		}
+	}
+}

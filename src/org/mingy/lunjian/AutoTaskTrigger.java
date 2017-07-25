@@ -62,7 +62,11 @@ public class AutoTaskTrigger implements Trigger {
 		}
 		Matcher m = FINISH_PATTERN.matcher(message);
 		if (m.find()) {
-			tasks.remove(m.group(3));
+			Room room = tasks.remove(m.group(3));
+			if (room != null) {
+				cmdline.js(cmdline.load("add_task_link.js"), seq,
+						room.getPath());
+			}
 			return true;
 		}
 		if (this.quest == null) {
