@@ -558,6 +558,10 @@ public class NewPvpCombatTask extends TimerTask {
 						}
 						if (vs_npc2 == null && isNpc(defender, vs2)) {
 							vs_npc2 = defender;
+						} else if (vs_npc2 != null && !isNpc(defender, vs2)) {
+							vs_npc2 = null;
+							npc_attack = false;
+							npc_attack_target = null;
 						}
 						current = null;
 						Part part = null;
@@ -682,6 +686,10 @@ public class NewPvpCombatTask extends TimerTask {
 											} else if (isNpc(part.defender, vs2)) {
 												vs_npc2 = part.defender;
 											}
+										} else if (!isNpc(part.defender, vs2)) {
+											vs_npc2 = null;
+											npc_attack = false;
+											npc_attack_target = null;
 										}
 									}
 									break;

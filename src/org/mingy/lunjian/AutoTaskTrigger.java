@@ -13,12 +13,12 @@ import org.mingy.lunjian.AutoQuest.Room;
 public class AutoTaskTrigger implements Trigger {
 
 	private static final Pattern[] GO_NPC_PATTERNS = new Pattern[] {
-			Pattern.compile("^(.+)道：上次我不小心，竟然吃了(.+)\\-(.+)的亏，.+去杀了他！$"),
-			Pattern.compile("^(.+)道：(.+)\\-(.+)竟对我横眉瞪眼的，真想杀掉他！$"),
-			Pattern.compile("^(.+)道：(.+)\\-(.+)昨天捡到了我几十辆银子，拒不归还。钱是小事，但人品可不好。.+去杀了他！$"),
-			Pattern.compile("^(.+)道：我十分讨厌那(.+)\\-(.+)，.+替我去教训教训他罢！$"),
-			Pattern.compile("^(.+)道：(.+)\\-(.+)竟敢得罪我，.+去让他尝尝厉害吧！$"),
-			Pattern.compile("^(.+)道：(.+)\\-(.+)十分嚣张，去让他见识见识厉害！$"),
+			Pattern.compile("^(.+)道：上次我不小心，竟然吃了(.+)\\-(.+)的亏，.+去杀了.?！$"),
+			Pattern.compile("^(.+)道：(.+)\\-(.+)竟对我横眉瞪眼的，真想杀掉.?！$"),
+			Pattern.compile("^(.+)道：(.+)\\-(.+)昨天捡到了我几十辆银子，拒不归还。钱是小事，但人品可不好。.+去杀了.?！$"),
+			Pattern.compile("^(.+)道：我十分讨厌那(.+)\\-(.+)，.+替我去教训教训.?罢！$"),
+			Pattern.compile("^(.+)道：(.+)\\-(.+)竟敢得罪我，.+去让.?尝尝厉害吧！$"),
+			Pattern.compile("^(.+)道：(.+)\\-(.+)十分嚣张，去让.?见识见识厉害！$"),
 			Pattern.compile("^(.+)道：(.+)\\-(.+)好大胆，竟敢拿走了我的.+，去替我要回来可好？$"),
 			Pattern.compile("^(.+)道：我有个.+被(.+)\\-(.+)抢走了，去替我要回来吧！$"),
 			Pattern.compile("^(.+)道：我有个事情想找(.+)\\-(.+)，.+可否替我走一趟？$"),

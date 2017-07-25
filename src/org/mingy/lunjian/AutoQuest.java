@@ -138,6 +138,17 @@ public class AutoQuest {
 	}
 
 	public Area getArea(String name) {
+		if ("光明顶".equals(name)) {
+			name = "明教";
+		} else if ("白驼山".equals(name)) {
+			name = "白驮山";
+		} else if ("梅庄".equals(name)) {
+			name = "寒梅庄";
+		} else if ("铁血大旗门".equals(name)) {
+			name = "大旗门";
+		} else if ("黑木崖".equals(name)) {
+			name = "魔教";
+		}
 		return maps.get(name);
 	}
 

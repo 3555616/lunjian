@@ -91,6 +91,8 @@ public class AutoPartyTrigger implements Trigger {
 			spec = true;
 		} else if ("大旗门".equals(map) && "宾奴".equals(npc)) {
 			spec = true;
+		} else if ("大昭寺".equals(map) && "护寺藏尼".equals(npc)) {
+			spec = true;
 		} else if ("桃花岛".equals(map) && "桃花岛弟子".equals(npc)) {
 			spec = true;
 		} else if ("大理".equals(map) && "采笋人".equals(npc)) {
