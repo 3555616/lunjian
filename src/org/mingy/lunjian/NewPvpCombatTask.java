@@ -1293,7 +1293,7 @@ public class NewPvpCombatTask extends TimerTask {
 					}
 					VsInfo me = createVsInfo((Map<String, Object>) combat
 							.get("me"));
-					if (me.max_qi - me.qi < 30000 || me.neili < 1000) {
+					if (me.max_qi - me.qi < 35000 || me.neili < 1000) {
 						cmdline.sendCmd("escape");
 						return;
 					}
@@ -1346,7 +1346,7 @@ public class NewPvpCombatTask extends TimerTask {
 							};
 							cmdline.walk(new String[] { "n;n;n;w" }, "桑邻药铺",
 									null, callback, 200);
-						} else if (max_kee - kee >= 30000) {
+						} else if (max_kee - kee >= 35000) {
 							if ("广场".equals(cmdline.getRoom())) {
 								cmdline.sendCmd("fight snow_worker");
 							} else {

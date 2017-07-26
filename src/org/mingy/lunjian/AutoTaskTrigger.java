@@ -42,7 +42,7 @@ public class AutoTaskTrigger implements Trigger {
 			Pattern.compile("^你一番搜索，果然找到了，回去告诉(.+)吧。$") };
 
 	private static final Pattern FINISH_PATTERN = Pattern
-			.compile("^完成谜题\\((\\d+)/(\\d+)\\)：(.+)的谜题，获得：经验x(\\d+)潜能x(\\d+)银两x(\\d+)$");
+			.compile("^完成谜题\\((\\d+)/(\\d+)\\)：(.+)的谜题，获得：经验x(\\d+)潜能x(\\d+)银两x(\\d+)");
 
 	private AutoQuest quest;
 	private Map<String, Room> tasks = new HashMap<String, Room>();
@@ -62,7 +62,7 @@ public class AutoTaskTrigger implements Trigger {
 		}
 		Matcher m = FINISH_PATTERN.matcher(message);
 		if (m.find()) {
-			Room room = tasks.remove(m.group(3));
+			Room room = tasks.remove(m.group(3).trim());
 			if (room != null) {
 				cmdline.js(cmdline.load("add_task_link.js"), seq,
 						room.getPath());
