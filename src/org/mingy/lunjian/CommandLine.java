@@ -360,6 +360,7 @@ public class CommandLine {
 		TriggerManager.register("taofan", TaofanTrigger.class);
 		TriggerManager.register("baozang", BaozangTrigger.class);
 		TriggerManager.register("autokill", AutoKillTrigger.class);
+		TriggerManager.register("tell", TellTrigger.class);
 	}
 
 	protected void finish() throws Exception {
