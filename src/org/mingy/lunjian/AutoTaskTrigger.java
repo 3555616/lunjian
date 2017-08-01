@@ -185,6 +185,22 @@ public class AutoTaskTrigger implements Trigger {
 					if (area != null) {
 						list.add(area);
 					}
+					area = quest.getArea(j - 3);
+					if (area != null) {
+						list.add(area);
+					}
+					area = quest.getArea(j + 3);
+					if (area != null) {
+						list.add(area);
+					}
+					area = quest.getArea(j - 4);
+					if (area != null) {
+						list.add(area);
+					}
+					area = quest.getArea(j + 4);
+					if (area != null) {
+						list.add(area);
+					}
 					for (Area a : list) {
 						List<Room> rooms = a.findItem(m.group(2).trim(), true);
 						if (!rooms.isEmpty()) {

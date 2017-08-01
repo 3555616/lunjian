@@ -743,7 +743,7 @@ public class NewPvpCombatTask extends TimerTask {
 						for (VsInfo info : vs2) {
 							Matcher m = USER_ID_PATTERN.matcher(info.id);
 							if (m.find()) {
-								if (info.max_qi >= 35000
+								if (info.max_qi >= 30000
 										&& !isFriend(info.name)) {
 									a++;
 								} else {
@@ -773,7 +773,7 @@ public class NewPvpCombatTask extends TimerTask {
 						for (VsInfo info : vs2) {
 							Matcher m = USER_ID_PATTERN.matcher(info.id);
 							if (m.find()) {
-								if (info.max_qi >= 35000
+								if (info.max_qi >= 30000
 										&& !isFriend(info.name)) {
 									a++;
 								} else {
@@ -1293,7 +1293,7 @@ public class NewPvpCombatTask extends TimerTask {
 					}
 					VsInfo me = createVsInfo((Map<String, Object>) combat
 							.get("me"));
-					if (me.max_qi - me.qi < 35000 || me.neili < 1000) {
+					if (me.qi * 1.0 / me.max_qi >= 0.8 || me.neili < 1000) {
 						cmdline.sendCmd("escape");
 						return;
 					}
@@ -1346,7 +1346,7 @@ public class NewPvpCombatTask extends TimerTask {
 							};
 							cmdline.walk(new String[] { "n;n;n;w" }, "桑邻药铺",
 									null, callback, 200);
-						} else if (max_kee - kee >= 35000) {
+						} else if (kee * 1.0 / max_kee < 0.8) {
 							if ("广场".equals(cmdline.getRoom())) {
 								cmdline.sendCmd("fight snow_worker");
 							} else {
