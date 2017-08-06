@@ -32,56 +32,94 @@ var perform = function(pfm_str) {
 		clickButton(cmds);
 	}
 };
-var h_interval;
+var h_interval, is_started = false, timestamp;
 var kill = function() {
-	var cmd = null;
+	var npc = null;
 	$('#out > span.out button.cmd_click2').each(function() {
 		$e = $(this);
 		if ($e.text() == '杀死') {
 			var onclick = $e.attr('onclick');
 			var i = onclick.indexOf('\'');
 			var j = onclick.indexOf('\'', i + 1);
-			cmd = onclick.substring(i + 1, j);
+			npc = onclick.substring(i + 6, j);
 			return false;
 		}
 	});
-	if (cmd) {
+	if (npc) {
 		if (h_interval) {
 			clearInterval(h_interval);
 			h_interval = undefined;
+			is_started = false;
 		}
-		var attrs = window.g_obj_map.get('msg_attrs');
-		var is_dummy = parseInt(attrs.get('max_kee')) < 10000;
+		timestamp = new Date().getTime();
+		clickButton('kill ' + npc + '\nwatch_vs ' + npc);
+		var my_id = window.g_obj_map.get('msg_attrs').get('id');
 		h_interval = setInterval(function() {
-			var is_fighting = false;
+			var is_fighting = false, do_kill = false;
 			if (window.is_fighting) {
-				var name = attrs.get('name');
-				$('td#vs11,td#vs12,td#vs13,td#vs14,td#vs21,td#vs22,td#vs23,td#vs24').each(
-						function() {
-							if ($($(this).contents()[0]).text() == name) {
-								is_fighting = true;
-								return false;
-							}
-						});
-			}
-			if (!is_fighting) {
-				if (is_dummy) {
-					var is_exercise = attrs.get('jh_exercise');
-					if (!is_exercise || parseInt(is_exercise) == 0) {
-						clickButton('exercise');
+				var vs_info = window.g_obj_map.get('msg_vs_info');
+				if (vs_info) {
+					is_started = true;
+					var n1 = 0, n2 = 0, side = 0;
+					for (var i = 1; i <= 4; i++) {
+						var qi = vs_info.get('vs1_kee' + i);
+						if (!qi) {
+							continue;
+						}
+						qi = parseInt(qi);
+						if (qi <= 0) {
+							continue;
+						}
+						n1++;
+						if (!is_fighting && vs_info.get('vs1_pos' + i) == my_id) {
+							is_fighting = true;
+						}
+						if (!side && vs_info.get('vs1_pos' + i) == npc) {
+							side = 1;
+						}
 					}
-					if (parseInt(attrs.get('kee')) < parseInt(attrs.get('max_kee'))) {
-						clickButton('recovery');
+					for (var i = 1; i <= 4; i++) {
+						var qi = vs_info.get('vs2_kee' + i);
+						if (!qi) {
+							continue;
+						}
+						qi = parseInt(qi);
+						if (qi <= 0) {
+							continue;
+						}
+						n2++;
+						if (!is_fighting && vs_info.get('vs2_pos' + i) == my_id) {
+							is_fighting = true;
+						}
+						if (!side && vs_info.get('vs2_pos' + i) == npc) {
+							side = 2;
+						}
+					}
+					if (side == 1) {
+						do_kill = n2 < 4;
+					} else if (side == 2) {
+						do_kill = n1 < 4
+					} else {
+						is_fighting = true;
 					}
 				}
-				clickButton(cmd);
-			} else {
-				if (!is_dummy) {
+				if (is_fighting) {
 					clearInterval(h_interval);
 					h_interval = undefined;
+					is_started = false;
+				} else if (do_kill) {
+					var t = new Date().getTime();
+					if (t - timestamp >= 1000) {
+						timestamp = t;
+						clickButton('kill ' + npc + '\nwatch_vs ' + npc);
+					}
 				}
+			} else if (is_started) {
+				clearInterval(h_interval);
+				h_interval = undefined;
+				is_started = false;
 			}
-		}, is_dummy ? 1000 : 1000);
+		}, 50);
 	}
 };
 $(document).keydown(function(e) {
@@ -91,6 +129,7 @@ $(document).keydown(function(e) {
 		if (h_interval) {
 			clearInterval(h_interval);
 			h_interval = undefined;
+			is_started = false;
 		}
 	} else {
 		for (var i = 0; i < args.length; i++) {
