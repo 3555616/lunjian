@@ -118,6 +118,8 @@ var kill = function() {
 				clearInterval(h_interval);
 				h_interval = undefined;
 				is_started = false;
+			} else {
+				clickButton('kill ' + npc + '\nwatch_vs ' + npc);
 			}
 		}, 50);
 	}
