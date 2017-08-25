@@ -1,36 +1,48 @@
 var pfms = arguments[0], wait = arguments[1], heal = arguments[2], safe = arguments[3], fast = arguments[4], fastpfm = arguments[5], halt = arguments[6], ctx = arguments[7], point, hp;
-if (!window.g_obj_map || !window.g_obj_map.get('msg_attrs')) {
+if (!window.is_fighting || !window.g_obj_map || !window.g_obj_map.get('msg_attrs')) {
 	return null;
 }
-var name = window.g_obj_map.get('msg_attrs').get('name'), pos;
-$('td#vs11,td#vs12,td#vs13,td#vs14,td#vs21,td#vs22,td#vs23,td#vs24').each(
-		function() {
-			if ($($(this).contents()[0]).text() == name) {
-				pos = $(this).attr('id').substr(2, 2);
-				return false;
-			}
-		});
+var my_id = window.g_obj_map.get('msg_attrs').get('id'), pos;
+var vs_info = window.g_obj_map.get('msg_vs_info');
+if (!vs_info) {
+	return null;
+}
+for (var i = 1; i <= 4; i++) {
+	var qi = vs_info.get('vs1_kee' + i);
+	if (!qi) {
+		continue;
+	}
+	qi = parseInt(qi);
+	if (qi <= 0) {
+		continue;
+	}
+	if (vs_info.get('vs1_pos' + i) == my_id) {
+		pos = '1' + i;
+		point = parseInt(vs_info.get('vs1_xdz' + i)) * 10;
+		break;
+	}
+}
+if (!pos) {
+	for (var i = 1; i <= 4; i++) {
+		var qi = vs_info.get('vs2_kee' + i);
+		if (!qi) {
+			continue;
+		}
+		qi = parseInt(qi);
+		if (qi <= 0) {
+			continue;
+		}
+		if (vs_info.get('vs2_pos' + i) == my_id) {
+			pos = '2' + i;
+			point = parseInt(vs_info.get('vs2_xdz' + i)) * 10;
+			break;
+		}
+	}
+}
 if (!pos) {
 	return null;
 }
 ctx[4] = true;
-var style = $('#barxdz_bar').attr('style');
-if (!style) {
-	return null;
-}
-var k = style.indexOf('width:')
-if (k >= 0) {
-	style = style.substr(k + 6);
-} else {
-	return null;
-}
-k = style.indexOf(';');
-var width = k >= 0 ? $.trim(style.substring(0, k)) : $.trim(style);
-if (width && width.charAt(width.length - 1) == '%') {
-	point = parseFloat(width.substr(0, width.length - 1));
-} else {
-	return null;
-}
 if (point < 20) {
 	ctx[1] = false;
 	return ctx;
@@ -66,10 +78,18 @@ if (ctx[2]) {
 	}
 }
 var getTargetHp = function() {
-	var hp = 0, $t = pos.charAt(0) == '1' ? $('#vs_hp21,#vs_hp22,#vs_hp23,#vs_hp24') : $('#vs_hp11,#vs_hp12,#vs_hp13,#vs_hp14');
-	$t.each(function () {
-		hp += parseInt($('> i > span', this).text());
-	});
+	var hp = 0;
+	for (var i = 1; i <= 4; i++) {
+		var qi = vs_info.get((pos.charAt(0) == '1' ? 'vs2_kee' : 'vs1_kee') + i);
+		if (!qi) {
+			continue;
+		}
+		qi = parseInt(qi);
+		if (qi <= 0) {
+			continue;
+		}
+		hp += qi;
+	}
 	return hp;
 };
 if (!ctx[1] && !ctx[2]) {
