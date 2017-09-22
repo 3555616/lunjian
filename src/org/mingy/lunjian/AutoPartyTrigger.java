@@ -30,6 +30,15 @@ public class AutoPartyTrigger implements Trigger {
 			cmdline.closeTrigger("party");
 			return true;
 		}
+		if (message.endsWith("现在没有任务，好好练功吧！！")) {
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// ignore
+			}
+			cmdline.sendCmd("family_quest");
+			return true;
+		}
 		Matcher m = PATTERN1.matcher(message);
 		if (!m.find()) {
 			m = PATTERN2.matcher(message);
@@ -95,7 +104,7 @@ public class AutoPartyTrigger implements Trigger {
 			spec = true;
 		} else if ("桃花岛".equals(map) && "桃花岛弟子".equals(npc)) {
 			spec = true;
-		} else if ("大理".equals(map) && "采笋人".equals(npc)) {
+		} else if ("大理".equals(map) && ("采笋人".equals(npc) || "农夫".equals(npc))) {
 			spec = true;
 		}
 		Area area = quest.getArea(map);

@@ -38,7 +38,13 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 	protected void process(final CommandLine cmdline, final String npc,
 			String place, String reward, boolean ignore) {
 		super.process(cmdline, npc, place, reward, ignore);
-		if (!ignore && !npc.startsWith("[")
+		String kuafu = cmdline.getProperty("kuafu.area");
+		if (kuafu == null || kuafu.length() == 0) {
+			kuafu = "1-5区";
+		}
+		boolean in_kuafu = cmdline.isKuafu();
+		if (!ignore
+				&& (!npc.startsWith("[") || (npc.startsWith("[" + kuafu + "]") && in_kuafu))
 				&& !Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
 				&& !cmdline.isFighting()) {
 			String path = PATHS.get(place);
@@ -51,7 +57,8 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				} catch (InterruptedException e) {
 					// ignore
 				}
-				final String good_npc = GOOD_NPCS.get(place);
+				final String good_npc = (in_kuafu ? "[" + kuafu + "]" : "")
+						+ GOOD_NPCS.get(place);
 				System.out.println("goto " + path);
 				cmdline.executeCmd("halt;prepare_kill");
 				final int priority;
@@ -150,11 +157,12 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 		@Override
 		protected void onTimer() throws Exception {
 			if (state == 0) {
-				state = 10;
+				String[] target = targets.get(0);
+				state = target[1].startsWith("[") ? 1 : 10;
 			} else if (state == 1) {
 				String[] target = targets.get(0);
-				if ("恶棍".equals(target[1]) || "流寇".equals(target[1])
-						|| "剧盗".equals(target[1])) {
+				if (target[1].endsWith("恶棍") || target[1].endsWith("流寇")
+						|| target[1].endsWith("剧盗")) {
 					if (priority > 0) {
 						cmdline.sendCmd("kill " + target[0] + ";kill "
 								+ target[2]);
@@ -169,7 +177,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 						cmdline.sendCmd("kill " + target[2]);
 					}
 				}
-				setTick(5000);
+				setTick(500);
 				state = 2;
 			} else if (state == 2) {
 				if (cmdline.getCombatPosition() != null) {
