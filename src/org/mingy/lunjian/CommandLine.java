@@ -150,6 +150,8 @@ public class CommandLine {
 		SECRET_ACCEPT_REWARDS.put("fomenshiku", 2425);
 		SECRET_ACCEPT_REWARDS.put("tianlongshan", 3100);
 		SECRET_ACCEPT_REWARDS.put("dafuchuan", 3090);
+		SECRET_ACCEPT_REWARDS.put("binhaigucheng", 3385);
+		SECRET_ACCEPT_REWARDS.put("baguamen", 3635);
 		InputStream in = CommandLine.class
 				.getResourceAsStream("maps/submap.list");
 		if (in != null) {

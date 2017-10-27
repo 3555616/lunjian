@@ -8,7 +8,7 @@ $a.each(
 		}
 		var path = args[i + 1];
 		if (path) {
-			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:clickButton(\''
+			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:send_cmd(\''
 					+ path.replace(/;/g, '\\n') + '\', 0);">GO</a>]</span>');
 			$n.insertAfter(this);
 		}
@@ -17,7 +17,7 @@ if ($a.length < args.length - 1) {
 	for (var i = $a.length; i < args.length - 1; i++) {
 		var path = args[i + 1];
 		if (path) {
-			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:clickButton(\''
+			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:send_cmd(\''
 					+ path.replace(/;/g, '\\n') + '\', 0);">GO</a>]</span>');
 			$e.append($n);
 		}

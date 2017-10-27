@@ -6,6 +6,22 @@ if (!window.g_obj_map.get('msg_attrs')) {
 	clickButton('attrs');
 	return;
 }
+window.send_cmd = function(cmds, k) {
+	var arr = cmds.split('\n');
+	if (arr.length > 4) {
+		_send_cmd(arr, k, 0);
+	} else {
+		clickButton(cmds, k);
+	}
+};
+var _send_cmd = function(cmds, k, i) {
+	clickButton(cmds[i], k);
+	if (++i < cmds.length) {
+		setTimeout(function() {
+			_send_cmd(cmds, k, i);
+		}, Math.floor(100 + Math.random() * 20));
+	}
+};
 var perform = function(pfm_str) {
 	var skills = [];
 	$('button.cmd_skill_button').each(function() {

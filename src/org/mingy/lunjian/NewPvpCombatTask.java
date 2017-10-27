@@ -243,7 +243,7 @@ public class NewPvpCombatTask extends TimerTask {
 															cmdline,
 															rooms.get(0));
 													cmdline.executeTask(task,
-															1000);
+															1000, 1000);
 												}
 											};
 											cmdline.walk(
@@ -288,7 +288,8 @@ public class NewPvpCombatTask extends TimerTask {
 																	cmdline,
 																	rooms.get(0));
 															cmdline.executeTask(
-																	task, 1000);
+																	task, 1000,
+																	1000);
 														}
 													};
 													cmdline.walk(
@@ -1233,14 +1234,14 @@ public class NewPvpCombatTask extends TimerTask {
 					if (force < max_force) {
 						StringBuilder sb = new StringBuilder();
 						int n = (int) (max_force - force) / 5000 + 1;
-						for (int i = 0; i < Math.min(n, 5); i++) {
+						for (int i = 0; i < Math.min(n, 2); i++) {
 							sb.append("buy /map/snow/obj/qiannianlingzhi from snow_herbalist\nitems use snow_qiannianlingzhi\n");
 						}
 						sb.append("attrs");
 						cmdline.js("clickButton(arguments[0]);", sb.toString());
 					} else if (kee < max_kee) {
 						StringBuilder sb = new StringBuilder();
-						for (int i = 0; i < 5; i++) {
+						for (int i = 0; i < 3; i++) {
 							sb.append("recovery\n");
 						}
 						sb.append("attrs");
@@ -1332,22 +1333,33 @@ public class NewPvpCombatTask extends TimerTask {
 						if (max_force - force >= 10000) {
 							final StringBuilder sb = new StringBuilder();
 							int n = (int) (max_force - force) / 5000 + 1;
-							for (int i = 0; i < Math.min(n, 5); i++) {
+							for (int i = 0; i < Math.min(n, 2); i++) {
 								sb.append("buy /map/snow/obj/qiannianlingzhi from snow_herbalist\nitems use snow_qiannianlingzhi\n");
 							}
 							sb.append("attrs");
-							Runnable callback = new Runnable() {
-								@Override
-								public void run() {
-									cmdline.js("clickButton(arguments[0]);",
-											sb.toString());
-									RecoveryTask2 task = new RecoveryTask2(
-											cmdline, room);
-									cmdline.executeTask(task, 1000, 1000);
-								}
-							};
-							cmdline.walk(new String[] { "n;n;n;w" }, "桑邻药铺",
-									null, callback, 200);
+							if ("桑邻药铺".equals(cmdline.getRoom())) {
+								cmdline.js("clickButton(arguments[0]);",
+										sb.toString());
+							} else {
+								Runnable callback = new Runnable() {
+									@Override
+									public void run() {
+										try {
+											Thread.sleep(1000);
+										} catch (InterruptedException e) {
+											// ignore
+										}
+										cmdline.js(
+												"clickButton(arguments[0]);",
+												sb.toString());
+										RecoveryTask2 task = new RecoveryTask2(
+												cmdline, room);
+										cmdline.executeTask(task, 1000, 1000);
+									}
+								};
+								cmdline.walk(new String[] { "n;n;n;w" },
+										"桑邻药铺", null, callback, 200);
+							}
 						} else if (kee * 1.0 / max_kee < 0.8) {
 							if ("广场".equals(cmdline.getRoom())) {
 								cmdline.sendCmd("fight snow_worker");
@@ -1366,7 +1378,7 @@ public class NewPvpCombatTask extends TimerTask {
 							}
 						} else if (kee < max_kee) {
 							StringBuilder sb = new StringBuilder();
-							for (int i = 0; i < 5; i++) {
+							for (int i = 0; i < 3; i++) {
 								sb.append("recovery\n");
 							}
 							sb.append("attrs");

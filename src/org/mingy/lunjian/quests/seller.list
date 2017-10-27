@@ -44,6 +44,17 @@
 红龟,/map/choyin/npc/obj/red_guay
 平安符,/map/choyin/npc/obj/amulet
 新鲜狗血,/obj/magic/dog_blood
+[emei_xiao-fan]
+铁甲,/map/emei/npc/obj/tiejia
+绣花小鞋,/map/emei/npc/obj/flower_shoe
+豆腐,/map/emei/npc/obj/doufu
+长剑,/map/emei/npc/obj/changjian
+金戒指,/map/emei/npc/obj/goldring
+葫芦,/map/emei/npc/obj/hulu
+包子,/map/emei/npc/obj/baozi
+馒头,/map/emei/npc/obj/mantou
+钢刀,/map/emei/npc/obj/gangdao
+皮背心,/map/emei/npc/obj/beixin
 [qingcheng_waiter]
 烤鸡腿,/obj/example/chicken_leg
 包子,/obj/example/dumpling
