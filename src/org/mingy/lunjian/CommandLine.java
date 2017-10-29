@@ -544,6 +544,10 @@ public class CommandLine {
 				System.out.println("starting snoop rumor...");
 				executeTask(new SnoopRumorTask(keywords, ignores), 3000);
 			}
+		} else if (line.equals("#question")) {
+			System.out.println("starting answer question...");
+			sendCmd("question");
+			executeTask(new AutoQuestionTask(this), 200, 200);
 		} else if (webqqQueue != null && line.startsWith("#send ")) {
 			Message message = new Message();
 			message.text = line.substring(6).trim();
