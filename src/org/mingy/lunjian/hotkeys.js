@@ -8,31 +8,64 @@ if (!window.g_obj_map.get('msg_attrs')) {
 }
 var _dispatch_message = window.gSocketMsg.dispatchMessage;
 var show_attack_target = true;
-var vs_text;
+var auto_attack = false;
+var vs_text1 = '', vs_text2 = '';
+var user_id_pattern = /^u[0-9]+/;
+var ansi_color_pattern = /\u001b\[[;0-9]+m/g;
+var skills = new Map();
+skills.put('九天龙吟剑法', ['排云掌法', '雪饮狂刀']);
+skills.put('覆雨剑法', ['翻云刀法', '如来神掌']);
+skills.put('织冰剑法', ['孔雀翎', '飞刀绝技']);
+skills.put('排云掌法', ['九天龙吟剑法', '雪饮狂刀']);
+skills.put('如来神掌', ['覆雨剑法', '孔雀翎']);
+skills.put('雪饮狂刀', ['九天龙吟剑法', '排云掌法']);
+skills.put('翻云刀法', ['覆雨剑法', '飞刀绝技']);
+skills.put('飞刀绝技', ['翻云刀法', '织冰剑法']);
+skills.put('孔雀翎', ['如来神掌', '织冰剑法']);
+var skill_chains = ['九天龙吟剑法', '覆雨剑法', '织冰剑法', '排云掌法', '如来神掌', '雪饮狂刀', '翻云刀法', '飞刀绝技', '孔雀翎', '道种心魔经', '生生造化功', '幽影幻虚步', '万流归一'];
 window.gSocketMsg.dispatchMessage = function(msg) {
 	_dispatch_message.apply(this, arguments);
 	if (show_attack_target && msg.get('type') == 'vs') {
 		if (msg.get('subtype') == 'text') {
-			vs_text = msg.get('msg');
+			vs_text1 = vs_text2;
+			vs_text2 = msg.get('msg');
 		} else if (msg.get('subtype') == 'playskill' && parseInt(msg.get('ret')) == 0) {
 			var my_id = window.g_obj_map.get('msg_attrs').get('id');
 			if (msg.get('uid') == my_id) {
 				var vid = msg.get('vid');
 				var vs_info = window.g_obj_map.get('msg_vs_info');
 				if (vs_info) {
-					var v;
+					var v1, v2, p1, p2;
 					for (var i = 1; i <= 4; i++) {
 						if (vs_info.get('vs1_pos_v' + i) == vid) {
-							v = 'vs2';
+							v1 = 'vs1';
+							p1 = i;
+							v2 = 'vs2';
 							break;
 						}
 					}
-					v = v || 'vs1';
+					if (!v1) {
+						for (var i = 1; i <= 4; i++) {
+							if (vs_info.get('vs2_pos_v' + i) == vid) {
+								v1 = 'vs2';
+								p1 = i;
+								v2 = 'vs1';
+								break;
+							}
+						}
+					}
 					for (var i = 1; i <= 4; i++) {
-						var name = vs_info.get(v + '_name' + i);
+						var name = vs_info.get(v2 + '_name' + i);
 						if (name) {
+							var pfm = msg.get('name').replace(ansi_color_pattern, '');
+							vs_text = skill_chains.indexOf(pfm) >= 0 ? vs_text1 + vs_text2 : vs_text2;
 							if (vs_text.indexOf(name) >= 0) {
 								notify_fail(HIG + 'ATTACK: ' + name);
+								p2 = i;
+								var id = vs_info.get(v2 + '_pos' + i);
+								if (auto_attack && user_id_pattern.test(id)) {
+									autopfm(vs_info, pfm, v1, p1, v2, p2);
+								}
 								break;
 							}
 						}
@@ -42,19 +75,10 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 		}
 	}
 };
-var skills = new Map();
-skills.set('九天龙吟剑法', ['排云掌法', '雪饮狂刀']);
-skills.set('覆雨剑法', ['翻云刀法', '如来神掌']);
-skills.set('织冰剑法', ['孔雀翎', '飞刀绝技']);
-skills.set('排云掌法', ['九天龙吟剑法', '雪饮狂刀']);
-skills.set('如来神掌', ['覆雨剑法', '孔雀翎']);
-skills.set('雪饮狂刀', ['九天龙吟剑法', '排云掌法']);
-skills.set('翻云刀法', ['覆雨剑法', '飞刀绝技']);
-skills.set('飞刀绝技', ['翻云刀法', '织冰剑法']);
-skills.set('孔雀翎', ['如来神掌', '织冰剑法']);
-function autopfm(vs_info, msg, v, i) {
-	var max_kee = vs_info.get(v + '_max_kee' + i);
-	var kee = vs_info.get(v + '_kee' + i);
+function autopfm(vs_info, pfm, v1, p1, v2, p2) {
+	var xdz = parseInt(vs_info.get(v1 + '_xdz' + p1));
+	var max_kee = vs_info.get(v2 + '_max_kee' + p2);
+	var kee = vs_info.get(v2 + '_kee' + p2);
 	var k = 0;
 	if (max_kee < 30000) {
 		k = 0;
@@ -65,42 +89,62 @@ function autopfm(vs_info, msg, v, i) {
 	} else {
 		k = 2;
 	}
-	String pfm = msg.get('name').replace(/\u001e\[[;0-9]+m/g, '');
-	if (skills.has(pfm)) {
+	if (skills.containsKey(pfm)) {
 		k = k > 0 ? k - 1 : 0;
 	}
 	var buttons = [];
-	$('button.cmd_skill_button').each(function() {
-		buttons.push($(this).text().replace(/\u001e\[[;0-9]+m/g, ''));
-	});
+	for (var i = 0; i < 4; i++) {
+		var button = window.g_obj_map.get('skill_button' + (i + 1));
+		if (button && parseInt(button.get('xdz')) <= xdz) {
+			buttons.push(button.get('name').replace(ansi_color_pattern, ''));
+		} else {
+			buttons.push('');
+		}
+	}
 	if (k == 1) {
 		var pfms = skills.get(pfm);
 		if (pfms) {
-			for (var j = 0; j < buttons.length; j++) {
-				if (pfms.indexOf(buttons[j]) >= 0) {
-					clickButton('playskill ' + (j + 1));
-					break;
+			for (var i = 0; i < buttons.length; i++) {
+				if (buttons[i] && pfms.indexOf(buttons[i]) >= 0) {
+					clickButton('playskill ' + (i + 1));
+					return;
 				}
 			}
-		} else {
-			for (var j = 0; j < buttons.length; j++) {
-				if (skills.has(buttons[j])) {
-					clickButton('playskill ' + (j + 1));
-					break;
-				}
+		}
+		for (var i = 0; i < buttons.length; i++) {
+			if (buttons[i] && skills.containsKey(buttons[i])) {
+				clickButton('playskill ' + (i + 1));
+				break;
 			}
 		}
 	} else if (k == 2) {
 		var pfms = skills.get(pfm);
 		if (pfms) {
-			for (var j = 0; j < buttons.length; j++) {
-				if (pfms.indexOf(buttons[j]) >= 0) {
-					clickButton('playskill ' + (j + 1));
-					break;
+			for (var i = 0; i < buttons.length; i++) {
+				if (buttons[i] && pfms.indexOf(buttons[i]) >= 0) {
+					clickButton('playskill ' + (i + 1));
+					return;
 				}
 			}
-		} else {
-			
+		}
+		for (var i = 0; i < buttons.length; i++) {
+			if (buttons[i]) {
+				pfms = skills.get(buttons[i]);
+				if (pfms) {
+					for (var j = i + 1; j < buttons.length; j++) {
+						if (buttons[j] && pfms.indexOf(buttons[j]) >= 0) {
+							clickButton('playskill ' + (i + 1) + '\nplayskill ' + (j + 1));
+							return;
+						}
+					}
+				}
+			}
+		}
+		for (var i = 0; i < buttons.length; i++) {
+			if (buttons[i] && skills.containsKey(buttons[i])) {
+				clickButton('playskill ' + (i + 1));
+				break;
+			}
 		}
 	}
 }
@@ -247,6 +291,8 @@ $(document).keydown(function(e) {
 			h_interval = undefined;
 			is_started = false;
 		}
+	} else if (e.which == 122) {
+		auto_attack = !auto_attack;
 	} else if (e.which == 123) {
 		show_attack_target = !show_attack_target;
 	} else {
