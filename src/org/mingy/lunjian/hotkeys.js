@@ -6,6 +6,104 @@ if (!window.g_obj_map.get('msg_attrs')) {
 	clickButton('attrs');
 	return;
 }
+var _dispatch_message = window.gSocketMsg.dispatchMessage;
+var show_attack_target = true;
+var vs_text;
+window.gSocketMsg.dispatchMessage = function(msg) {
+	_dispatch_message.apply(this, arguments);
+	if (show_attack_target && msg.get('type') == 'vs') {
+		if (msg.get('subtype') == 'text') {
+			vs_text = msg.get('msg');
+		} else if (msg.get('subtype') == 'playskill' && parseInt(msg.get('ret')) == 0) {
+			var my_id = window.g_obj_map.get('msg_attrs').get('id');
+			if (msg.get('uid') == my_id) {
+				var vid = msg.get('vid');
+				var vs_info = window.g_obj_map.get('msg_vs_info');
+				if (vs_info) {
+					var v;
+					for (var i = 1; i <= 4; i++) {
+						if (vs_info.get('vs1_pos_v' + i) == vid) {
+							v = 'vs2';
+							break;
+						}
+					}
+					v = v || 'vs1';
+					for (var i = 1; i <= 4; i++) {
+						var name = vs_info.get(v + '_name' + i);
+						if (name) {
+							if (vs_text.indexOf(name) >= 0) {
+								notify_fail(HIG + 'ATTACK: ' + name);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+};
+var skills = new Map();
+skills.set('九天龙吟剑法', ['排云掌法', '雪饮狂刀']);
+skills.set('覆雨剑法', ['翻云刀法', '如来神掌']);
+skills.set('织冰剑法', ['孔雀翎', '飞刀绝技']);
+skills.set('排云掌法', ['九天龙吟剑法', '雪饮狂刀']);
+skills.set('如来神掌', ['覆雨剑法', '孔雀翎']);
+skills.set('雪饮狂刀', ['九天龙吟剑法', '排云掌法']);
+skills.set('翻云刀法', ['覆雨剑法', '飞刀绝技']);
+skills.set('飞刀绝技', ['翻云刀法', '织冰剑法']);
+skills.set('孔雀翎', ['如来神掌', '织冰剑法']);
+function autopfm(vs_info, msg, v, i) {
+	var max_kee = vs_info.get(v + '_max_kee' + i);
+	var kee = vs_info.get(v + '_kee' + i);
+	var k = 0;
+	if (max_kee < 30000) {
+		k = 0;
+	} else if (max_kee < 100000) {
+		k = 1;
+	} else if (max_kee < 300000) {
+		k = kee < 100000 ? 1 : 2;
+	} else {
+		k = 2;
+	}
+	String pfm = msg.get('name').replace(/\u001e\[[;0-9]+m/g, '');
+	if (skills.has(pfm)) {
+		k = k > 0 ? k - 1 : 0;
+	}
+	var buttons = [];
+	$('button.cmd_skill_button').each(function() {
+		buttons.push($(this).text().replace(/\u001e\[[;0-9]+m/g, ''));
+	});
+	if (k == 1) {
+		var pfms = skills.get(pfm);
+		if (pfms) {
+			for (var j = 0; j < buttons.length; j++) {
+				if (pfms.indexOf(buttons[j]) >= 0) {
+					clickButton('playskill ' + (j + 1));
+					break;
+				}
+			}
+		} else {
+			for (var j = 0; j < buttons.length; j++) {
+				if (skills.has(buttons[j])) {
+					clickButton('playskill ' + (j + 1));
+					break;
+				}
+			}
+		}
+	} else if (k == 2) {
+		var pfms = skills.get(pfm);
+		if (pfms) {
+			for (var j = 0; j < buttons.length; j++) {
+				if (pfms.indexOf(buttons[j]) >= 0) {
+					clickButton('playskill ' + (j + 1));
+					break;
+				}
+			}
+		} else {
+			
+		}
+	}
+}
 window.send_cmd = function(cmds, k) {
 	var arr = cmds.split('\n');
 	if (arr.length > 4) {
@@ -149,6 +247,8 @@ $(document).keydown(function(e) {
 			h_interval = undefined;
 			is_started = false;
 		}
+	} else if (e.which == 123) {
+		show_attack_target = !show_attack_target;
 	} else {
 		for (var i = 0; i < args.length; i++) {
 			if (e.which == 112 + i) {
@@ -160,4 +260,4 @@ $(document).keydown(function(e) {
 	return true;
 });
 window.robot_hotkeys = 1;
-notify_fail('hotkey loaded');
+notify_fail(HIG + 'hotkey loaded');
