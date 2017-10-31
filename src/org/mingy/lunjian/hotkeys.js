@@ -23,9 +23,10 @@ skills.put('翻云刀法', ['覆雨剑法', '飞刀绝技']);
 skills.put('飞刀绝技', ['翻云刀法', '织冰剑法']);
 skills.put('孔雀翎', ['如来神掌', '织冰剑法']);
 var skill_chains = ['九天龙吟剑法', '覆雨剑法', '织冰剑法', '排云掌法', '如来神掌', '雪饮狂刀', '翻云刀法', '飞刀绝技', '孔雀翎', '道种心魔经', '生生造化功', '幽影幻虚步', '万流归一'];
+var defence_patterns = [/(.*)顿时被冲开老远，失去了攻击之势！/, /(.*)被(.*)的真气所迫，只好放弃攻击！/, /(.*)衣裳鼓起，真气直接将(.*)逼开了！/, /(.*)找到了闪躲的空间！/, /(.*)朝边上一步闪开！/, /面对(.*)的攻击，(.*)毫不为惧！/, /(.*)使出“(.*)”，希望扰乱(.*)的视线！/];
 window.gSocketMsg.dispatchMessage = function(msg) {
 	_dispatch_message.apply(this, arguments);
-	if (show_attack_target && msg.get('type') == 'vs') {
+	if ((show_attack_target || auto_attack) && msg.get('type') == 'vs') {
 		if (msg.get('subtype') == 'text') {
 			vs_text1 = vs_text2;
 			vs_text2 = msg.get('msg');
@@ -60,11 +61,22 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 							var pfm = msg.get('name').replace(ansi_color_pattern, '');
 							vs_text = skill_chains.indexOf(pfm) >= 0 ? vs_text1 + vs_text2 : vs_text2;
 							if (vs_text.indexOf(name) >= 0) {
-								notify_fail(HIG + 'ATTACK: ' + name);
-								p2 = i;
-								var id = vs_info.get(v2 + '_pos' + i);
-								if (auto_attack && user_id_pattern.test(id)) {
-									autopfm(vs_info, pfm, v1, p1, v2, p2);
+								var is_defence = false;
+								for (var j = 0; j < defence_patterns.length; j++) {
+									if (defence_patterns[j].test(vs_text)) {
+										is_defence = true;
+										break;
+									}
+								}
+								if (!is_defence) {
+									if (show_attack_target) {
+										notify_fail(HIG + 'ATTACK: ' + name);
+									}
+									p2 = i;
+									var id = vs_info.get(v2 + '_pos' + i);
+									if (auto_attack && user_id_pattern.test(id)) {
+										autopfm(vs_info, pfm, v1, p1, v2, p2);
+									}
 								}
 								break;
 							}
@@ -291,8 +303,9 @@ $(document).keydown(function(e) {
 			h_interval = undefined;
 			is_started = false;
 		}
-	} else if (e.which == 122) {
+	} else if (e.which == 119) {
 		auto_attack = !auto_attack;
+		notify_fail('auto attack ' + (auto_attack ? 'starting' : 'stopped'));
 	} else if (e.which == 123) {
 		show_attack_target = !show_attack_target;
 	} else {
@@ -306,4 +319,4 @@ $(document).keydown(function(e) {
 	return true;
 });
 window.robot_hotkeys = 1;
-notify_fail(HIG + 'hotkey loaded');
+notify_fail('hotkey loaded');
