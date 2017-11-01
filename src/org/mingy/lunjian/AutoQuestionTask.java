@@ -223,6 +223,7 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("乌金玄火鞭的伤害是多少", "d");
 		QUESTIONS.put("张松溪在哪个地图", "c");
 		QUESTIONS.put("欧阳敏是哪个门派的师傅", "b");
+		QUESTIONS.put("欧阳敏是哪个门派的", "b");
 		QUESTIONS.put("以下哪个门派是正派", "d");
 		QUESTIONS.put("成功易容成异性几次可以领取易容成就奖", "b");
 		QUESTIONS.put("论剑中以下不是峨嵋派技能的是哪个", "b");
@@ -363,7 +364,7 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("“花海”场景是在哪个地图上", "a");
 		QUESTIONS.put("雪蕊儿是哪个门派的师傅", "a");
 		QUESTIONS.put("新手礼包在哪里领取", "a");
-		QUESTIONS.put("论语在哪购买", "a");
+//		QUESTIONS.put("论语在哪购买", "a");
 		QUESTIONS.put("银丝链甲衣可以在哪位npc那里获得", "a");
 		QUESTIONS.put("乾坤大挪移属于什么类型的武功", "a");
 		QUESTIONS.put("移开明教石板需要哪项技能到一定级别", "a");
