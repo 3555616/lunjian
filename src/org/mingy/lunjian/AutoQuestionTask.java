@@ -222,7 +222,7 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("蛇形刁手是哪个门派的技能", "b");
 		QUESTIONS.put("乌金玄火鞭的伤害是多少", "d");
 		QUESTIONS.put("张松溪在哪个地图", "c");
-		QUESTIONS.put("欧阳敏是哪个门派的", "b");
+		QUESTIONS.put("欧阳敏是哪个门派的师傅", "b");
 		QUESTIONS.put("以下哪个门派是正派", "d");
 		QUESTIONS.put("成功易容成异性几次可以领取易容成就奖", "b");
 		QUESTIONS.put("论剑中以下不是峨嵋派技能的是哪个", "b");

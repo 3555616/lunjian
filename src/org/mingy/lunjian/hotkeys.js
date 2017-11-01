@@ -11,6 +11,7 @@ var show_attack_target = true;
 var auto_attack = false;
 var vs_text1 = '', vs_text2 = '';
 var user_id_pattern = /^u[0-9]+/;
+var kuafu_name_pattern = /^\[[0-9]+\]/;
 var ansi_color_pattern = /\u001b\[[;0-9]+m/g;
 var skills = new Map();
 skills.put('九天龙吟剑法', ['排云掌法', '雪饮狂刀']);
@@ -58,6 +59,10 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 					for (var i = 1; i <= 4; i++) {
 						var name = vs_info.get(v2 + '_name' + i);
 						if (name) {
+							if (my_id.indexOf('-') >= 0 && kuafu_name_pattern.test(name)) {
+								var j = name.indexOf(']');
+								name = name.substr(0, j) + '区' + name.substr(j, name.length - j);
+							}
 							var pfm = msg.get('name').replace(ansi_color_pattern, '');
 							vs_text = skill_chains.indexOf(pfm) >= 0 ? vs_text1 + vs_text2 : vs_text2;
 							if (vs_text.indexOf(name) >= 0) {
