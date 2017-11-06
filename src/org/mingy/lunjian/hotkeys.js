@@ -88,7 +88,7 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 									}
 									p2 = i;
 									var id = vs_info.get(v2 + '_pos' + i);
-									if (auto_attack && is_user(id)) {
+									if (auto_attack && is_player(id) && !is_friend(id)) {
 										auto_pfm(vs_info, pfm, v1, p1, v2, p2);
 									}
 								}
@@ -117,7 +117,7 @@ function try_join_combat(vs_info, target) {
 		if (!has_npc || !has_pos) {
 			var kee = vs_info.get(side + '_kee' + i);
 			if (kee && parseInt(kee) > 0) {
-				if (!has_npc && !is_user(vs_info.get(side + '_pos' + i))) {
+				if (!has_npc && !is_player(vs_info.get(side + '_pos' + i))) {
 					has_npc = true;
 				}
 			} else {
@@ -128,18 +128,15 @@ function try_join_combat(vs_info, target) {
 			var kee = vs_info.get(pos[0] + '_kee' + i);
 			if (kee && parseInt(kee) > 0) {
 				var id = vs_info.get(pos[0] + '_pos' + i);
-				var j = id.indexOf('-');
-				var _id = j >= 0 ? id.substr(0, j) : id;
-				if (friend_list.indexOf(_id) >= 0) {
+				if (is_friend(id)) {
 					friend_id = id;
 				}
 			}
 		}
 	}
-	if (!has_npc || !has_pos) {
+	if (!has_pos) {
 		return false;
 	}
-	notify_fail(friend_id);
 	if (friend_id) {
 		clickButton('fight ' + friend_id);
 	} else {
@@ -163,8 +160,15 @@ function check_pos(vs_info, target) {
 	}
 	return null;
 }
-function is_user(id) {
+function is_player(id) {
 	return user_id_pattern1.test(id) || user_id_pattern2.test(id);
+}
+function is_friend(id) {
+	var i = id.indexOf('-');
+	if (i >= 0) {
+		id = id.substr(0, j);
+	}
+	return friend_list && friend_list.indexOf(id) >= 0;
 }
 function auto_pfm(vs_info, pfm, v1, p1, v2, p2) {
 	var xdz = parseInt(vs_info.get(v1 + '_xdz' + p1));
@@ -272,6 +276,43 @@ var _send_cmd = function(cmds, k, i) {
 		}, Math.floor(100 + Math.random() * 20));
 	}
 };
+function rejoin(change_side) {
+	if (!window.is_fighting) {
+		return;
+	}
+	var vs_info = window.g_obj_map.get('msg_vs_info');
+	var my_id = window.g_obj_map.get('msg_attrs').get('id');
+	var pos = check_pos(vs_info, my_id);
+	if (pos) {
+		var side = pos[0];
+		if (!change_side) {
+			side = side == 'vs1' ? 'vs2' : 'vs1';
+		}
+		var npc_id = null;
+		for (var i = 1; i <= 4; i++) {
+			var kee = vs_info.get(side + '_kee' + i);
+			if (kee && parseInt(kee) > 0) {
+				var id = vs_info.get(side + '_pos' + i);
+				if (!is_player(id)) {
+					npc_id = id;
+					break;
+				}
+			}
+		}
+		if (npc_id) {
+			var cmd = 'escape\n';
+			var force = parseInt(vs_info.get(pos[0] + '_force' + pos[1]));
+			var max_force = parseInt(vs_info.get(pos[0] + '_max_force' + pos[1]));
+			if (max_force - force >= 20000) {
+				for (var i = 0; i < 3; i++) {
+					cmd += 'items use snow_qiannianlingzhi\n';
+				}
+			}
+			cmd += 'kill ' + npc_id;
+			clickButton(cmd);
+		}
+	}
+}
 var perform = function(pfm_str) {
 	var skills = [];
 	$('button.cmd_skill_button').each(function() {
@@ -351,19 +392,23 @@ var kill = function() {
 	}
 };
 $(document).keydown(function(e) {
-	if (e.which == 120) {
+	if (e.which == 120) { // F9
 		kill();
-	} else if (e.which == 121) {
+	} else if (e.which == 121) { // F10
 		if (h_interval) {
 			clearInterval(h_interval);
 			h_interval = undefined;
 			is_started = false;
 			join_combat_target = null;
 		}
-	} else if (e.which == 119) {
+	} else if (e.which == 115) { // F4
+		rejoin(false);
+	} else if (e.which == 118) { // F7
+		rejoin(true);
+	} else if (e.which == 119) { // F8
 		auto_attack = !auto_attack;
 		notify_fail('auto attack ' + (auto_attack ? 'starting' : 'stopped'));
-	} else if (e.which == 123) {
+	} else if (e.which == 123) { // F12
 		show_attack_target = !show_attack_target;
 	} else if (perform_list) {
 		for (var i = 0; i < perform_list.length; i++) {
