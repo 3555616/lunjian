@@ -29,8 +29,10 @@ public class Power extends CommandLine {
 	protected void start(String[] args) throws Exception {
 		super.start(args);
 		String hotkeys = properties.getProperty("hotkey.performs");
+		String friends = properties.getProperty("friends.list");
 		HotkeyTask hotkeyTask = new HotkeyTask(webdriver,
-				hotkeys != null ? hotkeys.trim() : null);
+				hotkeys != null ? hotkeys.trim() : null,
+				friends != null ? friends.trim() : null);
 		timer.schedule(hotkeyTask, 1000, 3000);
 		works = new ArrayList<Work>();
 		works.add(new Work("work click maikuli", 5500));
@@ -52,7 +54,8 @@ public class Power extends CommandLine {
 			String dummy = properties.getProperty("dummy" + i);
 			if (dummy != null && dummy.trim().length() > 0) {
 				WebDriver webdriver = openUrl(dummy);
-				timer.schedule(new HotkeyTask(webdriver, null), 1000, 3000);
+				timer.schedule(new HotkeyTask(webdriver, null, null), 1000,
+						3000);
 				webdrivers.add(webdriver);
 			} else {
 				break;
@@ -166,17 +169,24 @@ public class Power extends CommandLine {
 	private class HotkeyTask extends TimerTask {
 
 		private WebDriver webdriver;
-		private Object[] args = new Object[0];
+		private Object[] args = new Object[2];
 
-		public HotkeyTask(WebDriver webdriver, String hotkeys) {
+		public HotkeyTask(WebDriver webdriver, String hotkeys, String friends) {
 			super();
 			this.webdriver = webdriver;
 			if (hotkeys != null && hotkeys.length() > 0) {
 				String[] pfms = hotkeys.split(",");
-				args = new Object[pfms.length];
 				for (int i = 0; i < pfms.length; i++) {
-					args[i] = pfms[i].trim();
+					pfms[i] = pfms[i].trim();
 				}
+				args[0] = pfms;
+			}
+			if (friends != null && friends.length() > 0) {
+				String[] arr = friends.split(",");
+				for (int i = 0; i < arr.length; i++) {
+					arr[i] = arr[i].trim();
+				}
+				args[1] = arr;
 			}
 		}
 
