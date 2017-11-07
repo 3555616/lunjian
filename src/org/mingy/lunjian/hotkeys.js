@@ -88,7 +88,7 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 									}
 									p2 = i;
 									var id = vs_info.get(v2 + '_pos' + i);
-									if (auto_attack && is_player(id) && !is_friend(id)) {
+									if (auto_attack && is_player(id) && get_friend_index(id) < 0) {
 										auto_pfm(vs_info, pfm, v1, p1, v2, p2);
 									}
 								}
@@ -102,7 +102,7 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 	}
 };
 var last_kill_time = 0;
-function try_join_combat(vs_info, target, ignore_check) {
+function try_join_combat(vs_info, target, force_fight) {
 	var pos = check_pos(vs_info, target);
 	if (!pos) {
 		return false;
@@ -113,6 +113,7 @@ function try_join_combat(vs_info, target, ignore_check) {
 	var has_npc = false;
 	var has_pos = false;
 	var friend_id = null;
+	var k = -1;
 	for (var i = 1; i <= 4; i++) {
 		if (!has_npc || !has_pos) {
 			var kee = vs_info.get(side + '_kee' + i);
@@ -124,22 +125,30 @@ function try_join_combat(vs_info, target, ignore_check) {
 				has_pos = true;
 			}
 		}
-		if (friend_list && !friend_id) {
+		if (friend_list) {
 			var kee = vs_info.get(pos[0] + '_kee' + i);
 			if (kee && parseInt(kee) > 0) {
 				var id = vs_info.get(pos[0] + '_pos' + i);
-				if (is_friend(id)) {
+				var j = get_friend_index(id);
+				if (j >= 0 && (k < 0 || j < k)) {
 					friend_id = id;
+					k = j;
 				}
 			}
 		}
 	}
-	if (!has_npc || (!ignore_check && !has_pos)) {
+	if (!has_npc) {
 		return false;
 	}
 	if (friend_id) {
+		if (!force_fight && !has_pos) {
+			return false;
+		}
 		clickButton('fight ' + friend_id);
 	} else {
+		if (!has_pos) {
+			return false;
+		}
 		var t = new Date().getTime();
 		if (t - last_kill_time >= 1000) {
 			last_kill_time = t;
@@ -163,12 +172,15 @@ function check_pos(vs_info, target) {
 function is_player(id) {
 	return user_id_pattern1.test(id) || user_id_pattern2.test(id);
 }
-function is_friend(id) {
+function get_friend_index(id) {
+	if (!friend_list) {
+		return -1;
+	}
 	var i = id.indexOf('-');
 	if (i >= 0) {
-		id = id.substr(0, j);
+		id = id.substr(0, i);
 	}
-	return friend_list && friend_list.indexOf(id) >= 0;
+	return friend_list.indexOf(id);
 }
 function auto_pfm(vs_info, pfm, v1, p1, v2, p2) {
 	var xdz = parseInt(vs_info.get(v1 + '_xdz' + p1));
@@ -388,7 +400,7 @@ var kill = function() {
 				last_kill_time = new Date().getTime();
 				clickButton('kill ' + npc + '\nwatch_vs ' + npc);
 			}
-		}, 100);
+		}, 150);
 	}
 };
 $(document).keydown(function(e) {
