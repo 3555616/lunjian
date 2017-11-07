@@ -102,7 +102,7 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 	}
 };
 var last_kill_time = 0;
-function try_join_combat(vs_info, target) {
+function try_join_combat(vs_info, target, ignore_check) {
 	var pos = check_pos(vs_info, target);
 	if (!pos) {
 		return false;
@@ -134,7 +134,7 @@ function try_join_combat(vs_info, target) {
 			}
 		}
 	}
-	if (!has_pos) {
+	if (!has_npc || (!ignore_check && !has_pos)) {
 		return false;
 	}
 	if (friend_id) {
@@ -377,7 +377,7 @@ var kill = function() {
 					is_started = false;
 					join_combat_target = null;
 				} else {
-					try_join_combat(vs_info, npc);
+					try_join_combat(vs_info, npc, true);
 				}
 			} else if (is_started) {
 				clearInterval(h_interval);
@@ -388,7 +388,7 @@ var kill = function() {
 				last_kill_time = new Date().getTime();
 				clickButton('kill ' + npc + '\nwatch_vs ' + npc);
 			}
-		}, 120);
+		}, 100);
 	}
 };
 $(document).keydown(function(e) {
