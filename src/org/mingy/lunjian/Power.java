@@ -6,7 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
+import java.util.regex.Pattern;
 
+import org.mingy.lunjian.AutoQuest.Area;
+import org.mingy.lunjian.AutoQuest.Room;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 
@@ -87,6 +90,7 @@ public class Power extends CommandLine {
 		TriggerManager.register("task", AutoTaskTrigger.class);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void execute(String line) throws IOException {
 		if (line.startsWith("#loop ")) {
@@ -161,9 +165,47 @@ public class Power extends CommandLine {
 				System.out.println("starting auto pve ...");
 				executeTask(task, 100);
 			}
+		} else if (line.equals("#heal")) {
+			Map<String, Object> map = (Map<String, Object>) js(
+					load("get_msgs.js"), "msg_room", false);
+			MapId mapId = null;
+			String place = null;
+			String id = (String) map.get("map_id");
+			if (id != null) {
+				try {
+					mapId = MapId.valueOf(id);
+					place = removeSGR((String) map.get("short"));
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+			Room room = null;
+			AutoQuest quest = new AutoQuest(this);
+			if (quest.init()) {
+				Area area = quest.getArea(mapId.ordinal() - 1);
+				if (area != null) {
+					final List<Room> rooms = area.findRoom(place);
+					if (!rooms.isEmpty()) {
+						room = rooms.get(0);
+					}
+				}
+			}
+			recovery(room, null);
 		} else {
 			super.execute(line);
 		}
+	}
+
+	protected void recovery(final Room room, final Runnable finish_callback) {
+		System.out.println("starting recovery ...");
+		Runnable callback = new Runnable() {
+			@Override
+			public void run() {
+				RecoveryTask task = new RecoveryTask(room, finish_callback);
+				executeTask(task, 1000, 1000);
+			}
+		};
+		walk(new String[] { "jh 1;e" }, "广场", null, callback, 200);
 	}
 
 	private class HotkeyTask extends TimerTask {
@@ -455,6 +497,147 @@ public class Power extends CommandLine {
 							cmd += "." + random;
 						}
 						sendCmd(cmd);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				stopTask(this);
+			}
+		}
+	}
+
+	private static Pattern HEAL_PATTERN = Pattern
+			.compile("^你深深吸了几口气，脸色看起来好多了。$");
+	private static String[] FORCE_SKILLS = new String[] { "道种心魔经", "生生造化功",
+			"不动明王诀", "八荒功", "易筋经神功", "天邪神功", "紫霞神功", "葵花宝典", "九阴真经", "茅山道术",
+			"蛤蟆神功" };
+
+	private class RecoveryTask extends TimerTask {
+
+		private Room room;
+		private Runnable finish_callback;
+		private boolean in_fighting;
+		private int heal_count;
+
+		public RecoveryTask(Room room, Runnable callback) {
+			this.room = room;
+			this.finish_callback = callback;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run() {
+			try {
+				Map<String, Object> combat = (Map<String, Object>) js(load("get_combat_info.js"));
+				if (combat != null) {
+					if (!in_fighting) {
+						in_fighting = true;
+						heal_count = 0;
+					}
+					Map<String, Object> map = (Map<String, Object>) combat
+							.get("me");
+					long kee = (Long) map.get("qi");
+					long max_kee = (Long) map.get("max_qi");
+					long force = (Long) map.get("neili");
+					if (kee * 1.0 / max_kee >= 0.8 || force < 1000) {
+						sendCmd("escape");
+						return;
+					}
+					List<String> msgs = (List<String>) combat.get("msgs");
+					for (String msg : msgs) {
+						if (HEAL_PATTERN.matcher(msg).find()) {
+							heal_count++;
+						}
+					}
+					if (heal_count >= 3) {
+						sendCmd("escape");
+						return;
+					}
+					List<String> pfms = (List<String>) combat.get("pfms");
+					for (String skill : FORCE_SKILLS) {
+						int i = pfms.indexOf(skill);
+						if (i >= 0) {
+							sendCmd("playskill " + (i + 1));
+							break;
+						}
+					}
+				} else {
+					in_fighting = false;
+					Map<String, Object> attrs = (Map<String, Object>) js(
+							load("get_msgs.js"), "msg_attrs", false);
+					if (attrs != null) {
+						long force = Long
+								.parseLong((String) attrs.get("force"));
+						long max_force = Long.parseLong((String) attrs
+								.get("max_force"));
+						long kee = Long.parseLong((String) attrs.get("kee"));
+						long max_kee = Long.parseLong((String) attrs
+								.get("max_kee"));
+						if (max_force - force >= 10000) {
+							final StringBuilder sb = new StringBuilder();
+							int n = (int) (max_force - force) / 5000 + 1;
+							for (int i = 0; i < Math.min(n, 2); i++) {
+								sb.append("buy /map/snow/obj/qiannianlingzhi from snow_herbalist\nitems use snow_qiannianlingzhi\n");
+							}
+							sb.append("attrs");
+							if ("桑邻药铺".equals(getRoom())) {
+								js("clickButton(arguments[0]);", sb.toString());
+							} else {
+								Runnable callback = new Runnable() {
+									@Override
+									public void run() {
+										try {
+											Thread.sleep(1000);
+										} catch (InterruptedException e) {
+											// ignore
+										}
+										js("clickButton(arguments[0]);",
+												sb.toString());
+										RecoveryTask task = new RecoveryTask(
+												room, finish_callback);
+										executeTask(task, 1000, 1000);
+									}
+								};
+								walk(new String[] { "n;n;n;w" }, "桑邻药铺", null,
+										callback, 200);
+							}
+						} else if (kee * 1.0 / max_kee < 0.8) {
+							if ("广场".equals(getRoom())) {
+								sendCmd("fight snow_worker");
+							} else {
+								Runnable callback = new Runnable() {
+									@Override
+									public void run() {
+										sendCmd("fight snow_worker");
+										RecoveryTask task = new RecoveryTask(
+												room, finish_callback);
+										executeTask(task, 500, 1000);
+									}
+								};
+								walk(new String[] { "jh 1;e" }, "广场", null,
+										callback, 200);
+							}
+						} else if (kee < max_kee) {
+							StringBuilder sb = new StringBuilder();
+							for (int i = 0; i < 3; i++) {
+								sb.append("recovery\n");
+							}
+							sb.append("attrs");
+							js("clickButton(arguments[0]);", sb.toString());
+						} else if (room != null) {
+							System.out.println("finished!");
+							walk(new String[] { room.getPath() },
+									room.getName(), null, finish_callback, 200);
+						} else {
+							System.out.println("finished!");
+							stopTask(this);
+							if (finish_callback != null) {
+								finish_callback.run();
+							}
+						}
+					} else {
+						System.out.println("failed to get attrs");
+						stopTask(this);
 					}
 				}
 			} catch (Exception e) {

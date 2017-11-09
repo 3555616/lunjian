@@ -79,11 +79,6 @@ public class NewPvpCombatTask extends TimerTask {
 	private static Map<String, String[]> SKILL_MAP1 = new HashMap<String, String[]>();
 	private static Map<String, String[]> SKILL_MAP2 = new HashMap<String, String[]>();
 
-	private static Pattern HEAL_PATTERN = Pattern
-			.compile("^你深深吸了几口气，脸色看起来好多了。$");
-	private static String[] FORCE_SKILLS = new String[] { "道种心魔经", "生生造化功",
-			"不动明王诀", "八荒功", "易筋经神功", "天邪神功", "紫霞神功", "葵花宝典", "九阴真经", "茅山道术",
-			"蛤蟆神功" };
 	private static List<String> QINGLONG_ROOM = Arrays.asList("打铁铺子", "桑邻药铺",
 			"书房", "南市", "绣楼", "北大街", "钱庄", "杂货铺", "祠堂大门", "厅堂");
 
@@ -236,19 +231,18 @@ public class NewPvpCombatTask extends TimerTask {
 													.println("try to back "
 															+ mapId.name()
 															+ "-" + room);
-											Runnable callback = new Runnable() {
-												@Override
-												public void run() {
-													RecoveryTask task = new RecoveryTask(
-															cmdline,
-															rooms.get(0));
-													cmdline.executeTask(task,
-															1000, 1000);
-												}
-											};
-											cmdline.walk(
-													new String[] { "jh 1;e;n;n;n;w" },
-													"桑邻药铺", null, callback, 200);
+											((Power) cmdline).recovery(
+													rooms.get(0),
+													new Runnable() {
+														@Override
+														public void run() {
+															try {
+																cmdline.execute("#pk");
+															} catch (IOException e) {
+																e.printStackTrace();
+															}
+														}
+													});
 										}
 									}
 								}
@@ -281,21 +275,18 @@ public class NewPvpCombatTask extends TimerTask {
 																	+ mapId.name()
 																	+ "-"
 																	+ room);
-													Runnable callback = new Runnable() {
-														@Override
-														public void run() {
-															RecoveryTask2 task = new RecoveryTask2(
-																	cmdline,
-																	rooms.get(0));
-															cmdline.executeTask(
-																	task, 1000,
-																	1000);
-														}
-													};
-													cmdline.walk(
-															new String[] { "jh 1;e" },
-															"广场", null,
-															callback, 200);
+													((Power) cmdline).recovery(
+															rooms.get(0),
+															new Runnable() {
+																@Override
+																public void run() {
+																	try {
+																		cmdline.execute("#pk");
+																	} catch (IOException e) {
+																		e.printStackTrace();
+																	}
+																}
+															});
 												}
 											}
 										}
@@ -1206,207 +1197,5 @@ public class NewPvpCombatTask extends TimerTask {
 		long max_qi;
 		long neili;
 		int point;
-	}
-
-	private static class RecoveryTask extends TimerTask {
-
-		private CommandLine cmdline;
-		private Room room;
-
-		public RecoveryTask(CommandLine cmdline, Room room) {
-			this.cmdline = cmdline;
-			this.room = room;
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void run() {
-			try {
-				Map<String, Object> attrs = (Map<String, Object>) cmdline.js(
-						cmdline.load("get_msgs.js"), "msg_attrs", false);
-				if (attrs != null) {
-					long force = Long.parseLong((String) attrs.get("force"));
-					long max_force = Long.parseLong((String) attrs
-							.get("max_force"));
-					long kee = Long.parseLong((String) attrs.get("kee"));
-					long max_kee = Long
-							.parseLong((String) attrs.get("max_kee"));
-					if (force < max_force) {
-						StringBuilder sb = new StringBuilder();
-						int n = (int) (max_force - force) / 5000 + 1;
-						for (int i = 0; i < Math.min(n, 2); i++) {
-							sb.append("buy /map/snow/obj/qiannianlingzhi from snow_herbalist\nitems use snow_qiannianlingzhi\n");
-						}
-						sb.append("attrs");
-						cmdline.js("clickButton(arguments[0]);", sb.toString());
-					} else if (kee < max_kee) {
-						StringBuilder sb = new StringBuilder();
-						for (int i = 0; i < 3; i++) {
-							sb.append("recovery\n");
-						}
-						sb.append("attrs");
-						cmdline.js("clickButton(arguments[0]);", sb.toString());
-					} else {
-						Runnable callback = new Runnable() {
-							@Override
-							public void run() {
-								try {
-									cmdline.execute("#pk");
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-							}
-						};
-						cmdline.walk(new String[] { room.getPath() },
-								room.getName(), null, callback, 200);
-					}
-				} else {
-					System.out.println("failed to get attrs");
-					cmdline.stopTask(this);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				cmdline.stopTask(this);
-			}
-		}
-	}
-
-	private static class RecoveryTask2 extends TimerTask {
-
-		private CommandLine cmdline;
-		private Room room;
-		private boolean in_fighting;
-		private int heal_count;
-
-		public RecoveryTask2(CommandLine cmdline, Room room) {
-			this.cmdline = cmdline;
-			this.room = room;
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void run() {
-			try {
-				Map<String, Object> combat = (Map<String, Object>) cmdline
-						.js(cmdline.load("get_combat_info.js"));
-				if (combat != null) {
-					if (!in_fighting) {
-						in_fighting = true;
-						heal_count = 0;
-					}
-					VsInfo me = createVsInfo((Map<String, Object>) combat
-							.get("me"));
-					if (me.qi * 1.0 / me.max_qi >= 0.8 || me.neili < 1000) {
-						cmdline.sendCmd("escape");
-						return;
-					}
-					List<String> msgs = (List<String>) combat.get("msgs");
-					for (String msg : msgs) {
-						if (HEAL_PATTERN.matcher(msg).find()) {
-							heal_count++;
-						}
-					}
-					if (heal_count >= 3) {
-						cmdline.sendCmd("escape");
-						return;
-					}
-					List<String> pfms = (List<String>) combat.get("pfms");
-					for (String skill : FORCE_SKILLS) {
-						int i = pfms.indexOf(skill);
-						if (i >= 0) {
-							cmdline.sendCmd("playskill " + (i + 1));
-							break;
-						}
-					}
-				} else {
-					in_fighting = false;
-					Map<String, Object> attrs = (Map<String, Object>) cmdline
-							.js(cmdline.load("get_msgs.js"), "msg_attrs", false);
-					if (attrs != null) {
-						long force = Long
-								.parseLong((String) attrs.get("force"));
-						long max_force = Long.parseLong((String) attrs
-								.get("max_force"));
-						long kee = Long.parseLong((String) attrs.get("kee"));
-						long max_kee = Long.parseLong((String) attrs
-								.get("max_kee"));
-						if (max_force - force >= 10000) {
-							final StringBuilder sb = new StringBuilder();
-							int n = (int) (max_force - force) / 5000 + 1;
-							for (int i = 0; i < Math.min(n, 2); i++) {
-								sb.append("buy /map/snow/obj/qiannianlingzhi from snow_herbalist\nitems use snow_qiannianlingzhi\n");
-							}
-							sb.append("attrs");
-							if ("桑邻药铺".equals(cmdline.getRoom())) {
-								cmdline.js("clickButton(arguments[0]);",
-										sb.toString());
-							} else {
-								Runnable callback = new Runnable() {
-									@Override
-									public void run() {
-										try {
-											Thread.sleep(1000);
-										} catch (InterruptedException e) {
-											// ignore
-										}
-										cmdline.js(
-												"clickButton(arguments[0]);",
-												sb.toString());
-										RecoveryTask2 task = new RecoveryTask2(
-												cmdline, room);
-										cmdline.executeTask(task, 1000, 1000);
-									}
-								};
-								cmdline.walk(new String[] { "n;n;n;w" },
-										"桑邻药铺", null, callback, 200);
-							}
-						} else if (kee * 1.0 / max_kee < 0.8) {
-							if ("广场".equals(cmdline.getRoom())) {
-								cmdline.sendCmd("fight snow_worker");
-							} else {
-								Runnable callback = new Runnable() {
-									@Override
-									public void run() {
-										cmdline.sendCmd("fight snow_worker");
-										RecoveryTask2 task = new RecoveryTask2(
-												cmdline, room);
-										cmdline.executeTask(task, 500, 1000);
-									}
-								};
-								cmdline.walk(new String[] { "jh 1;e" }, "广场",
-										null, callback, 200);
-							}
-						} else if (kee < max_kee) {
-							StringBuilder sb = new StringBuilder();
-							for (int i = 0; i < 3; i++) {
-								sb.append("recovery\n");
-							}
-							sb.append("attrs");
-							cmdline.js("clickButton(arguments[0]);",
-									sb.toString());
-						} else {
-							Runnable callback = new Runnable() {
-								@Override
-								public void run() {
-									try {
-										cmdline.execute("#pk");
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
-								}
-							};
-							cmdline.walk(new String[] { room.getPath() },
-									room.getName(), null, callback, 200);
-						}
-					} else {
-						System.out.println("failed to get attrs");
-						cmdline.stopTask(this);
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				cmdline.stopTask(this);
-			}
-		}
 	}
 }
