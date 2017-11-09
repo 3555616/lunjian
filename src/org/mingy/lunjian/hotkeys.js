@@ -101,8 +101,9 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 		}
 	}
 };
+var last_fight_time = 0;
 var last_kill_time = 0;
-function try_join_combat(vs_info, target, force_fight) {
+function try_join_combat(vs_info, target, ignore_check) {
 	var pos = check_pos(vs_info, target);
 	if (!pos) {
 		return false;
@@ -112,7 +113,7 @@ function try_join_combat(vs_info, target, force_fight) {
 	var side = pos[0] == 'vs1' ? 'vs2' : 'vs1';
 	var has_npc = false;
 	var has_pos = false;
-	var friend_id = null;
+	var player_id = null;
 	var k = -1;
 	for (var i = 1; i <= 4; i++) {
 		if (!has_npc || !has_pos) {
@@ -129,31 +130,29 @@ function try_join_combat(vs_info, target, force_fight) {
 			var kee = vs_info.get(pos[0] + '_kee' + i);
 			if (kee && parseInt(kee) > 0) {
 				var id = vs_info.get(pos[0] + '_pos' + i);
-				var j = get_friend_index(id);
-				if (j >= 0 && (k < 0 || j < k)) {
-					friend_id = id;
-					k = j;
+				if (is_player(id)) {
+					if (!player_id) {
+						player_id = id;
+					}
+					var j = get_friend_index(id);
+					if (j >= 0 && (k < 0 || j < k)) {
+						player_id = id;
+						k = j;
+					}
 				}
 			}
 		}
 	}
-	if (!has_npc) {
+	if (!has_npc || (!ignore_check && !has_pos)) {
 		return false;
 	}
-	if (friend_id) {
-		if (!force_fight && !has_pos) {
-			return false;
-		}
-		clickButton('fight ' + friend_id);
-	} else {
-		if (!has_pos) {
-			return false;
-		}
-		var t = new Date().getTime();
-		if (t - last_kill_time >= 1000) {
-			last_kill_time = t;
-			clickButton('kill ' + target);
-		}
+	var t = new Date().getTime();
+	if (!ignore_check && player_id && t - last_fight_time >= 3000) {
+		last_fight_time = t;
+		clickButton('fight ' + player_id);
+	} else if (t - last_kill_time >= 1000) {
+		last_kill_time = t;
+		clickButton('kill ' + target);
 	}
 	return true;
 }
@@ -432,5 +431,21 @@ $(document).keydown(function(e) {
 	}
 	return true;
 });
+var qixia_id_pattern = /^(langfuyu|wangrong|pangtong|liyufei|bujinghong|fengxingzhui|guoji|wuzhen|fengnan|huoyunxieshen|niwufeng|hucangyan|huzhu)_/;
+var _show_npc = window.gSocketMsg2.show_npc;
+window.gSocketMsg2.show_npc = function() {
+	_show_npc.apply(this, arguments);
+	var id = window.g_obj_map.get('msg_npc').get('id');
+	if (qixia_id_pattern.test(id)) {
+		var cmd = 'ask ' + id + '\\n' + 'ask ' + id + '\\n' + 'ask ' + id + '\\n' + 'ask ' + id + '\\n' + 'ask ' + id;
+		var $td = $('<td align="center"><button type="button" onclick="clickButton(\''
+				+ cmd + '\', 1)" class="cmd_click2">领朱果</button></td>');
+		var $tr = $('#out > span.out button.cmd_click2:last').parent('td').parent();
+		if ($('> td', $tr).length >= 4) {
+			$tr = $tr.parent().append('<tr></tr>');
+		}
+		$tr.append($td);
+	}
+};
 window.robot_hotkeys = 1;
 notify_fail('hotkey loaded');
