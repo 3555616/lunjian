@@ -304,13 +304,16 @@ public class NewPvpCombatTask extends TimerTask {
 				in_fighting = true;
 				Map<String, Object> map = (Map<String, Object>) cmdline.js(
 						cmdline.load("get_msgs.js"), "msg_room", false);
-				String id = (String) map.get("map_id");
-				if (id != null) {
-					try {
-						mapId = MapId.valueOf(id);
-						room = CommandLine.removeSGR((String) map.get("short"));
-					} catch (Exception e) {
-						mapId = null;
+				if (map != null) {
+					String id = (String) map.get("map_id");
+					if (id != null) {
+						try {
+							mapId = MapId.valueOf(id);
+							room = CommandLine.removeSGR((String) map
+									.get("short"));
+						} catch (Exception e) {
+							mapId = null;
+						}
 					}
 				}
 			}
