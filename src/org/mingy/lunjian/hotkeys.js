@@ -402,6 +402,45 @@ var kill = function() {
 		}, 150);
 	}
 };
+var cmdline = $('<div id="cmdline" style="position: fixed; left: 0px; top: 0px; width: 503px; height: 44px; border: 1px solid rgb(53, 37, 21);"><table align="center" border="0" style="width:100%"><tr><td style="width:65%" align="left"><input id="cmd_box" class="chat_input" type="text" value=""></td><td style="width:35%" align="left"><button type="button" cellpadding="0" cellspacing="0" onclick="sendCommand();" class="cmd_click3"><span class="out2">发送</span></button></td></tr></table></div>');
+var cmdbox = $(':text', cmdline);
+var history_cmds = [];
+var select_index = -1;
+cmdline.keydown(function(e) {
+	if (e.which == 27) { // ESC
+		cmdline.detach();
+	} else if (e.which == 13) { // ENTER
+		cmdline.detach();
+		sendCommand();
+		e.preventDefault();
+	} else if (e.which == 38) { // UP
+		if (select_index > 0) {
+			cmdbox.val(history_cmds[--select_index]);
+			cmdbox.select();
+			cmdbox.focus();
+			e.preventDefault();
+		}
+	} else if (e.which == 40) { // DOWN
+		if (select_index < history_cmds.length - 1) {
+			cmdbox.val(history_cmds[++select_index]);
+			cmdbox.select();
+			cmdbox.focus();
+			e.preventDefault();
+		}
+	}
+});
+function sendCommand() {
+	var cmd = $.trim(cmdbox.val());
+	if (cmd == '') {
+		return;
+	}
+	if (history_cmds.length == 0 || history_cmds[history_cmds.length - 1] != cmd) {
+		history_cmds.push(cmd);
+		if (history_cmds.length > 20) {
+			history_cmds = history_cmds.slice(-20);
+		}
+	}
+}
 $(document).keydown(function(e) {
 	if (e.which == 120) { // F9
 		kill();
@@ -421,6 +460,18 @@ $(document).keydown(function(e) {
 		notify_fail('auto attack ' + (auto_attack ? 'starting' : 'stopped'));
 	} else if (e.which == 123) { // F12
 		show_attack_target = !show_attack_target;
+	} else if (!e.isDefaultPrevented() && e.which == 13) { // ENTER
+		$('body').append(cmdline);
+		cmdline.css('top', ($('#page').height() - 60) + 'px');
+		if (history_cmds.length > 0) {
+			select_index = history_cmds.length - 1;
+			cmdbox.val(history_cmds[select_index]);
+			cmdbox.select();
+			cmdbox.focus();
+		} else {
+			cmdbox.val('');
+			cmdbox.focus();
+		}
 	} else if (perform_list) {
 		for (var i = 0; i < perform_list.length; i++) {
 			if (e.which == 112 + i) {
