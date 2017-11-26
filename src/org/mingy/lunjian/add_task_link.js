@@ -9,7 +9,7 @@ $a.each(
 		var path = args[i + 1];
 		if (path) {
 			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:send_cmd(\''
-					+ path.replace(/;/g, '\\n') + '\', 0);">GO</a>]</span>');
+					+ path + '\', 0);">GO</a>]</span>');
 			$n.insertAfter(this);
 		}
 	});
@@ -18,7 +18,7 @@ if ($a.length < args.length - 1) {
 		var path = args[i + 1];
 		if (path) {
 			var $n = $('<span style="color:red;">[<a style="text-decoration:underline;color:red;" href="javascript:send_cmd(\''
-					+ path.replace(/;/g, '\\n') + '\', 0);">GO</a>]</span>');
+					+ path + '\', 0);">GO</a>]</span>');
 			$e.append($n);
 		}
 	}

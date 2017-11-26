@@ -31,10 +31,18 @@ public class Power extends CommandLine {
 	@Override
 	protected void start(String[] args) throws Exception {
 		super.start(args);
-		String hotkeys = properties.getProperty("hotkey.performs");
+		List<String> aliases = new ArrayList<String>();
+		for (String key : defaultAliases.stringPropertyNames()) {
+			if (!userAliases.containsKey(key)) {
+				aliases.add(key + "=" + defaultAliases.getProperty(key));
+			}
+		}
+		for (String key : userAliases.stringPropertyNames()) {
+			aliases.add(key + "=" + userAliases.getProperty(key));
+		}
 		String friends = properties.getProperty("friends.list");
 		HotkeyTask hotkeyTask = new HotkeyTask(webdriver,
-				hotkeys != null ? hotkeys.trim() : null,
+				aliases.toArray(new String[aliases.size()]),
 				friends != null ? friends.trim() : null);
 		timer.schedule(hotkeyTask, 1000, 3000);
 		works = new ArrayList<Work>();
@@ -57,8 +65,10 @@ public class Power extends CommandLine {
 			String dummy = properties.getProperty("dummy" + i);
 			if (dummy != null && dummy.trim().length() > 0) {
 				WebDriver webdriver = openUrl(dummy);
-				timer.schedule(new HotkeyTask(webdriver, null, null), 1000,
-						3000);
+				timer.schedule(
+						new HotkeyTask(webdriver, aliases
+								.toArray(new String[aliases.size()]), null),
+						1000, 3000);
 				webdrivers.add(webdriver);
 			} else {
 				break;
@@ -214,16 +224,10 @@ public class Power extends CommandLine {
 		private WebDriver webdriver;
 		private Object[] args = new Object[2];
 
-		public HotkeyTask(WebDriver webdriver, String hotkeys, String friends) {
+		public HotkeyTask(WebDriver webdriver, String[] aliases, String friends) {
 			super();
 			this.webdriver = webdriver;
-			if (hotkeys != null && hotkeys.length() > 0) {
-				String[] pfms = hotkeys.split(",");
-				for (int i = 0; i < pfms.length; i++) {
-					pfms[i] = pfms[i].trim();
-				}
-				args[0] = pfms;
-			}
+			args[0] = aliases;
 			if (friends != null && friends.length() > 0) {
 				String[] arr = friends.split(",");
 				for (int i = 0; i < arr.length; i++) {

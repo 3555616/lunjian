@@ -19,7 +19,6 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("锦缎腰带是腰带类的第几级装备", "a");
 		QUESTIONS.put("扬州询问黑狗子能到下面哪个地点", "a");
 		QUESTIONS.put("跨服天剑谷每周六几点开启", "a");
-		QUESTIONS.put("青城派的道德经可以提升哪个属性", "c");
 		QUESTIONS.put("论剑中以下哪个不是晚月庄的技能", "d");
 		QUESTIONS.put("跨服天剑谷是星期几举行的", "b");
 		QUESTIONS.put("玉女剑法是哪个门派的技能", "b");
@@ -364,7 +363,6 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("“花海”场景是在哪个地图上", "a");
 		QUESTIONS.put("雪蕊儿是哪个门派的师傅", "a");
 		QUESTIONS.put("新手礼包在哪里领取", "a");
-//		QUESTIONS.put("论语在哪购买", "a");
 		QUESTIONS.put("银丝链甲衣可以在哪位npc那里获得", "a");
 		QUESTIONS.put("乾坤大挪移属于什么类型的武功", "a");
 		QUESTIONS.put("移开明教石板需要哪项技能到一定级别", "a");
@@ -521,7 +519,7 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("论剑中逍遥派的终极师傅是谁", "c");
 		QUESTIONS.put("不可保存装备下线多久会消失", "c");
 		QUESTIONS.put("一个队伍最多有几个队员", "c");
-		QUESTIONS.put("论语在哪购买", "c");
+//		QUESTIONS.put("论语在哪购买", "c");
 		QUESTIONS.put("以下哪个宝石不能镶嵌到戒指", "c");
 		QUESTIONS.put("论剑是每周星期几", "c");
 		QUESTIONS.put("茅山在哪里拜师", "c");
@@ -604,8 +602,10 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("“鹰记商号”场景是在哪个地图上", "d");
 		QUESTIONS.put("改名字在哪改", "d");
 		QUESTIONS.put("以下哪个不是在洛阳场景", "d");
-		QUESTIONS.put("青城派的道德经可以提升哪个属性", "d");
+//		QUESTIONS.put("青城派的道德经可以提升哪个属性", "d");
 		QUESTIONS.put("金项链可以在哪位npc那里获得", "d");
+//		QUESTIONS.put("论语在哪购买", "a");
+//		QUESTIONS.put("青城派的道德经可以提升哪个属性", "c");
 	}
 
 	public AutoQuestionTask(CommandLine cmdline) {

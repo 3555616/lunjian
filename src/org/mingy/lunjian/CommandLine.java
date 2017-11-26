@@ -51,8 +51,8 @@ public class CommandLine {
 	private WebDriver webdriver2;
 	private File aliasFile;
 	protected Properties properties;
-	private Properties defaultAliases;
-	private Properties userAliases;
+	protected Properties defaultAliases;
+	protected Properties userAliases;
 	private BlockingQueue<String> commandQueue;
 	private Thread commandThread;
 	protected Timer timer;
