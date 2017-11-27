@@ -119,6 +119,18 @@ map_ids.put('jueqinggu', '37');
 map_ids.put('jqg', '37');
 map_ids.put('bihai', '38');
 map_ids.put('bh', '38');
+var secrets = new Map();
+secrets.put("lvshuige", 1255);
+secrets.put("daojiangu", 1535);
+secrets.put("taohuadu", 1785);
+secrets.put("lvzhou", 2035);
+secrets.put("luanshishan", 2350);
+secrets.put("dilongling", 2385);
+secrets.put("fomenshiku", 2425);
+secrets.put("tianlongshan", 3100);
+secrets.put("dafuchuan", 3090);
+secrets.put("binhaigucheng", 3385);
+secrets.put("baguamen", 3635);
 var message_listeners = [];
 var listener_seq = 0;
 function add_listener(type, subtype, fn, is_pre) {
@@ -144,9 +156,11 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 	for ( var i = 0; i < message_listeners.length; i++) {
 		var listener = message_listeners[i];
 		if (listener.is_pre
-				&& listener.type == msg.get('type')
-				&& (!listener.subtype || listener.subtype == msg
-						.get('subtype'))) {
+				&& (listener.type == msg.get('type') || (listener.type instanceof Array && $
+						.inArray(msg.get('type'), listener.type) >= 0))
+				&& (!listener.subtype
+						|| listener.subtype == msg.get('subtype') || (listener.subtype instanceof Array && $
+						.inArray(msg.get('subtype'), listener.subtype) >= 0))) {
 			listener.fn(msg);
 		}
 	}
@@ -154,9 +168,11 @@ window.gSocketMsg.dispatchMessage = function(msg) {
 	for ( var i = 0; i < message_listeners.length; i++) {
 		var listener = message_listeners[i];
 		if (!listener.is_pre
-				&& listener.type == msg.get('type')
-				&& (!listener.subtype || listener.subtype == msg
-						.get('subtype'))) {
+				&& (listener.type == msg.get('type') || (listener.type instanceof Array && $
+						.inArray(msg.get('type'), listener.type) >= 0))
+				&& (!listener.subtype
+						|| listener.subtype == msg.get('subtype') || (listener.subtype instanceof Array && $
+						.inArray(msg.get('subtype'), listener.subtype) >= 0))) {
 			listener.fn(msg);
 		}
 	}
@@ -834,6 +850,85 @@ function execute_cmd(cmd) {
 				}, true);
 			}
 		}
+	} else if (cmd == '#secret' || cmd.substr(0, 8) == '#secret ') {
+		var msg_room = window.g_obj_map.get('msg_room');
+		var accept;
+		if (cmd == '#secret') {
+			accept = secrets.get(msg_room.get('map_id'));
+		} else {
+			accept = parseInt($.trim(cmd.substr(8)));
+		}
+		if (!isNaN(accept)) {
+			var saodang;
+			for (var i = 1; ; i++) {
+				if (!msg_room.containsKey('cmd' + i + '_name')) {
+					break;
+				}
+				if (removeSGR(msg_room.get('cmd' + i + '_name')) == '扫荡') {
+					saodang = msg_room.get('cmd' + i);
+					break;
+				}
+			}
+			if (saodang) {
+				add_task_listener(
+						'prompt',
+						'',
+						function(msg) {
+							var r = msg.get('msg').match(/^您已经通关过此副本，可以扫荡完成，\n扫荡完成的奖励为：玄铁令x(\d+)、朱果x(\d+)。/);
+							if (r) {
+								if (parseInt(r[2]) > accept) {
+									console.log('ok!');
+									stop_task();
+								} else {
+									send_cmd(saodang);
+								}
+							}
+						}, true);
+				console.log('starting clean out secret...');
+				send_cmd(saodang);
+			} else {
+				console.log('cannot clean out secret.');
+			}
+		} else {
+			console.log('invalid command.');
+		}
+	} else if (cmd == '#tianjiangu') {
+		console.log('starting tianjiangu combat...');
+		add_task_listener(['jh', 'vs'], '', function(msg) {
+			if (msg.get('type') == 'jh' && (msg.get('subtype') == 'info'
+					|| msg.get('subtype') == 'new_npc' || msg.get('subtype') == 'dest_npc')) {
+				var msg_room = window.g_obj_map.get('msg_room');
+				var target;
+				for (var i = 1; ; i++) {
+					var npc = msg_room.get('npc' + i);
+					if (!npc) {
+						break;
+					}
+					var arr = npc.split(',');
+					if (arr.length > 1) {
+						arr[1] = removeSGR(arr[1]);
+						if (arr[1] == '天剑真身' || arr[1] == '天剑'
+								|| arr[1] == '虹风' || arr[1] == '虹雨'
+								|| arr[1] == '虹雷' || arr[1] == '虹电') {
+							target = arr[0];
+						} else if (!target && arr[1] == '天剑谷卫士') {
+							target = arr[0];
+						}
+					}
+				}
+				if (target) {
+					clickButton('kill ' + target);
+				}
+			} else if (msg.get('type') == 'vs') {
+				if (msg.get('subtype') == 'combat_result') {
+					clickButton('prev_combat');
+				} else {
+					var vs_info = window.g_obj_map.get('msg_vs_info');
+					var my_id = window.g_obj_map.get('msg_attrs').get('id');
+					auto_combat(vs_info, my_id, msg);
+				}
+			}
+		});
 	} else if (cmd == '#combat') {
 		console.log('starting auto combat...');
 		auto_fight = true;
@@ -843,44 +938,17 @@ function execute_cmd(cmd) {
 			$b.addClass('cmd_combat_auto_fight');
 			$b.onclick = 'clickButton("#stop", 0)';
 		}
-		var my_id = window.g_obj_map.get('msg_attrs').get('id');
 		add_task_listener('vs', '', function(msg) {
 			var vs_info = window.g_obj_map.get('msg_vs_info');
-			var pos = check_pos(vs_info, my_id);
-			if (!pos) {
-				return;
-			}
-			var subtype = msg.get('subtype');
-			if (subtype == 'add_xdz'
-					|| (subtype == 'attack' && msg.get('rid') == my_id)) {
-				var kee = parseInt(vs_info.get(pos[0] + '_kee' + pos[1]));
-				var max_kee = parseInt(window.g_obj_map.get('msg_attrs').get('max_kee'));
-				if (kee * 100 / max_kee < 50) {
-					var xdz = parseInt(vs_info
-							.get(pos[0] + '_xdz' + pos[1]));
-					var buttons = get_skill_buttons(xdz);
-					for ( var i = 0; i < force_skills.length; i++) {
-						var k = $.inArray(force_skills[i], buttons);
-						if (k >= 0) {
-							clickButton('playskill ' + (k + 1));
-							break;
-						}
-					}
-					return;
-				}
-			}
-			if (subtype == 'add_xdz') {
-				var xdz = parseInt(vs_info.get(pos[0] + '_xdz' + pos[1]));
-				var buttons = get_skill_buttons(xdz);
-				select_perform(buttons);
-			}
+			var my_id = window.g_obj_map.get('msg_attrs').get('id');
+			auto_combat(vs_info, my_id, msg);
 		});
 	} else if (cmd == '#pk') {
 		console.log('starting auto pvp...');
-		var my_id = window.g_obj_map.get('msg_attrs').get('id');
 		var vs_npc1 = false, vs_npc2 = false;
 		add_task_listener('vs', '', function(msg) {
 			var vs_info = window.g_obj_map.get('msg_vs_info');
+			var my_id = window.g_obj_map.get('msg_attrs').get('id');
 			var pos = check_pos(vs_info, my_id);
 			if (!pos) {
 				return;
@@ -954,6 +1022,36 @@ function execute_cmd(cmd) {
 		if (pc[0]) {
 			send_cmd(pc[0]);
 		}
+	}
+}
+function auto_combat(vs_info, my_id, msg) {
+	var pos = check_pos(vs_info, my_id);
+	if (!pos) {
+		return;
+	}
+	var subtype = msg.get('subtype');
+	if (subtype == 'add_xdz'
+			|| (subtype == 'attack' && msg.get('rid') == my_id)) {
+		var kee = parseInt(vs_info.get(pos[0] + '_kee' + pos[1]));
+		var max_kee = parseInt(window.g_obj_map.get('msg_attrs').get('max_kee'));
+		if (kee * 100 / max_kee < 50) {
+			var xdz = parseInt(vs_info
+					.get(pos[0] + '_xdz' + pos[1]));
+			var buttons = get_skill_buttons(xdz);
+			for ( var i = 0; i < force_skills.length; i++) {
+				var k = $.inArray(force_skills[i], buttons);
+				if (k >= 0) {
+					clickButton('playskill ' + (k + 1));
+					break;
+				}
+			}
+			return;
+		}
+	}
+	if (subtype == 'add_xdz') {
+		var xdz = parseInt(vs_info.get(pos[0] + '_xdz' + pos[1]));
+		var buttons = get_skill_buttons(xdz);
+		select_perform(buttons);
 	}
 }
 function process_cmdline(line) {
