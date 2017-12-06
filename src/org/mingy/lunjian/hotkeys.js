@@ -28,7 +28,6 @@ var skill_chains = [ '九天龙吟剑法', '覆雨剑法', '织冰剑法', '排�
 		'翻云刀法', '飞刀绝技', '孔雀翎', '道种心魔经', '生生造化功', '幽影幻虚步', '万流归一' ];
 var force_skills = [ '道种心魔经', '生生造化功', '不动明王诀', '八荒功', '易筋经神功', '天邪神功',
 		'紫霞神功', '葵花宝典', '九阴真经', '茅山道术', '蛤蟆神功' ];
-var force_skills2 = [ '道种心魔经', '生生造化功' ];
 var dodge_skills = [ '万流归一', '幽影幻虚步', '乾坤大挪移', '凌波微步', '无影毒阵', '九妙飞天术' ];
 var defence_patterns = [ /(.*)顿时被冲开老远，失去了攻击之势！/, /(.*)被(.*)的真气所迫，只好放弃攻击！/,
 		/(.*)衣裳鼓起，真气直接将(.*)逼开了！/, /(.*)找到了闪躲的空间！/, /(.*)朝边上一步闪开！/,
@@ -292,10 +291,8 @@ add_listener(
 										if (max_kee2 > max_kee1 * 0.8) {
 											var xdz = parseInt(vs_info.get(pos1[0] + '_xdz' + pos1[1]));
 											var buttons = get_skill_buttons(xdz);
-											var kee = parseInt(vs_info.get(pos1[0] + '_kee' + pos1[1]));
-											var select_skills = max_kee1 * 0.8 < kee ? force_skills2 : dodge_skills;
-											for ( var i = 0; i < select_skills.length; i++) {
-												var k = $.inArray(select_skills[i], buttons);
+											for ( var i = 0; i < dodge_skills.length; i++) {
+												var k = $.inArray(dodge_skills[i], buttons);
 												if (k >= 0) {
 													clickButton('playskill ' + (k + 1));
 													defence_performed = true;
