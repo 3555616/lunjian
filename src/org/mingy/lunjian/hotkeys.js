@@ -9,7 +9,7 @@ if (!window.g_obj_map.get('msg_attrs')) {
 }
 var show_target = true;
 var auto_attack = false;
-var auto_defence = true;
+var auto_defence = false;
 var auto_fight = false;
 var user_id_pattern1 = /^u[0-9]+$/;
 var user_id_pattern2 = /^u[0-9]+\-/;
