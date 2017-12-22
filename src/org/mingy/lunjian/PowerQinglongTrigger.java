@@ -51,7 +51,7 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 			if (path == null) {
 				System.out.println("path not found: " + place);
 			} else {
-				cmdline.closeTrigger("zhengxie");
+				// cmdline.closeTrigger("zhengxie");
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {

@@ -18,7 +18,7 @@ public class QinglongTrigger implements Trigger {
 	@Override
 	public boolean match(CommandLine cmdline, String message, String type,
 			long seq) {
-		if (!"system".equals(type)) {
+		if (!"sys".equals(type)) {
 			return false;
 		}
 		Matcher m = PATTERN1.matcher(message);

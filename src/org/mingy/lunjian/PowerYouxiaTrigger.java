@@ -60,7 +60,7 @@ public class PowerYouxiaTrigger extends YouxiaTrigger {
 				&& !cmdline.isFighting()) {
 			for (int i = 0; i < MAPS.size(); i++) {
 				if (place.startsWith(MAPS.get(i))) {
-					cmdline.closeTrigger("zhengxie");
+					// cmdline.closeTrigger("zhengxie");
 					try {
 						Thread.sleep(Math.round(Math.random() * 200) + 1000);
 					} catch (InterruptedException e) {

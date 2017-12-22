@@ -151,7 +151,14 @@ function remove_listener(id) {
 	}
 }
 var _dispatch_message = window.gSocketMsg.dispatchMessage;
+window.channel_messages = [];
 window.gSocketMsg.dispatchMessage = function(msg) {
+	if (msg.get('type') == 'channel') {
+		channel_messages.push(msg.get('subtype') + ',' + msg.get('msg'));
+		if (channel_messages.length > 100) {
+			channel_messages = channel_messages.slice(-50);
+		}
+	}
 	for ( var i = 0; i < message_listeners.length; i++) {
 		var listener = message_listeners[i];
 		if (listener.is_pre

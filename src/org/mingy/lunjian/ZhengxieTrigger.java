@@ -14,7 +14,7 @@ public class ZhengxieTrigger implements Trigger {
 	public boolean match(CommandLine cmdline, String message, String type,
 			long seq) {
 		Matcher m = PATTERN.matcher(message);
-		if (!"system".equals(type) || !m.find()) {
+		if (!"sys".equals(type) || !m.find()) {
 			m = TIMES_PATTERN.matcher(message);
 			if (!"local".equals(type) || !m.find()) {
 				return false;

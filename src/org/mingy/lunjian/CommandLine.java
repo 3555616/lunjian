@@ -56,9 +56,6 @@ public class CommandLine {
 	private BlockingQueue<String> commandQueue;
 	private Thread commandThread;
 	protected Timer timer;
-	private SnoopTask snoopTask;
-	private WebqqTask webqqTask;
-	private MonitorTask monitorTask;
 	private TimerTask task;
 	private BlockingQueue<Message> webqqQueue;
 	private Thread webqqThread;
@@ -247,11 +244,7 @@ public class CommandLine {
 		loadTriggers(triggers != null && triggers.length() > 0 ? triggers
 				.split(",") : new String[0]);
 		timer = new Timer(true);
-		String keywords = properties.getProperty("snoop.keywords");
-		snoopTask = new SnoopTask(
-				keywords != null && keywords.length() > 0 ? keywords.split(",")
-						: new String[0]);
-		timer.schedule(snoopTask, 500, 500);
+		timer.schedule(new SnoopTask(), 500, 500);
 		if (Boolean.parseBoolean(properties.getProperty("notify.webqq"))) {
 			String browser = properties.getProperty("webdriver.browser");
 			if (browser == null || "firefox".equalsIgnoreCase(browser)) {
@@ -268,8 +261,7 @@ public class CommandLine {
 			long interval = Long.parseLong(properties
 					.getProperty("notify.interval"));
 			if (pingId != null && pingId.length() > 0) {
-				webqqTask = new WebqqTask();
-				timer.schedule(webqqTask, 120000, interval);
+				timer.schedule(new WebqqTask(), 120000, interval);
 			}
 			webqqQueue = new LinkedBlockingDeque<Message>();
 			webqqThread = new Thread() {
@@ -308,8 +300,7 @@ public class CommandLine {
 			webqqThread.start();
 		}
 		if (Boolean.parseBoolean(properties.getProperty("monitor.ranks"))) {
-			monitorTask = new MonitorTask();
-			timer.schedule(monitorTask, 30000, 180000);
+			timer.schedule(new MonitorTask(), 30000, 180000);
 		}
 	}
 
@@ -484,14 +475,6 @@ public class CommandLine {
 					}
 				}
 			}
-		} else if (line.startsWith("#snoop add ")) {
-			snoopTask.add(line.substring(11).trim());
-		} else if (line.startsWith("#snoop del ")) {
-			snoopTask.remove(line.substring(11).trim());
-		} else if (line.startsWith("#s+ ")) {
-			snoopTask.add(line.substring(4).trim());
-		} else if (line.startsWith("#s- ")) {
-			snoopTask.remove(line.substring(4).trim());
 		} else if (line.startsWith("#trigger add ")) {
 			openTrigger(line.substring(13).trim());
 		} else if (line.startsWith("#trigger del ")) {
@@ -501,9 +484,9 @@ public class CommandLine {
 		} else if (line.startsWith("#t- ")) {
 			closeTrigger(line.substring(4).trim());
 		} else if (line.startsWith("#show ")) {
-			triggerManager.process(this, line.substring(6).trim(), "system", 0);
+			triggerManager.process(this, line.substring(6).trim(), "sys", 0);
 		} else if (line.startsWith("#sh ")) {
-			triggerManager.process(this, line.substring(4).trim(), "system", 0);
+			triggerManager.process(this, line.substring(4).trim(), "sys", 0);
 		} else if (line.equals("#secret") || line.startsWith("#secret ")) {
 			Map<String, Object> map = (Map<String, Object>) js(
 					load("get_msgs.js"), "msg_room", false);
@@ -1512,24 +1495,16 @@ public class CommandLine {
 
 	private class SnoopTask extends TimerTask {
 
-		private List<String> keywords;
-
-		private SnoopTask(String[] keywords) {
-			this.keywords = new ArrayList<String>(Arrays.asList(keywords));
-		}
-
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
-			if (keywords.isEmpty()) {
-				return;
-			}
 			try {
-				List<String> msgs = (List<String>) js(load("get_chat_msgs.js"),
-						keywords);
+				List<String> msgs = (List<String>) js(load("get_chat_msgs.js"));
 				for (String msg : msgs) {
 					msg = removeSGR(msg);
-					triggerManager.process(CommandLine.this, msg, "system", 0);
+					int i = msg.indexOf(',');
+					triggerManager.process(CommandLine.this,
+							msg.substring(i + 1), msg.substring(0, i), 0);
 				}
 				msgs = (List<String>) js(load("get_out_msgs.js"));
 				for (String msg : msgs) {
@@ -1540,20 +1515,6 @@ public class CommandLine {
 				}
 			} catch (Exception e) {
 				e.fillInStackTrace();
-			}
-		}
-
-		public void add(String keyword) {
-			if (!keywords.contains(keyword)) {
-				keywords.add(keyword);
-				System.out.println("ok!");
-			}
-		}
-
-		public void remove(String keyword) {
-			if (keywords.contains(keyword)) {
-				keywords.remove(keyword);
-				System.out.println("ok!");
 			}
 		}
 	}

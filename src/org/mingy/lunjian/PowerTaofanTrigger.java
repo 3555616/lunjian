@@ -77,12 +77,13 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 						@Override
 						public void run() {
 							cmdline.executeCmd(cmd);
+							/*
 							NewPvpCombatTask task = new NewPvpCombatTask(
 									cmdline);
 							if (task.init()) {
 								System.out.println("starting auto pvp ...");
 								cmdline.executeTask(task, 100);
-							}
+							} */
 						}
 					}, 100);
 		}
