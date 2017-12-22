@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -354,6 +353,7 @@ public class CommandLine {
 		TriggerManager.register("baozang", BaozangTrigger.class);
 		TriggerManager.register("autokill", AutoKillTrigger.class);
 		TriggerManager.register("teamkill", TeamKillTrigger.class);
+		TriggerManager.register("snoop", SnoopRumorTrigger.class);
 		TriggerManager.register("tell", TellTrigger.class);
 	}
 
@@ -516,17 +516,6 @@ public class CommandLine {
 						}
 					}
 				}
-			}
-		} else if (line.equals("#rumor")) {
-			String[] keywords = properties.getProperty("snoop.rumor.keywords",
-					"").split(",");
-			if (keywords.length < 1) {
-				System.out.println("property snoop.rumor.keywords not set");
-			} else {
-				String[] ignores = properties.getProperty(
-						"snoop.rumor.ignores", "").split(",");
-				System.out.println("starting snoop rumor...");
-				executeTask(new SnoopRumorTask(keywords, ignores), 3000);
 			}
 		} else if (line.equals("#question")) {
 			System.out.println("starting answer question...");
@@ -1512,36 +1501,6 @@ public class CommandLine {
 					triggerManager.process(CommandLine.this,
 							msg.substring(i + 1), "local",
 							Long.parseLong(msg.substring(0, i)));
-				}
-			} catch (Exception e) {
-				e.fillInStackTrace();
-			}
-		}
-	}
-
-	private class SnoopRumorTask extends TimerTask {
-
-		private List<String> keywords;
-		private List<String> ignores;
-
-		private SnoopRumorTask(String[] keywords, String[] ignores) {
-			this.keywords = new ArrayList<String>(Arrays.asList(keywords));
-			this.ignores = new ArrayList<String>(Arrays.asList(ignores));
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public void run() {
-			if (keywords.isEmpty()) {
-				return;
-			}
-			try {
-				List<String> msgs = (List<String>) js(
-						load("get_chat_rumors.js"), keywords, ignores);
-				for (String msg : msgs) {
-					msg = removeSGR(msg.replace("\n", ""));
-					System.out.println(msg + " ("
-							+ FORMAT_TIME.format(new Date()) + ")");
 				}
 			} catch (Exception e) {
 				e.fillInStackTrace();

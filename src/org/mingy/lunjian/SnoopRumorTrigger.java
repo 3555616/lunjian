@@ -1,13 +1,18 @@
 package org.mingy.lunjian;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mingy.lunjian.CommandLine.SnoopRumorTask;
-
 public class SnoopRumorTrigger implements Trigger {
+
+	private static final Pattern PATTERN = Pattern
+			.compile("^【谣言】某人：听说(.+)被(.+)杀死了。$");
+	private static final DateFormat FORMAT_TIME = new SimpleDateFormat("HH:mm");
 
 	private List<String> keywords;
 	private List<String> ignores;
@@ -30,57 +35,11 @@ public class SnoopRumorTrigger implements Trigger {
 		if (!m.find()) {
 			return false;
 		}
-		String killer = m.group(1);
-		String target = m.group(2);
-		process(cmdline, killer, target);
-		return true;
-	}
-
-	protected void process(CommandLine cmdline, String killer, String target) {
-		if ("你".equals(killer) || "你".equals(target)) {
-			NewPvpCombatTask task = new NewPvpCombatTask(cmdline);
-			if (task.init()) {
-				System.out.println("starting auto pvp ...");
-				cmdline.executeTask(task, 100);
-			}
-		} else {
-			boolean f1 = false, f2 = false;
-			String include = cmdline.getProperty("friends.include");
-			if (include != null && include.length() > 0) {
-				for (String s : include.split(",")) {
-					if (killer.contains(s)) {
-						f1 = true;
-					}
-					if (target.contains(s)) {
-						f2 = true;
-					}
-				}
-			}
-			String exclude = cmdline.getProperty("friends.exclude");
-			if (exclude != null && exclude.length() > 0) {
-				for (String s : exclude.split(",")) {
-					if (f1 && killer.contains(s)) {
-						f1 = false;
-					}
-					if (f2 && target.contains(s)) {
-						f2 = false;
-					}
-				}
-			}
-			if (f1 != f2) {
-				String name = f1 ? target : killer;
-				String[] tar = cmdline
-						.findTarget(new String[] { "user" }, name);
-				if (tar != null) {
-					cmdline.sendCmd("fight " + tar[0]);
-					NewPvpCombatTask task = new NewPvpCombatTask(cmdline);
-					if (task.init()) {
-						System.out.println("starting auto pvp ...");
-						cmdline.executeTask(task, 100);
-					}
-				}
-			}
+		if (keywords.contains(m.group(2)) && !ignores.contains(m.group(1))) {
+			System.out.println("[谣言] " + m.group(1) + "被" + m.group(2)
+					+ "杀死了 (" + FORMAT_TIME.format(new Date()) + ")");
 		}
+		return true;
 	}
 
 	@Override
