@@ -604,7 +604,7 @@ public class AutoQuestionTask extends TimerTask {
 		QUESTIONS.put("以下哪个不是在洛阳场景", "d");
 //		QUESTIONS.put("青城派的道德经可以提升哪个属性", "d");
 		QUESTIONS.put("金项链可以在哪位npc那里获得", "d");
-//		QUESTIONS.put("论语在哪购买", "a");
+		QUESTIONS.put("论语在哪购买", "a");
 //		QUESTIONS.put("青城派的道德经可以提升哪个属性", "c");
 	}
 
