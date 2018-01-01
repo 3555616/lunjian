@@ -36,8 +36,8 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 
 	@Override
 	protected void process(final CommandLine cmdline, final String npc,
-			String place, String reward, boolean ignore) {
-		super.process(cmdline, npc, place, reward, ignore);
+			String place, String reward, boolean ignore, long seq) {
+		super.process(cmdline, npc, place, reward, ignore, seq);
 		String kuafu = cmdline.getProperty("kuafu.area");
 		if (kuafu == null || kuafu.length() == 0) {
 			kuafu = "1-5区";
@@ -47,86 +47,67 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 				&& (!npc.startsWith("[") || (npc.startsWith("[" + kuafu + "]") && in_kuafu))
 				&& !Boolean.parseBoolean(cmdline.getProperty("notify.webqq"))
 				&& !cmdline.isFighting()) {
-			String path = PATHS.get(place);
-			if (path == null) {
-				System.out.println("path not found: " + place);
+			// cmdline.closeTrigger("zhengxie");
+			final String good_npc = (in_kuafu ? "[" + kuafu + "]" : "")
+					+ GOOD_NPCS.get(place);
+			cmdline.js(cmdline.load("click_link.js"), seq);
+			try {
+				Thread.sleep(200);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			cmdline.executeCmd("halt;prepare_kill");
+			final int priority;
+			String str = cmdline.getProperty("qinglong.auto.priority");
+			if ("++".equals(str)) {
+				priority = 1;
+			} else if (Boolean.parseBoolean(str)) {
+				priority = 0;
 			} else {
-				// cmdline.closeTrigger("zhengxie");
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// ignore
+				priority = -1;
+			}
+			if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))) {
+				if (in_kuafu && reward.contains("碎片")) {
+					cmdline.executeCmd("kill " + npc);
+					return;
 				}
-				final String good_npc = (in_kuafu ? "[" + kuafu + "]" : "")
-						+ GOOD_NPCS.get(place);
-				System.out.println("goto " + path);
-				cmdline.executeCmd("halt;prepare_kill");
-				final int priority;
-				String str = cmdline.getProperty("qinglong.auto.priority");
-				if ("++".equals(str)) {
-					priority = 1;
-				} else if (Boolean.parseBoolean(str)) {
-					priority = 0;
-				} else {
-					priority = -1;
-				}
-				Runnable callback = null;
-				if (Boolean.parseBoolean(cmdline.getProperty("qinglong.auto"))) {
-					boolean pass = false;
-					String items = cmdline.getProperty("qinglong.auto.items");
-					if (items != null) {
-						for (String item : items.split(",")) {
-							if (reward.equals(item)) {
-								pass = true;
-								break;
-							}
+				boolean pass = false;
+				String items = cmdline.getProperty("qinglong.auto.items");
+				if (items != null) {
+					for (String item : items.split(",")) {
+						if (reward.equals(item)) {
+							pass = true;
+							break;
 						}
-					} else {
-						pass = true;
 					}
-					if (pass) {
-						callback = new Runnable() {
-							@Override
-							public void run() {
-								List<String[]> list = new ArrayList<String[]>();
-								List<String[]> targets = cmdline
-										.getTargets("npc");
-								for (int i = targets.size() - 1; i > 0; i--) {
-									if (npc.equals(targets.get(i)[1])
-											&& good_npc.equals(targets
-													.get(i - 1)[1])) {
-										list.add(new String[] {
-												targets.get(i)[0],
-												targets.get(i)[1],
-												targets.get(i - 1)[0],
-												targets.get(i - 1)[1] });
-									}
-								}
-								if (!list.isEmpty()) {
-									System.out
-											.println("start auto qinglong...");
-									QinglongTask task = new QinglongTask(
-											cmdline, list, priority, 0, 100);
-									cmdline.executeTask(task, 100);
-								} else {
-									System.out.println("npc not found: " + npc);
-								}
-							}
-						};
+				} else {
+					pass = true;
+				}
+				if (pass) {
+					List<String[]> list = new ArrayList<String[]>();
+					List<String[]> targets = cmdline
+							.getTargets("npc");
+					for (int i = targets.size() - 1; i > 0; i--) {
+						if (npc.equals(targets.get(i)[1])
+								&& good_npc.equals(targets
+										.get(i - 1)[1])) {
+							list.add(new String[] {
+									targets.get(i)[0],
+									targets.get(i)[1],
+									targets.get(i - 1)[0],
+									targets.get(i - 1)[1] });
+						}
+					}
+					if (!list.isEmpty()) {
+						System.out
+								.println("start auto qinglong...");
+						QinglongTask task = new QinglongTask(
+								cmdline, list, priority, 0, 100);
+						cmdline.executeTask(task, 100);
+					} else {
+						System.out.println("npc not found: " + npc);
 					}
 				}
-				try {
-					if (priority == 0) {
-						Thread.sleep(Math.round(Math.random() * 300) + 200);
-					} else if (priority < 0) {
-						Thread.sleep(Math.round(Math.random() * 500) + 500);
-					} else {
-						Thread.sleep(Math.round(Math.random() * 200));
-					}
-				} catch (InterruptedException e) {
-					// ignore
-				}
-				cmdline.walk(new String[] { path }, place, null, callback, 200);
 			}
 		}
 	}

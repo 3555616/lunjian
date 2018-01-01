@@ -59,7 +59,7 @@ public class PvpCombatTask extends TimerTask {
 			"岳老三", "云老四", "剧盗", "流寇", "恶棍", "王铁匠", "杨掌柜", "柳绘心", "客商", "柳小花",
 			"卖花姑娘", "刘守财", "方老板", "朱老伯", "方寡妇", "[1-5区]段老大", "[1-5区]二娘",
 			"[1-5区]岳老三", "[1-5区]云老四", "[1-5区]无一", "[1-5区]铁二", "[1-5区]追三",
-			"[1-5区]冷四" };
+			"[1-5区]冷四", "年兽", "天剑真身" };
 
 	private static Map<String, String[]> SKILL_MAP1 = new HashMap<String, String[]>();
 	private static Map<String, String[]> SKILL_MAP2 = new HashMap<String, String[]>();

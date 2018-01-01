@@ -170,6 +170,12 @@ public class Power extends CommandLine {
 				System.out.println("starting auto pvp ...");
 				executeTask(task, 100);
 			}
+		} else if (line.equals("#pk2")) {
+			PvpCombatTask task = new PvpCombatTask(this);
+			if (task.init()) {
+				System.out.println("starting auto pvp ...");
+				executeTask(task, 100);
+			}
 		} else if (line.equals("#pve")) {
 			PveCombatTask task = new PveCombatTask(this);
 			if (task.init()) {

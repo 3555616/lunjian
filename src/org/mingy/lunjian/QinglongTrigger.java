@@ -11,14 +11,14 @@ import java.util.regex.Pattern;
 public class QinglongTrigger implements Trigger {
 
 	private static final Pattern PATTERN1 = Pattern
-			.compile("^【系统】青龙会组织：(.*)正在(.*)施展力量，本会愿出(.*)的战利品奖励给本场战斗的最终获胜者。$");
+			.compile("^青龙会组织：(.*)正在(.*)施展力量，本会愿出(.*)的战利品奖励给本场战斗的最终获胜者。");
 	private static final Pattern PATTERN2 = Pattern
-			.compile("^【系统】跨服：\\[(.*)\\](.*)逃到了跨服时空(.*)之中，青龙会组织悬赏(.*)惩治恶人，众位英雄快来诛杀。$");
+			.compile("^【系统】跨服：\\[(.*)\\](.*)逃到了跨服时空(.*)之中，青龙会组织悬赏(.*)惩治恶人，众位英雄快来诛杀。");
 
 	@Override
 	public boolean match(CommandLine cmdline, String message, String type,
 			long seq) {
-		if (!"sys".equals(type)) {
+		if (!"sys".equals(type) && !"local".equals(type)) {
 			return false;
 		}
 		Matcher m = PATTERN1.matcher(message);
@@ -41,7 +41,7 @@ public class QinglongTrigger implements Trigger {
 						}
 					}
 				}
-				process(cmdline, npc, place, reward, !pass);
+				process(cmdline, npc, place, reward, !pass, seq);
 			}
 			return true;
 		}
@@ -55,7 +55,7 @@ public class QinglongTrigger implements Trigger {
 				String npc = "[" + m.group(1) + "]" + m.group(2);
 				String place = m.group(3);
 				String reward = m.group(4);
-				process(cmdline, npc, place, reward, false);
+				process(cmdline, npc, place, reward, false, seq);
 				return true;
 			}
 		}
@@ -63,7 +63,7 @@ public class QinglongTrigger implements Trigger {
 	}
 
 	protected void process(CommandLine cmdline, String npc, String place,
-			String reward, boolean ignore) {
+			String reward, boolean ignore, long seq) {
 		int count = 0;
 		String logfile = cmdline.getProperty("log.properties");
 		if (logfile != null && logfile.length() > 0) {

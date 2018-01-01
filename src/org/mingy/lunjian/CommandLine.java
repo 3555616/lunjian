@@ -675,7 +675,12 @@ public class CommandLine {
 			}
 		} else if ("kill".equals(cmd[0]) || "ask".equals(cmd[0])
 				|| "give".equals(cmd[0]) || "buy".equals(cmd[0])) {
-			String[] target = findTarget(new String[] { "npc" }, cmd[1]);
+			String[] target;
+			if (isKuafu() && "kill".equals(cmd[0])) {
+				target = findTarget(new String[] { "npc", "user" }, cmd[1]);
+			} else {
+				target = findTarget(new String[] { "npc" }, cmd[1]);
+			}
 			if (target != null) {
 				cmd[1] = target[0];
 			} else {
