@@ -19,10 +19,12 @@ public class QinglongTrigger implements Trigger {
 			return false;
 		}
 		Matcher m = PATTERN.matcher(message);
-		if (!m.find()) {
+		boolean matched = m.find();
+		if (!matched) {
 			m = PATTERN1.matcher(message);
+			matched = m.find();
 		}
-		if (m.find()) {
+		if (matched) {
 			String npc = m.group(1);
 			String place = m.group(2);
 			String reward = m.group(3);
@@ -56,7 +58,7 @@ public class QinglongTrigger implements Trigger {
 				String npc = "[" + m.group(1) + "]" + m.group(2);
 				String place = m.group(3);
 				String reward = m.group(4);
-				int count = Integer.parseInt(m.group(4));
+				int count = Integer.parseInt(m.group(5));
 				process(cmdline, npc, place, reward, false, count, 0);
 				return true;
 			}

@@ -486,7 +486,7 @@ public class CommandLine {
 		} else if (line.startsWith("#show ")) {
 			triggerManager.process(this, line.substring(6).trim(), "sys", 0);
 		} else if (line.startsWith("#sh ")) {
-			triggerManager.process(this, line.substring(4).trim(), "sys", 0);
+			triggerManager.process(this, "青龙会组织：[1-5区]流寇正在北大街施展力量，本会愿出神龙怒火鞭碎片的战利品奖励给本场战斗的最终获胜者。这是本大区第39个跨服青龙。", "local", 1);
 		} else if (line.equals("#secret") || line.startsWith("#secret ")) {
 			Map<String, Object> map = (Map<String, Object>) js(
 					load("get_msgs.js"), "msg_room", false);
