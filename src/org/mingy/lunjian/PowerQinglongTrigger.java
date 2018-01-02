@@ -36,8 +36,11 @@ public class PowerQinglongTrigger extends QinglongTrigger {
 
 	@Override
 	protected void process(final CommandLine cmdline, final String npc,
-			String place, String reward, boolean ignore, long seq) {
-		super.process(cmdline, npc, place, reward, ignore, seq);
+			String place, String reward, boolean ignore, int count, long seq) {
+		super.process(cmdline, npc, place, reward, ignore, count, seq);
+		if (seq <= 0) {
+			return;
+		}
 		String kuafu = cmdline.getProperty("kuafu.area");
 		if (kuafu == null || kuafu.length() == 0) {
 			kuafu = "1-5区";
