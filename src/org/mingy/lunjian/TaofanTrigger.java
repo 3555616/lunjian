@@ -14,6 +14,7 @@ public class TaofanTrigger implements Trigger {
 		if (!"sys".equals(type)) {
 			return false;
 		}
+		// [1-5区]无一对著[1-5区]段老大喝道：「臭贼！今日不是你死就是我活！」
 		Matcher m = PATTERN.matcher(message);
 		if (!m.find()) {
 			return false;

@@ -647,11 +647,15 @@ var kill = function() {
 					is_fighting = !!check_pos(vs_info, my_id);
 				}
 				if (is_fighting) {
-					clearInterval(h_interval);
-					h_interval = undefined;
-					is_started = false;
-					remove_listener(h_listener);
-					h_listener = undefined;
+					if (check_pos(vs_info, npc)) {
+						clearInterval(h_interval);
+						h_interval = undefined;
+						is_started = false;
+						remove_listener(h_listener);
+						h_listener = undefined;
+					} else {
+						perform();
+					}
 				} else {
 					try_join_combat(vs_info, npc, true);
 				}
