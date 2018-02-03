@@ -137,6 +137,14 @@ public class CommandLine {
 		MAP_IDS.put("bhd", "35");
 		MAP_IDS.put("xiakedao", "36");
 		MAP_IDS.put("xkd", "36");
+		MAP_IDS.put("jueqinggu", "37");
+		MAP_IDS.put("jqg", "37");
+		MAP_IDS.put("bihai", "38");
+		MAP_IDS.put("bh", "38");
+		MAP_IDS.put("tianshan", "39");
+		MAP_IDS.put("ts2", "39");
+		MAP_IDS.put("miaojiang", "40");
+		MAP_IDS.put("mj3", "40");
 		SECRET_ACCEPT_REWARDS.put("lvshuige", 1255);
 		SECRET_ACCEPT_REWARDS.put("daojiangu", 1535);
 		SECRET_ACCEPT_REWARDS.put("taohuadu", 1785);
@@ -148,6 +156,8 @@ public class CommandLine {
 		SECRET_ACCEPT_REWARDS.put("dafuchuan", 3090);
 		SECRET_ACCEPT_REWARDS.put("binhaigucheng", 3385);
 		SECRET_ACCEPT_REWARDS.put("baguamen", 3635);
+		SECRET_ACCEPT_REWARDS.put("nanmanzhidi", 3890);
+		SECRET_ACCEPT_REWARDS.put("fengduguicheng", 3890);
 		InputStream in = CommandLine.class
 				.getResourceAsStream("maps/submap.list");
 		if (in != null) {
