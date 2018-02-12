@@ -965,6 +965,25 @@ function execute_cmd(cmd) {
 			var my_id = window.g_obj_map.get('msg_attrs').get('id');
 			auto_combat(vs_info, my_id, msg);
 		});
+	} else if (cmd == '#team') {
+		console.log('starting auto team combat...');
+		var leader, target;
+		add_task_listener(['main_msg', 'vs'], '', function(msg) {
+			if (msg.get('type') == 'main_msg' && msg.get('ctype') == 'text') {
+				var r = msg.get('msg').match(/(.+)对著(.+)喝道：「(.+)！今日不是你死就是我活！」/);
+				if (r) {
+					leader = find_target(removeSGR(r[1]), [ 'user' ]);
+					target = find_target(removeSGR(r[2]), [ 'npc' ]);
+					if (leader && target) {
+						clickButton('kill ' + target[0]);
+					}
+				}
+			} else if (leader && target && msg.get('type') == 'vs') {
+				var vs_info = window.g_obj_map.get('msg_vs_info');
+				var my_id = window.g_obj_map.get('msg_attrs').get('id');
+				combo_pfm(vs_info, my_id, msg, leader[0]);
+			}
+		});
 	} else if (cmd == '#pk') {
 		console.log('starting auto pvp...');
 		var vs_npc1 = false, vs_npc2 = false;
@@ -1076,12 +1095,67 @@ function auto_combat(vs_info, my_id, msg) {
 		select_perform(buttons);
 	}
 }
-add_listener('main_msg', '',
+function combo_pfm(vs_info, my_id, msg, leader) {
+	var pos = check_pos(vs_info, my_id);
+	if (!pos) {
+		return;
+	}
+	var subtype = msg.get('subtype');
+	if (subtype == 'add_xdz'
+			|| (subtype == 'attack' && msg.get('rid') == my_id)) {
+		var kee = parseInt(vs_info.get(pos[0] + '_kee' + pos[1]));
+		var max_kee = parseInt(window.g_obj_map.get('msg_attrs').get('max_kee'));
+		if (kee * 100 / max_kee < 50) {
+			var xdz = parseInt(vs_info
+					.get(pos[0] + '_xdz' + pos[1]));
+			var buttons = get_skill_buttons(xdz);
+			for ( var i = 0; i < force_skills.length; i++) {
+				var k = $.inArray(force_skills[i], buttons);
+				if (k >= 0) {
+					clickButton('playskill ' + (k + 1));
+					break;
+				}
+			}
+			return;
+		}
+	}
+	if (subtype == 'playskill' && parseInt(msg.get('ret')) == 0
+			&& msg.get('uid') == leader) {
+		var xdz = parseInt(vs_info.get(pos[0] + '_xdz' + pos[1]));
+		var buttons = get_skill_buttons(xdz);
+		var pfm = removeSGR(msg.get('name'));
+		var pfms = skills.get(pfm);
+		if (pfms) {
+			for ( var i = 0; i < buttons.length; i++) {
+				if (buttons[i] && pfms.indexOf(buttons[i]) >= 0) {
+					clickButton('playskill ' + (i + 1));
+					return;
+				}
+			}
+		}
+		for ( var i = 0; i < buttons.length; i++) {
+			if (buttons[i] && skills.containsKey(buttons[i])) {
+				clickButton('playskill ' + (i + 1));
+				break;
+			}
+		}
+	}
+}
+var hongbao_h_listener, last_hongbao_time = 0;
+hongbao_h_listener = add_listener(['main_msg', 'notice'], '',
 		function(msg) {
-			if (msg.get('ctype') == 'text') {
+			if (msg.get('type') == 'main_msg' && msg.get('ctype') == 'text') {
 				var r = msg.get('msg').match(/hongbao qiang (.+) gn(\d+)/);
 				if (r) {
-					send_cmd('hongbao qiang ' + r[1] + ' gn' + r[2]);
+					var t = new Date().getTime();
+					if (t - last_hongbao_time >= 3000) {
+						last_hongbao_time = t;
+						send_cmd('hongbao qiang ' + r[1] + ' gn' + r[2]);
+					}
+				}
+			} else if (msg.get('type') == 'notice' && msg.get('subtype') == 'notify_fail') {
+				if (/你就抢新春红包的次数已达到上限了，明天再抢吧。/.test(msg.get('msg'))) {
+					remove_listener(hongbao_h_listener);
 				}
 			}
 		});
