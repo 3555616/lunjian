@@ -91,6 +91,7 @@ public class Power extends CommandLine {
 		TriggerManager.register("location", YouxiaLocationTrigger.class);
 		TriggerManager.register("qinglong", PowerQinglongTrigger.class);
 		TriggerManager.register("zhengxie", PowerZhengxieTrigger.class);
+		TriggerManager.register("pintu", PowerPintuTrigger.class);
 		TriggerManager.register("baozang", PowerBaozangTrigger.class);
 		TriggerManager.register("taofan", PowerTaofanTrigger.class);
 		TriggerManager.register("biaoche", PowerBiaocheTrigger.class);

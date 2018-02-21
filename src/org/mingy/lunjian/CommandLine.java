@@ -360,6 +360,7 @@ public class CommandLine {
 		TriggerManager.register("qinglong", QinglongTrigger.class);
 		TriggerManager.register("zhengxie", ZhengxieTrigger.class);
 		TriggerManager.register("taofan", TaofanTrigger.class);
+		TriggerManager.register("pintu", PintuTrigger.class);
 		TriggerManager.register("baozang", BaozangTrigger.class);
 		TriggerManager.register("autokill", AutoKillTrigger.class);
 		TriggerManager.register("teamkill", TeamKillTrigger.class);
