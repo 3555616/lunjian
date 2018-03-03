@@ -1141,6 +1141,7 @@ function combo_pfm(vs_info, my_id, msg, leader) {
 		}
 	}
 }
+/*
 var hongbao_h_listener, hongbao_list = [], hongbao_timer, hongbao_full1 = false, hongbao_full2 = false;
 hongbao_h_listener = add_listener(['channel', 'notice'], '',
 		function(msg) {
@@ -1185,7 +1186,7 @@ function get_hongbao() {
 	} else {
 		hongbao_timer = undefined;
 	}
-}
+} */
 function process_cmdline(line) {
 	var pc = [ '', true ];
 	var arr = line.split(';');

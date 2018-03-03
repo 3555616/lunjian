@@ -28,7 +28,7 @@ public class PowerTaofanTrigger extends TaofanTrigger {
 		MAPS.add("光明顶");
 		MAPS.add("全真教");
 		MAPS.add("古墓");
-		MAPS.add("白驮山");
+		MAPS.add("白驼山");
 		MAPS.add("嵩山");
 		MAPS.add("寒梅庄");
 		MAPS.add("泰山");
